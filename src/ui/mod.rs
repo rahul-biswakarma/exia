@@ -245,7 +245,8 @@ impl UI {
         let content_area = if app.data.is_loading {
             // Show loading indicator at the top
             let loading_widget =
-                EvaLoadingWidget::new(app.data.status_message.clone(), app.data.is_loading);
+                EvaLoadingWidget::new(app.data.status_message.clone(), app.data.is_loading)
+                    .with_theme(app.data.theme_manager.current_theme());
             loading_widget.render(f, main_chunks[0]);
             main_chunks[1]
         } else {
@@ -290,11 +291,13 @@ impl UI {
         // Right panel - Progress overview only
         if let Some(stats) = &app.data.statistics {
             let eva_progress = EvaProgressWidget::new(stats)
+                .with_theme(app.data.theme_manager.current_theme())
                 .with_cost_analytics(app.data.cost_analytics.as_ref())
                 .with_details(false);
             eva_progress.render(f, chunks[1]);
         } else {
             let loading_widget = EvaLoadingWidget::new("Loading Statistics".to_string(), true)
+                .with_theme(app.data.theme_manager.current_theme())
                 .with_operation_type(EvaOperationType::MagiCalculation);
             loading_widget.render(f, chunks[1]);
         }
@@ -595,7 +598,8 @@ impl UI {
         f.render_widget(eva_status, stats_chunks[0]);
 
         // Entry Plug Interface (typing speed)
-        let eva_typing = EvaTypingWidget::new(&app.data.typing_speed);
+        let eva_typing = EvaTypingWidget::new(&app.data.typing_speed)
+            .with_theme(app.data.theme_manager.current_theme());
         eva_typing.render(f, stats_chunks[1]);
 
         // Enhanced code editor widget
@@ -617,6 +621,7 @@ impl UI {
         };
 
         let eva_loading = EvaLoadingWidget::new(status_message, app.data.is_loading)
+            .with_theme(app.data.theme_manager.current_theme())
             .with_operation_type(operation_type);
         eva_loading.render(f, chunks[2]);
     }

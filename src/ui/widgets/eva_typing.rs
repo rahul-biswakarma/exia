@@ -1,14 +1,23 @@
-use super::{EvaBorders, EvaColors, EvaFormat, EvaStyles, EvaSymbols, Widget};
+use super::{EvaBorders, EvaColors, EvaFormat, EvaStyles, EvaSymbols, Theme, Widget};
 use crate::ui::TypingMetrics;
 use ratatui::{layout::Rect, style::Style, widgets::Paragraph, Frame};
 
 pub struct EvaTypingWidget<'a> {
     pub metrics: &'a TypingMetrics,
+    pub theme: Option<&'a dyn Theme>,
 }
 
 impl<'a> EvaTypingWidget<'a> {
     pub fn new(metrics: &'a TypingMetrics) -> Self {
-        Self { metrics }
+        Self {
+            metrics,
+            theme: None,
+        }
+    }
+
+    pub fn with_theme(mut self, theme: &'a dyn Theme) -> Self {
+        self.theme = Some(theme);
+        self
     }
 
     fn get_coder_performance_level(&self) -> (&'static str, Style) {
@@ -41,20 +50,46 @@ impl<'a> EvaTypingWidget<'a> {
         let (coder_level, _) = self.get_coder_performance_level();
         let coding_efficiency = self.get_coding_efficiency();
         let interface_status = self.get_interface_status();
-        let efficiency_symbol = EvaSymbols::sync_rate_symbol(coding_efficiency);
+        let efficiency_symbol = self.get_themed_efficiency_symbol(coding_efficiency);
+
+        let hexagon_symbol = if let Some(theme) = self.theme {
+            theme.symbols().geometric_shapes()[0] // Use first geometric shape
+        } else {
+            EvaSymbols::HEXAGON
+        };
+
+        let diamond_symbol = if let Some(theme) = self.theme {
+            theme.symbols().geometric_shapes()[1] // Use second geometric shape
+        } else {
+            EvaSymbols::DIAMOND
+        };
 
         format!(
             "{} CODING INTERFACE STATUS\n\n{}\n{}\n{}\n{}\n\n{} DEVELOPER LEVEL: {}\n{} INTERFACE: {}",
-            EvaSymbols::HEXAGON,
+            hexagon_symbol,
             EvaFormat::readout("CURRENT WPM", &format!("{:.1}", self.metrics.current_wpm), ""),
             EvaFormat::readout("AVERAGE WPM", &format!("{:.1}", self.metrics.average_wpm), ""),
             EvaFormat::readout("TOTAL CHARS", &self.metrics.total_characters.to_string(), ""),
             EvaFormat::readout("SESSION TIME", &format!("{:.1}", self.metrics.total_time_ms as f64 / 1000.0), "SEC"),
-            EvaSymbols::DIAMOND,
+            diamond_symbol,
             coder_level,
             efficiency_symbol,
             interface_status
         )
+    }
+
+    fn get_themed_efficiency_symbol(&self, efficiency: f64) -> &'static str {
+        if let Some(theme) = self.theme {
+            let indicators = theme.symbols().status_indicators();
+            match efficiency {
+                e if e >= 80.0 => indicators.sync_high,
+                e if e >= 60.0 => indicators.sync_medium,
+                e if e >= 40.0 => indicators.sync_low,
+                _ => indicators.sync_critical,
+            }
+        } else {
+            EvaSymbols::sync_rate_symbol(efficiency)
+        }
     }
 
     fn get_border_style(&self) -> ratatui::widgets::Block<'static> {

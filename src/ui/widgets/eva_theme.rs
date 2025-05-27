@@ -59,6 +59,33 @@ pub trait ThemeSymbols {
     fn loading_frames(&self) -> &'static [&'static str];
     fn corner_decoration(&self) -> &'static str;
     fn geometric_shapes(&self) -> &'static [&'static str];
+    fn progress_symbols(&self) -> &'static [&'static str];
+    fn status_indicators(&self) -> StatusIndicators;
+    fn loading_messages(&self) -> LoadingMessages;
+}
+
+/// Status indicator symbols for different themes
+#[derive(Debug, Clone)]
+pub struct StatusIndicators {
+    pub sync_high: &'static str,
+    pub sync_medium: &'static str,
+    pub sync_low: &'static str,
+    pub sync_critical: &'static str,
+    pub connection_active: &'static str,
+    pub connection_weak: &'static str,
+    pub connection_lost: &'static str,
+}
+
+/// Loading messages for different themes
+#[derive(Debug, Clone)]
+pub struct LoadingMessages {
+    pub system_boot: &'static str,
+    pub angel_detection: &'static str,
+    pub eva_activation: &'static str,
+    pub sync_test: &'static str,
+    pub data_analysis: &'static str,
+    pub magi_calculation: &'static str,
+    pub at_field_generation: &'static str,
 }
 
 // ============================================================================
@@ -253,6 +280,31 @@ impl ThemeSymbols for EvangelionSymbols {
     }
     fn geometric_shapes(&self) -> &'static [&'static str] {
         &["◆", "▲", "●", "■", "⬢"]
+    }
+    fn progress_symbols(&self) -> &'static [&'static str] {
+        &["█", "▉", "▊", "▋", "▌", "▍", "▎", "▏", "░"]
+    }
+    fn status_indicators(&self) -> StatusIndicators {
+        StatusIndicators {
+            sync_high: "████",
+            sync_medium: "███░",
+            sync_low: "██░░",
+            sync_critical: "█░░░",
+            connection_active: "◉◉◉",
+            connection_weak: "◉◉◯",
+            connection_lost: "◯◯◯",
+        }
+    }
+    fn loading_messages(&self) -> LoadingMessages {
+        LoadingMessages {
+            system_boot: "NERV SYSTEM INITIALIZATION",
+            angel_detection: "PATTERN BLUE DETECTED",
+            eva_activation: "EVA UNIT ACTIVATION SEQUENCE",
+            sync_test: "PILOT SYNCHRONIZATION TEST",
+            data_analysis: "MAGI SYSTEM ANALYSIS",
+            magi_calculation: "MAGI SUPERCOMPUTER CALCULATION",
+            at_field_generation: "AT FIELD GENERATION",
+        }
     }
 }
 
@@ -449,6 +501,31 @@ impl ThemeSymbols for Gundam00Symbols {
     fn geometric_shapes(&self) -> &'static [&'static str] {
         &["◢", "◣", "◤", "◥", "◆", "▼"]
     }
+    fn progress_symbols(&self) -> &'static [&'static str] {
+        &["▰", "▱", "▰", "▱", "▰", "▱", "▰", "▱", "▱"]
+    }
+    fn status_indicators(&self) -> StatusIndicators {
+        StatusIndicators {
+            sync_high: "▰▰▰▰",
+            sync_medium: "▰▰▰▱",
+            sync_low: "▰▰▱▱",
+            sync_critical: "▰▱▱▱",
+            connection_active: "●●●",
+            connection_weak: "●●○",
+            connection_lost: "○○○",
+        }
+    }
+    fn loading_messages(&self) -> LoadingMessages {
+        LoadingMessages {
+            system_boot: "CELESTIAL BEING SYSTEM ONLINE",
+            angel_detection: "TARGET ACQUISITION IN PROGRESS",
+            eva_activation: "GUNDAM ACTIVATION SEQUENCE",
+            sync_test: "QUANTUM BRAINWAVE SYNC",
+            data_analysis: "VEDA SYSTEM ANALYSIS",
+            magi_calculation: "QUANTUM COMPUTATION",
+            at_field_generation: "GN FIELD DEPLOYMENT",
+        }
+    }
 }
 
 // ============================================================================
@@ -628,6 +705,31 @@ impl ThemeSymbols for CleanTerminalSymbols {
     }
     fn geometric_shapes(&self) -> &'static [&'static str] {
         &["+", "-", "|", "·", "•"]
+    }
+    fn progress_symbols(&self) -> &'static [&'static str] {
+        &["=", "-", "=", "-", "=", "-", "=", "-", " "]
+    }
+    fn status_indicators(&self) -> StatusIndicators {
+        StatusIndicators {
+            sync_high: "====",
+            sync_medium: "===-",
+            sync_low: "==--",
+            sync_critical: "=---",
+            connection_active: "●●●",
+            connection_weak: "●●○",
+            connection_lost: "○○○",
+        }
+    }
+    fn loading_messages(&self) -> LoadingMessages {
+        LoadingMessages {
+            system_boot: "System Initialization",
+            angel_detection: "Pattern Recognition",
+            eva_activation: "Application Startup",
+            sync_test: "Connection Test",
+            data_analysis: "Data Processing",
+            magi_calculation: "Computing",
+            at_field_generation: "Loading Resources",
+        }
     }
 }
 

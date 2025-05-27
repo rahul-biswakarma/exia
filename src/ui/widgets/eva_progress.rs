@@ -1,4 +1,4 @@
-use super::{EvaBorders, EvaColors, EvaFormat, EvaStyles, EvaSymbols, Widget};
+use super::{EvaBorders, EvaColors, EvaFormat, EvaStyles, EvaSymbols, Theme, Widget};
 use crate::models::CostAnalytics;
 use crate::storage::Statistics;
 use ratatui::{
@@ -12,6 +12,7 @@ pub struct EvaProgressWidget<'a> {
     pub stats: &'a Statistics,
     pub cost_analytics: Option<&'a CostAnalytics>,
     pub show_detailed: bool,
+    pub theme: Option<&'a dyn Theme>,
 }
 
 impl<'a> EvaProgressWidget<'a> {
@@ -20,7 +21,13 @@ impl<'a> EvaProgressWidget<'a> {
             stats,
             cost_analytics: None,
             show_detailed: false,
+            theme: None,
         }
+    }
+
+    pub fn with_theme(mut self, theme: &'a dyn Theme) -> Self {
+        self.theme = Some(theme);
+        self
     }
 
     pub fn with_cost_analytics(mut self, cost_analytics: Option<&'a CostAnalytics>) -> Self {
@@ -42,6 +49,36 @@ impl<'a> EvaProgressWidget<'a> {
         let is_ok = success_rate >= 70.0;
         let is_warning = success_rate >= 40.0 && success_rate < 70.0;
         (is_ok, is_warning)
+    }
+
+    fn get_themed_sync_symbol(&self, rate: f64) -> &'static str {
+        if let Some(theme) = self.theme {
+            let indicators = theme.symbols().status_indicators();
+            match rate {
+                r if r >= 80.0 => indicators.sync_high,
+                r if r >= 60.0 => indicators.sync_medium,
+                r if r >= 40.0 => indicators.sync_low,
+                _ => indicators.sync_critical,
+            }
+        } else {
+            EvaSymbols::sync_rate_symbol(rate)
+        }
+    }
+
+    fn get_themed_progress_bar(&self, progress: f64, width: usize) -> String {
+        if let Some(theme) = self.theme {
+            let progress_symbols = theme.symbols().progress_symbols();
+            let filled = (progress * width as f64) as usize;
+            let empty_symbol = progress_symbols.last().unwrap_or(&" ");
+            let fill_symbol = progress_symbols.first().unwrap_or(&"█");
+
+            format!("{}{}",
+                fill_symbol.repeat(filled),
+                empty_symbol.repeat(width - filled)
+            )
+        } else {
+            EvaFormat::progress_bar(progress, width)
+        }
     }
 
     fn render_main_display(&self, f: &mut Frame, area: Rect) {
@@ -66,13 +103,17 @@ impl<'a> EvaProgressWidget<'a> {
 
         // Sync Rate Display
         let sync_rate = self.get_sync_rate();
-        let sync_symbol = EvaSymbols::sync_rate_symbol(sync_rate);
+        let sync_symbol = self.get_themed_sync_symbol(sync_rate);
+        let progress_bar = self.get_themed_progress_bar(sync_rate / 100.0, 20);
+        let operational_symbol = if let Some(theme) = self.theme {
+            theme.symbols().operational()
+        } else {
+            EvaSymbols::OPERATIONAL
+        };
+
         let sync_text = format!(
             "{} LEARNING EFFICIENCY RATE: {:.1}%\n{} {}",
-            EvaSymbols::OPERATIONAL,
-            sync_rate,
-            sync_symbol,
-            EvaFormat::progress_bar(sync_rate / 100.0, 20)
+            operational_symbol, sync_rate, sync_symbol, progress_bar
         );
 
         let sync_style = if sync_rate >= 80.0 {
