@@ -953,6 +953,8 @@ impl EvaSymbols {
     pub const TRIANGLE: &'static str = "▲";
     pub const SQUARE: &'static str = "■";
     pub const ARROW_RIGHT: &'static str = "→";
+    pub const CLOCK: &'static str = "⏱";
+    pub const SYNC: &'static str = "⟲";
 
     pub fn loading_frame() -> &'static str {
         let time = std::time::SystemTime::now()

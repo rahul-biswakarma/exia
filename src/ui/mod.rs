@@ -17,8 +17,9 @@ use std::io;
 
 use widgets::{
     CornerDecorationWidget, DecoratedBlock, EvaBorders, EvaColors, EvaFormat, EvaLoadingWidget,
-    EvaOperationType, EvaProgressWidget, EvaStyles, EvaSymbols, EvaTypingWidget, LLMCallInfo,
-    LLMCallWidget, TextEditor, ThemeManager,
+    EvaOperationType, EvaProgressWidget, EvaStyles, EvaSymbols, EvaTypingWidget, HomeLayoutWidget,
+    LLMCallInfo, LLMCallWidget, LLMStreamInfo, LLMStreamStatus, SystemMetrics, TextEditor, Theme,
+    ThemeManager,
 };
 
 pub mod app;
@@ -264,54 +265,126 @@ impl UI {
             area
         };
 
-        let chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-            .split(content_area);
-
-        // Left panel - Quick actions
-        let shapes = theme.symbols().geometric_shapes();
-        let actions = vec![
-            format!("{} Generate New Algorithm Challenge", shapes[0]),
-            format!("{} Access Problem Database", shapes[1]),
-            format!("{} Review Learning Analytics", shapes[2]),
-            format!("{} System Configuration", shapes[3]),
-            format!("{} Technical Documentation", theme.symbols().operational()),
-            format!("{} Terminate Session", theme.symbols().error()),
-        ];
-
-        let action_items: Vec<ListItem> = actions
-            .iter()
-            .enumerate()
-            .map(|(i, action)| {
-                let style = if i == app.data.selected_tab {
-                    theme.styles().selected()
-                } else {
-                    theme.styles().text_primary()
-                };
-                ListItem::new(action.as_str()).style(style)
-            })
-            .collect();
-
-        let actions_list = List::new(action_items)
-            .block(theme.borders().default_block().title("Exia Operations"))
-            .highlight_style(theme.styles().selected());
-
-        f.render_stateful_widget(actions_list, chunks[0], &mut app.data.list_state.clone());
-
-        // Right panel - Progress overview only
+        // Use the new HomeLayoutWidget if statistics are available
         if let Some(stats) = &app.data.statistics {
-            let eva_progress = EvaProgressWidget::new(stats)
-                .with_theme(app.data.theme_manager.current_theme())
+            // Create sample system history for demonstration
+            let mut cpu_history = std::collections::VecDeque::new();
+            let mut ram_history = std::collections::VecDeque::new();
+
+            // Generate sample data for the last 60 seconds
+            for i in 0..60 {
+                let time = i as f64;
+                let cpu_usage = (45.0 + 10.0 * (time * 0.1).sin()).max(0.0).min(100.0);
+                let ram_usage = (35.0 + 5.0 * (time * 0.05).cos()).max(0.0).min(100.0);
+                cpu_history.push_back((time, cpu_usage));
+                ram_history.push_back((time, ram_usage));
+            }
+
+            // Create sample LLM stream info for demonstration
+            let sample_llm_info = {
+                use crate::ui::widgets::{LLMStreamInfo, LLMStreamStatus};
+                let mut info = LLMStreamInfo::new("Code Analysis".to_string());
+                info.status = LLMStreamStatus::Streaming;
+                info.progress = 0.65;
+                info.input_tokens = Some(1250);
+                info.output_tokens = Some(890);
+                info.estimated_cost_usd = Some(0.0003);
+                info.model_name = Some("gemini-1.5-flash".to_string());
+                info.streamed_content = "Analyzing your algorithm implementation...\n\nI can see you're using a dynamic programming approach, which is excellent for this type of problem. Here are my observations:\n\n1. Time Complexity: O(n²) - This is optimal for the given constraints\n2. Space Complexity: O(n²) - Could be optimized to O(n)\n3. Edge Cases: Consider handling empty arrays\n\nLet me suggest some optimizations...".to_string();
+                info
+            };
+
+            // Create sample system metrics
+            let sample_metrics = {
+                use crate::ui::widgets::SystemMetrics;
+                SystemMetrics {
+                    cpu_usage: 45.2,
+                    ram_usage: 2.8,
+                    ram_total: 8.0,
+                    timestamp: std::time::Instant::now(),
+                }
+            };
+
+            // Create Exia operations widget
+            let exia_widget = self.create_exia_operations_widget(app, theme);
+
+            // Use the new home layout
+            let home_layout = HomeLayoutWidget::new(stats, &cpu_history, &ram_history)
                 .with_cost_analytics(app.data.cost_analytics.as_ref())
-                .with_details(false);
-            eva_progress.render(f, chunks[1]);
+                .with_llm_stream_info(Some(&sample_llm_info))
+                .with_system_metrics(Some(&sample_metrics))
+                .with_exia_operations(exia_widget)
+                .with_animation_frame(0);
+
+            home_layout.render(f, content_area);
         } else {
+            // Fallback to loading widget
             let loading_widget = EvaLoadingWidget::new("Loading Statistics".to_string(), true)
                 .with_theme(app.data.theme_manager.current_theme())
                 .with_operation_type(EvaOperationType::MagiCalculation);
-            loading_widget.render(f, chunks[1]);
+            loading_widget.render(f, content_area);
         }
+    }
+
+    fn create_exia_operations_widget<'a>(
+        &self,
+        app: &'a App,
+        theme: &'a dyn Theme,
+    ) -> Box<dyn Widget + 'a> {
+        use ratatui::widgets::{List, ListItem};
+
+        struct ExiaOperationsWidget<'a> {
+            app: &'a App,
+            theme: &'a dyn Theme,
+        }
+
+        impl<'a> Widget for ExiaOperationsWidget<'a> {
+            fn render(&self, f: &mut Frame, area: Rect) {
+                let shapes = self.theme.symbols().geometric_shapes();
+                let actions = vec![
+                    format!("{} Generate New Algorithm Challenge", shapes[0]),
+                    format!("{} Access Problem Database", shapes[1]),
+                    format!("{} Review Learning Analytics", shapes[2]),
+                    format!("{} System Configuration", shapes[3]),
+                    format!(
+                        "{} Technical Documentation",
+                        self.theme.symbols().operational()
+                    ),
+                    format!("{} Terminate Session", self.theme.symbols().error()),
+                ];
+
+                let action_items: Vec<ListItem> = actions
+                    .iter()
+                    .enumerate()
+                    .map(|(i, action)| {
+                        let style = if i == self.app.data.selected_tab {
+                            self.theme.styles().selected()
+                        } else {
+                            self.theme.styles().text_primary()
+                        };
+                        ListItem::new(action.as_str()).style(style)
+                    })
+                    .collect();
+
+                let actions_list = List::new(action_items)
+                    .block(
+                        self.theme
+                            .borders()
+                            .default_block()
+                            .title("Exia Operations"),
+                    )
+                    .highlight_style(self.theme.styles().selected());
+
+                let mut list_state = self.app.data.list_state.clone();
+                f.render_stateful_widget(actions_list, area, &mut list_state);
+            }
+
+            fn title(&self) -> Option<&str> {
+                Some("EXIA OPERATIONS")
+            }
+        }
+
+        Box::new(ExiaOperationsWidget { app, theme })
     }
 
     fn render_recent_questions(&self, f: &mut Frame, area: Rect, app: &App) {

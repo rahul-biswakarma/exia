@@ -12,12 +12,17 @@ pub mod eva_loading;
 pub mod eva_progress;
 pub mod eva_theme;
 pub mod eva_typing;
+pub mod home_layout;
+pub mod learning_efficiency;
+pub mod learning_unit_status;
 pub mod llm_call;
+pub mod llm_info;
 pub mod loading;
 pub mod network_activity;
 pub mod progress_overview;
 pub mod stats_bar;
 pub mod syntax_highlighter;
+pub mod system_monitor;
 pub mod text_editor;
 pub mod typing_speed;
 
@@ -31,11 +36,16 @@ pub use eva_theme::{
     Gundam00Theme, Theme, ThemeManager,
 };
 pub use eva_typing::EvaTypingWidget;
+pub use home_layout::HomeLayoutWidget;
+pub use learning_efficiency::LearningEfficiencyWidget;
+pub use learning_unit_status::LearningUnitStatusWidget;
 pub use llm_call::{LLMCallInfo, LLMCallStatus, LLMCallWidget};
+pub use llm_info::{LLMInfoWidget, LLMStreamInfo, LLMStreamStatus};
 pub use loading::LoadingWidget;
 pub use network_activity::NetworkActivityWidget;
 pub use progress_overview::ProgressOverviewWidget;
 pub use stats_bar::StatsBarWidget;
+pub use system_monitor::{SystemMetrics, SystemMonitorWidget};
 pub use text_editor::TextEditor;
 pub use typing_speed::TypingSpeedWidget;
 
