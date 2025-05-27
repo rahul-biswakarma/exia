@@ -1,4 +1,4 @@
-# 🎯 DSA Learning Assistant
+# 🎯 Exia - AI-Powered Coding Assistant
 
 A comprehensive **Data Structures and Algorithms** learning companion built in **Rust** with **AI-powered question generation**, **real-time code compilation**, and **personalized progress tracking**.
 
@@ -48,7 +48,7 @@ A comprehensive **Data Structures and Algorithms** learning companion built in *
 1. **Clone the repository**:
    ```bash
    git clone <repository-url>
-   cd dsa_learning_assistant
+   cd exia
    ```
 
 2. **Set up your Gemini API Key**:
@@ -69,7 +69,7 @@ A comprehensive **Data Structures and Algorithms** learning companion built in *
 
 ### First Run
 
-1. The application will create a data directory at `~/.local/share/dsa_learning_assistant/`
+1. The application will create a data directory at `~/.local/share/exia/`
 2. Start with generating your first question by pressing `g` or selecting "Generate New Question"
 3. Follow the on-screen instructions to navigate through the interface
 
@@ -135,8 +135,8 @@ src/
 - `GEMINI_API_KEY`: Your Google Gemini API key (required for AI features)
 
 ### Data Directory
-- **macOS/Linux**: `~/.local/share/dsa_learning_assistant/`
-- **Windows**: `%APPDATA%\dsa_learning_assistant\`
+- **macOS/Linux**: `~/.local/share/exia/`
+- **Windows**: `%APPDATA%\exia\`
 
 ### Files
 - `database.json`: Main data file containing questions, solutions, and progress

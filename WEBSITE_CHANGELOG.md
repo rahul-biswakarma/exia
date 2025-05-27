@@ -1,4 +1,4 @@
-# DSA Learning Assistant - Release Notes
+# Exia - AI-Powered Coding Assistant - Release Notes
 
 *A comprehensive Rust-based terminal application for Data Structures and Algorithms learning with AI-powered features*
 

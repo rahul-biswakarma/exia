@@ -202,7 +202,7 @@ impl UI {
         let theme = app.data.theme_manager.current_theme();
 
         let title = match app.state {
-            AppState::Home => "DSA LEARNING COMMAND CENTER",
+            AppState::Home => "EXIA COMMAND CENTER",
             AppState::AllQuestions => "ALGORITHM DATABASE",
             AppState::QuestionView => "PROBLEM ANALYSIS",
             AppState::CodeEditor => "CODE SYNTHESIS INTERFACE",
@@ -217,7 +217,7 @@ impl UI {
         let header = Paragraph::new(header_text)
             .style(theme.styles().text_highlight())
             .alignment(Alignment::Center)
-            .block(theme.borders().header_block("LEARNING SYSTEM"));
+            .block(theme.borders().header_block("EXIA SYSTEM"));
 
         f.render_widget(header, area);
     }
@@ -287,7 +287,7 @@ impl UI {
             .collect();
 
         let actions_list = List::new(action_items)
-            .block(theme.borders().default_block().title("Learning Operations"))
+            .block(theme.borders().default_block().title("Exia Operations"))
             .highlight_style(theme.styles().selected());
 
         f.render_stateful_widget(actions_list, chunks[0], &mut app.data.list_state.clone());
@@ -724,6 +724,7 @@ impl UI {
             .split(area);
 
         // Typing speed widget (full width)
+        use widgets::*;
         let eva_typing = EvaTypingWidget::new(&app.data.typing_speed)
             .with_theme(app.data.theme_manager.current_theme());
         eva_typing.render(f, chunks[0]);
@@ -1011,7 +1012,7 @@ impl UI {
     }
 
     fn render_help(&self, f: &mut Frame, area: Rect, app: &App) {
-        let help_text = r#"🎯 DSA Learning Assistant - Help
+        let help_text = r#"🎯 Exia - AI-Powered Coding Assistant - Help
 
 📋 Navigation:
 • Tab/Shift+Tab: Navigate between sections

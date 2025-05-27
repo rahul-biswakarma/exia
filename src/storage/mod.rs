@@ -32,7 +32,7 @@ impl Storage {
     pub fn new() -> Result<Self> {
         let data_dir = dirs::data_dir()
             .ok_or_else(|| anyhow!("Could not find data directory"))?
-            .join("dsa_learning_assistant");
+            .join("exia");
 
         fs::create_dir_all(&data_dir)?;
 
@@ -86,7 +86,7 @@ impl Storage {
                 self.save_database(&new_db)?;
                 Ok(new_db)
             }
-            Err(e) => Err(anyhow!("Failed to migrate database: {}", e))
+            Err(e) => Err(anyhow!("Failed to migrate database: {}", e)),
         }
     }
 
@@ -271,22 +271,28 @@ impl Storage {
         let tokens_used = db.llm_usage.values().map(|u| u.total_tokens as u64).sum();
         let requests_count = db.llm_usage.len() as u64;
 
-        let cost_by_model = db.llm_usage.values().fold(HashMap::new(), |mut acc, usage| {
-            *acc.entry(usage.model_name.clone()).or_insert(0.0) += usage.cost_usd;
-            acc
-        });
+        let cost_by_model = db
+            .llm_usage
+            .values()
+            .fold(HashMap::new(), |mut acc, usage| {
+                *acc.entry(usage.model_name.clone()).or_insert(0.0) += usage.cost_usd;
+                acc
+            });
 
-        let cost_by_request_type = db.llm_usage.values().fold(HashMap::new(), |mut acc, usage| {
-            let key = match &usage.request_type {
-                LLMRequestType::QuestionGeneration => "Question Generation".to_string(),
-                LLMRequestType::HintGeneration => "Hint Generation".to_string(),
-                LLMRequestType::FeedbackGeneration => "Feedback Generation".to_string(),
-                LLMRequestType::CodeAnalysis => "Code Analysis".to_string(),
-                LLMRequestType::Other(s) => s.clone(),
-            };
-            *acc.entry(key).or_insert(0.0) += usage.cost_usd;
-            acc
-        });
+        let cost_by_request_type = db
+            .llm_usage
+            .values()
+            .fold(HashMap::new(), |mut acc, usage| {
+                let key = match &usage.request_type {
+                    LLMRequestType::QuestionGeneration => "Question Generation".to_string(),
+                    LLMRequestType::HintGeneration => "Hint Generation".to_string(),
+                    LLMRequestType::FeedbackGeneration => "Feedback Generation".to_string(),
+                    LLMRequestType::CodeAnalysis => "Code Analysis".to_string(),
+                    LLMRequestType::Other(s) => s.clone(),
+                };
+                *acc.entry(key).or_insert(0.0) += usage.cost_usd;
+                acc
+            });
 
         let average_cost_per_request = if requests_count > 0 {
             total_cost_usd / requests_count as f64
@@ -323,18 +329,19 @@ impl Storage {
     pub fn get_user_analytics(&self, user_id: &str) -> Result<UserAnalytics> {
         let db = self.load_database()?;
 
-        let user_actions: Vec<_> = db.user_actions.values()
+        let user_actions: Vec<_> = db
+            .user_actions
+            .values()
             .filter(|a| a.session_id.to_string().contains(user_id)) // Simple user filtering
             .collect();
 
         let total_sessions = db.sessions.len() as u64;
         let actions_count = user_actions.len() as u64;
 
-        let total_time_spent_ms = user_actions.iter()
-            .filter_map(|a| a.duration_ms)
-            .sum();
+        let total_time_spent_ms = user_actions.iter().filter_map(|a| a.duration_ms).sum();
 
-        let most_used_features = user_actions.iter()
+        let most_used_features = user_actions
+            .iter()
             .fold(HashMap::new(), |mut acc, action| {
                 let feature = match &action.action_type {
                     ActionType::Navigation => "Navigation".to_string(),
@@ -353,7 +360,8 @@ impl Storage {
             .into_iter()
             .collect::<Vec<_>>();
 
-        let error_actions = user_actions.iter()
+        let error_actions = user_actions
+            .iter()
             .filter(|a| matches!(a.action_type, ActionType::Error))
             .count();
 
@@ -376,7 +384,9 @@ impl Storage {
             0.0
         };
 
-        let behavior_patterns = db.behavior_patterns.values()
+        let behavior_patterns = db
+            .behavior_patterns
+            .values()
             .filter(|p| p.user_id == user_id)
             .cloned()
             .collect();
@@ -399,7 +409,9 @@ impl Storage {
 
     pub fn analyze_behavior_patterns(&self, user_id: &str) -> Result<Vec<UserBehaviorPattern>> {
         let db = self.load_database()?;
-        let user_actions: Vec<_> = db.user_actions.values()
+        let user_actions: Vec<_> = db
+            .user_actions
+            .values()
             .filter(|a| a.session_id.to_string().contains(user_id))
             .collect();
 
@@ -408,7 +420,8 @@ impl Storage {
         // Analyze frequent key sequences
         let key_sequences = self.find_key_sequences(&user_actions);
         for (sequence, frequency) in key_sequences {
-            if frequency >= 3 { // Pattern threshold
+            if frequency >= 3 {
+                // Pattern threshold
                 patterns.push(UserBehaviorPattern {
                     id: Uuid::new_v4(),
                     user_id: user_id.to_string(),
@@ -449,13 +462,20 @@ impl Storage {
     fn find_key_sequences(&self, actions: &[&UserAction]) -> HashMap<String, u32> {
         let mut sequences = HashMap::new();
 
-        let key_actions: Vec<_> = actions.iter()
+        let key_actions: Vec<_> = actions
+            .iter()
             .filter(|a| matches!(a.action_type, ActionType::KeyPress))
             .collect();
 
         for window in key_actions.windows(3) {
-            let sequence = window.iter()
-                .map(|a| a.metadata.get("key").unwrap_or(&"unknown".to_string()).clone())
+            let sequence = window
+                .iter()
+                .map(|a| {
+                    a.metadata
+                        .get("key")
+                        .unwrap_or(&"unknown".to_string())
+                        .clone()
+                })
                 .collect::<Vec<_>>()
                 .join("->");
             *sequences.entry(sequence).or_insert(0) += 1;
@@ -467,14 +487,15 @@ impl Storage {
     fn find_navigation_patterns(&self, actions: &[&UserAction]) -> HashMap<String, u32> {
         let mut patterns = HashMap::new();
 
-        let nav_actions: Vec<_> = actions.iter()
+        let nav_actions: Vec<_> = actions
+            .iter()
             .filter(|a| matches!(a.action_type, ActionType::Navigation))
             .collect();
 
         for window in nav_actions.windows(2) {
-            let pattern = format!("{} -> {}",
-                window[0].context.screen,
-                window[1].context.screen
+            let pattern = format!(
+                "{} -> {}",
+                window[0].context.screen, window[1].context.screen
             );
             *patterns.entry(pattern).or_insert(0) += 1;
         }
