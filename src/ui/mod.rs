@@ -8,18 +8,17 @@ use crossterm::{
 };
 use ratatui::{
     backend::CrosstermBackend,
-    layout::{Alignment, Constraint, Direction, Layout, Margin, Rect},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    widgets::{
-        Block, Borders, Clear, Gauge, List, ListItem, ListState, Paragraph, ScrollbarState, Wrap,
-    },
+    widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, ScrollbarState, Wrap},
     Frame, Terminal,
 };
 use std::io;
-use tui_input::Input;
+
 use widgets::{
-    EvaBorders, EvaColors, EvaFormat, EvaGradientWidget, EvaLoadingWidget, EvaOperationType,
-    EvaProgressWidget, EvaStyles, EvaSymbols, EvaTypingWidget, TextEditor,
+    CornerDecorationWidget, DecoratedBlock, EvaBorders, EvaColors, EvaFormat, EvaLoadingWidget,
+    EvaOperationType, EvaProgressWidget, EvaStyles, EvaSymbols, EvaTypingWidget, TextEditor,
+    ThemeManager,
 };
 
 pub mod app;
@@ -66,6 +65,7 @@ pub struct AppData {
     pub network_activity: Vec<NetworkActivity>,
     pub typing_speed: TypingMetrics,
     pub recent_questions: Vec<Question>,
+    pub theme_manager: ThemeManager,
 }
 
 #[derive(Debug, Clone)]
@@ -153,6 +153,7 @@ impl Default for AppData {
                 keystroke_intervals: Vec::new(),
             },
             recent_questions: Vec::new(),
+            theme_manager: ThemeManager::new(),
         }
     }
 }
@@ -177,10 +178,6 @@ impl UI {
         self.terminal.draw(move |f| {
             let ui = unsafe { &*ui_ref };
 
-            // Render gradient background first
-            let gradient = EvaGradientWidget::new();
-            gradient.render(f, f.size());
-
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([
@@ -198,24 +195,25 @@ impl UI {
     }
 
     fn render_header(&self, f: &mut Frame, area: Rect, app: &App) {
-        use widgets::*;
+        let theme = app.data.theme_manager.current_theme();
 
         let title = match app.state {
-            AppState::Home => "CENTRAL DOGMA - DSA LEARNING COMMAND CENTER",
-            AppState::AllQuestions => "ALGORITHM DATABASE - PROBLEM ARCHIVE",
-            AppState::QuestionView => "PROBLEM ANALYSIS - ALGORITHM BRIEFING",
-            AppState::CodeEditor => "CODE SYNTHESIS INTERFACE - SOLUTION MODE",
-            AppState::Results => "EXECUTION REPORT - SOLUTION ANALYSIS",
-            AppState::Statistics => "MAGI ANALYTICS - LEARNING PERFORMANCE",
-            AppState::Settings => "SYSTEM CONFIGURATION - LEARNING PARAMETERS",
-            AppState::Help => "TECHNICAL MANUAL - OPERATION GUIDANCE",
+            AppState::Home => "DSA LEARNING COMMAND CENTER",
+            AppState::AllQuestions => "ALGORITHM DATABASE",
+            AppState::QuestionView => "PROBLEM ANALYSIS",
+            AppState::CodeEditor => "CODE SYNTHESIS INTERFACE",
+            AppState::Results => "EXECUTION REPORT",
+            AppState::Statistics => "LEARNING ANALYTICS",
+            AppState::Settings => "SYSTEM CONFIGURATION",
+            AppState::Help => "OPERATION GUIDANCE",
         };
 
-        let header_text = format!("{} {} {}", EvaSymbols::HEXAGON, title, EvaSymbols::HEXAGON);
+        let corner_symbol = theme.symbols().corner_decoration();
+        let header_text = format!("{} {} {}", corner_symbol, title, corner_symbol);
         let header = Paragraph::new(header_text)
-            .style(EvaStyles::text_highlight())
+            .style(theme.styles().text_highlight())
             .alignment(Alignment::Center)
-            .block(EvaBorders::header("NERV HEADQUARTERS"));
+            .block(theme.borders().header_block("LEARNING SYSTEM"));
 
         f.render_widget(header, area);
     }
@@ -234,7 +232,7 @@ impl UI {
     }
 
     fn render_home(&self, f: &mut Frame, area: Rect, app: &App) {
-        use widgets::*;
+        let theme = app.data.theme_manager.current_theme();
 
         let main_chunks = Layout::default()
             .direction(Direction::Vertical)
@@ -247,7 +245,7 @@ impl UI {
         let content_area = if app.data.is_loading {
             // Show loading indicator at the top
             let loading_widget =
-                LoadingWidget::new(app.data.status_message.clone(), app.data.is_loading);
+                EvaLoadingWidget::new(app.data.status_message.clone(), app.data.is_loading);
             loading_widget.render(f, main_chunks[0]);
             main_chunks[1]
         } else {
@@ -260,13 +258,14 @@ impl UI {
             .split(content_area);
 
         // Left panel - Quick actions
+        let shapes = theme.symbols().geometric_shapes();
         let actions = vec![
-            format!("{} GENERATE NEW ALGORITHM CHALLENGE", EvaSymbols::TRIANGLE),
-            format!("{} ACCESS PROBLEM DATABASE", EvaSymbols::SQUARE),
-            format!("{} REVIEW LEARNING ANALYTICS", EvaSymbols::DIAMOND),
-            format!("{} SYSTEM CONFIGURATION", EvaSymbols::HEXAGON),
-            format!("{} TECHNICAL DOCUMENTATION", EvaSymbols::OPERATIONAL),
-            format!("{} TERMINATE SESSION", EvaSymbols::CRITICAL),
+            format!("{} Generate New Algorithm Challenge", shapes[0]),
+            format!("{} Access Problem Database", shapes[1]),
+            format!("{} Review Learning Analytics", shapes[2]),
+            format!("{} System Configuration", shapes[3]),
+            format!("{} Technical Documentation", theme.symbols().operational()),
+            format!("{} Terminate Session", theme.symbols().error()),
         ];
 
         let action_items: Vec<ListItem> = actions
@@ -274,17 +273,17 @@ impl UI {
             .enumerate()
             .map(|(i, action)| {
                 let style = if i == app.data.selected_tab {
-                    EvaStyles::selected()
+                    theme.styles().selected()
                 } else {
-                    EvaStyles::text_primary()
+                    theme.styles().text_primary()
                 };
                 ListItem::new(action.as_str()).style(style)
             })
             .collect();
 
         let actions_list = List::new(action_items)
-            .block(EvaBorders::panel().title(EvaFormat::title("LEARNING OPERATIONS")))
-            .highlight_style(EvaStyles::selected());
+            .block(theme.borders().default_block().title("Learning Operations"))
+            .highlight_style(theme.styles().selected());
 
         f.render_stateful_widget(actions_list, chunks[0], &mut app.data.list_state.clone());
 
@@ -295,7 +294,7 @@ impl UI {
                 .with_details(false);
             eva_progress.render(f, chunks[1]);
         } else {
-            let loading_widget = EvaLoadingWidget::new("LOADING MAGI STATISTICS".to_string(), true)
+            let loading_widget = EvaLoadingWidget::new("Loading Statistics".to_string(), true)
                 .with_operation_type(EvaOperationType::MagiCalculation);
             loading_widget.render(f, chunks[1]);
         }
@@ -364,7 +363,7 @@ impl UI {
             let no_questions_text = format!(
                 "{} NO PROBLEMS DETECTED\n\n{} INITIATE PROBLEM GENERATION PROTOCOL\n{} PRESS 'G' TO BEGIN ALGORITHM SYNTHESIS",
                 EvaSymbols::OPERATIONAL,
-                EvaSymbols::ARROW_RIGHT,
+                "→",
                 EvaSymbols::TRIANGLE
             );
             let no_questions = Paragraph::new(no_questions_text)
@@ -386,7 +385,7 @@ impl UI {
                             (EvaStyles::text_warning(), EvaSymbols::WARNING)
                         }
                         crate::models::Difficulty::Hard => {
-                            (EvaStyles::text_critical(), EvaSymbols::CRITICAL)
+                            (EvaStyles::text_error(), EvaSymbols::CRITICAL)
                         }
                     };
 
@@ -499,7 +498,7 @@ impl UI {
                     .map(|(i, tc)| {
                         format!(
                             "{} TEST CASE {}: INPUT: {} | EXPECTED: {}",
-                            EvaSymbols::ARROW_RIGHT,
+                            "→",
                             i + 1,
                             tc.input,
                             tc.expected_output
@@ -814,19 +813,56 @@ impl UI {
         }
     }
 
-    fn render_settings(&self, f: &mut Frame, area: Rect, _app: &App) {
-        let settings_text = "⚙️ Settings\n\n🔑 Gemini API Key: Set via GEMINI_API_KEY environment variable\n📁 Data Directory: ~/.local/share/dsa_learning_assistant/\n\n🎨 Theme: Dark (default)\n🔊 Sound: Disabled\n📊 Auto-save: Enabled";
+    fn render_settings(&self, f: &mut Frame, area: Rect, app: &App) {
+        let theme = app.data.theme_manager.current_theme();
+
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(8), // Theme selection
+                Constraint::Min(0),    // Other settings
+            ])
+            .split(area);
+
+        // Theme selection
+        let available_themes = app.data.theme_manager.available_themes();
+        let current_theme_name = theme.name();
+
+        let theme_items: Vec<ListItem> = available_themes
+            .iter()
+            .map(|theme_name| {
+                let prefix = if *theme_name == current_theme_name {
+                    "● "
+                } else {
+                    "○ "
+                };
+                let text = format!("{}{}", prefix, theme_name);
+                let style = if *theme_name == current_theme_name {
+                    theme.styles().selected()
+                } else {
+                    theme.styles().text_primary()
+                };
+                ListItem::new(text).style(style)
+            })
+            .collect();
+
+        let theme_list = List::new(theme_items)
+            .block(theme.borders().default_block().title("Themes (T to cycle)"))
+            .highlight_style(theme.styles().selected());
+
+        f.render_widget(theme_list, chunks[0]);
+
+        // Other settings
+        let settings_text = format!(
+            "🔑 Gemini API Key: Set via GEMINI_API_KEY environment variable\n📁 Data Directory: ~/.local/share/dsa_learning_assistant/\n\n🔊 Sound: Disabled\n📊 Auto-save: Enabled\n\nControls:\n• T: Cycle themes\n• ESC: Return to main menu"
+        );
 
         let settings = Paragraph::new(settings_text)
-            .style(Style::default().fg(Color::White))
+            .style(theme.styles().text_primary())
             .wrap(Wrap { trim: true })
-            .block(
-                Block::default()
-                    .title("Settings")
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::Green)),
-            );
-        f.render_widget(settings, area);
+            .block(theme.borders().default_block().title("Configuration"));
+
+        f.render_widget(settings, chunks[1]);
     }
 
     fn render_help(&self, f: &mut Frame, area: Rect, app: &App) {
@@ -888,23 +924,25 @@ impl UI {
     }
 
     fn render_footer(&self, f: &mut Frame, area: Rect, app: &App) {
-        use widgets::*;
+        let theme = app.data.theme_manager.current_theme();
 
         let footer_text = match app.state {
-            AppState::Home => format!("{} COMMAND: ↑↓ NAVIGATE | ENTER: EXECUTE | G: GENERATE PROBLEM | R: ARCHIVE | S: ANALYTICS | Q: SHUTDOWN", EvaSymbols::ARROW_RIGHT),
-            AppState::AllQuestions => format!("{} ARCHIVE: ↑↓ BROWSE | ENTER: SELECT PROBLEM | ESC: RETURN | Q: SHUTDOWN", EvaSymbols::ARROW_RIGHT),
-            AppState::QuestionView => format!("{} BRIEFING: C: START CODING | H: HINTS | ESC: RETURN | Q: SHUTDOWN", EvaSymbols::ARROW_RIGHT),
-            AppState::CodeEditor => format!("{} CODING: CTRL+S: SUBMIT SOLUTION | CTRL+H: REQUEST HINT | ESC: RETURN | Q: SHUTDOWN", EvaSymbols::ARROW_RIGHT),
-            AppState::Results => format!("{} REPORT: F: DETAILED ANALYSIS | R: RETRY PROBLEM | N: NEXT PROBLEM | ESC: RETURN | Q: SHUTDOWN", EvaSymbols::ARROW_RIGHT),
-            AppState::Statistics => format!("{} ANALYTICS: ESC: RETURN | Q: SHUTDOWN", EvaSymbols::ARROW_RIGHT),
-            AppState::Settings => format!("{} CONFIG: ESC: RETURN | Q: SHUTDOWN", EvaSymbols::ARROW_RIGHT),
-            AppState::Help => format!("{} MANUAL: ↑↓ SCROLL | ESC: RETURN | Q: SHUTDOWN", EvaSymbols::ARROW_RIGHT),
+            AppState::Home => {
+                "↑↓ Navigate | Enter: Execute | G: Generate | R: Archive | S: Analytics | Q: Quit"
+            }
+            AppState::AllQuestions => "↑↓ Browse | Enter: Select | ESC: Return | Q: Quit",
+            AppState::QuestionView => "C: Start Coding | H: Hints | ESC: Return | Q: Quit",
+            AppState::CodeEditor => "Ctrl+S: Submit | Ctrl+H: Hint | ESC: Return | Q: Quit",
+            AppState::Results => "F: Feedback | R: Retry | N: Next | ESC: Return | Q: Quit",
+            AppState::Statistics => "ESC: Return | Q: Quit",
+            AppState::Settings => "T: Cycle Theme | ESC: Return | Q: Quit",
+            AppState::Help => "↑↓ Scroll | ESC: Return | Q: Quit",
         };
 
         let footer = Paragraph::new(footer_text)
-            .style(EvaStyles::text_secondary())
+            .style(theme.styles().text_secondary())
             .alignment(Alignment::Center)
-            .block(EvaBorders::panel().title(EvaFormat::title("PILOT INTERFACE")));
+            .block(theme.borders().default_block().title("Controls"));
 
         f.render_widget(footer, area);
     }

@@ -80,7 +80,7 @@ impl<'a> EvaProgressWidget<'a> {
         } else if sync_rate >= 60.0 {
             EvaStyles::text_warning()
         } else {
-            EvaStyles::text_critical()
+            EvaStyles::text_error()
         };
 
         let sync_widget = Paragraph::new(sync_text)
@@ -105,7 +105,11 @@ impl<'a> EvaProgressWidget<'a> {
         let learning_stats = format!(
             "{} LEARNING STATISTICS\n\n{}\n{}\n{}\n{}\n{}",
             EvaSymbols::DIAMOND,
-            EvaFormat::status("PROBLEMS ATTEMPTED", &self.stats.total_questions.to_string(), true),
+            EvaFormat::status(
+                "PROBLEMS ATTEMPTED",
+                &self.stats.total_questions.to_string(),
+                true
+            ),
             EvaFormat::status(
                 "SOLUTIONS ACCEPTED",
                 &self.stats.accepted_solutions.to_string(),
@@ -130,7 +134,7 @@ impl<'a> EvaProgressWidget<'a> {
 
         let (is_ok, is_warning) = self.get_operational_status();
         let learning_border = if !is_ok && !is_warning {
-            EvaBorders::critical()
+            EvaBorders::error()
         } else if is_warning {
             EvaBorders::warning()
         } else {
@@ -192,12 +196,7 @@ impl<'a> EvaProgressWidget<'a> {
         // Topic distribution
         let mut topic_text = format!("{} ALGORITHM CATEGORIES\n\n", EvaSymbols::SQUARE);
         for (topic, count) in self.stats.topic_distribution.iter().take(5) {
-            topic_text.push_str(&format!(
-                "{} {}: {}\n",
-                EvaSymbols::ARROW_RIGHT,
-                topic,
-                count
-            ));
+            topic_text.push_str(&format!("{} {}: {}\n", "→", topic, count));
         }
 
         let topics_widget = Paragraph::new(topic_text)
@@ -208,12 +207,7 @@ impl<'a> EvaProgressWidget<'a> {
         // Difficulty distribution
         let mut difficulty_text = format!("{} COMPLEXITY LEVELS\n\n", EvaSymbols::WARNING);
         for (difficulty, count) in self.stats.difficulty_distribution.iter().take(3) {
-            difficulty_text.push_str(&format!(
-                "{} {}: {}\n",
-                EvaSymbols::ARROW_RIGHT,
-                difficulty,
-                count
-            ));
+            difficulty_text.push_str(&format!("{} {}: {}\n", "→", difficulty, count));
         }
 
         let difficulty_widget = Paragraph::new(difficulty_text)

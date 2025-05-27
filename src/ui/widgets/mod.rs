@@ -7,7 +7,7 @@ use ratatui::{
 
 pub mod api_debug;
 pub mod code_editor;
-pub mod eva_gradient;
+pub mod corner_decoration;
 pub mod eva_loading;
 pub mod eva_progress;
 pub mod eva_theme;
@@ -22,10 +22,13 @@ pub mod typing_speed;
 
 pub use api_debug::ApiDebugWidget;
 pub use code_editor::{CodeEditorWidget, CodeLanguage};
-pub use eva_gradient::EvaGradientWidget;
+pub use corner_decoration::{CornerDecorationWidget, DecoratedBlock};
 pub use eva_loading::{EvaLoadingWidget, EvaOperationType};
 pub use eva_progress::EvaProgressWidget;
-pub use eva_theme::{EvaBorders, EvaColors, EvaFormat, EvaStyles, EvaSymbols};
+pub use eva_theme::{
+    CleanTerminalTheme, EvaBorders, EvaColors, EvaFormat, EvaStyles, EvaSymbols, EvangelionTheme,
+    Gundam00Theme, Theme, ThemeManager,
+};
 pub use eva_typing::EvaTypingWidget;
 pub use loading::LoadingWidget;
 pub use network_activity::NetworkActivityWidget;

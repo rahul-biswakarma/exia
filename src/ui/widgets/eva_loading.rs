@@ -44,23 +44,31 @@ impl EvaLoadingWidget {
 
     fn get_operation_prefix(&self) -> &'static str {
         match self.operation_type {
-            EvaOperationType::SystemBoot => "SYSTEM INITIALIZATION",
-            EvaOperationType::AngelDetection => "ANGEL PATTERN ANALYSIS",
-            EvaOperationType::EvaActivation => "EVA UNIT ACTIVATION",
-            EvaOperationType::SyncTest => "SYNCHRONIZATION TEST",
-            EvaOperationType::DataAnalysis => "MAGI DATA PROCESSING",
-            EvaOperationType::MagiCalculation => "MAGI CALCULATION",
-            EvaOperationType::AtFieldGeneration => "AT FIELD GENERATION",
+            EvaOperationType::SystemBoot => "System Initialization",
+            EvaOperationType::AngelDetection => "Pattern Analysis",
+            EvaOperationType::EvaActivation => "Unit Activation",
+            EvaOperationType::SyncTest => "Synchronization Test",
+            EvaOperationType::DataAnalysis => "Data Processing",
+            EvaOperationType::MagiCalculation => "Calculation",
+            EvaOperationType::AtFieldGeneration => "Field Generation",
         }
     }
 
     fn get_loading_animation(&self) -> String {
         if !self.is_loading {
-            return EvaSymbols::OPERATIONAL.to_string();
+            return format!("{} {}", EvaSymbols::OPERATIONAL, "Complete");
         }
 
-        let frame = EvaSymbols::loading_frame();
-        format!("{} {}", frame, self.get_operation_prefix())
+        // Slower animation - update every 500ms instead of 200ms
+        let frame = (std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis()
+            / 500)
+            % EvaSymbols::LOADING_FRAMES.len() as u128;
+
+        let animation_char = EvaSymbols::LOADING_FRAMES[frame as usize];
+        format!("{} {}", animation_char, self.get_operation_prefix())
     }
 
     fn get_progress_display(&self) -> String {
@@ -68,32 +76,21 @@ impl EvaLoadingWidget {
             return String::new();
         }
 
-        let progress_bar = EvaFormat::progress_bar(self.progress, 25);
+        let progress_bar = EvaFormat::progress_bar(self.progress, 20);
         let percentage = self.progress * 100.0;
 
-        format!(
-            "\n\n{} COMPLETION: {:.1}%\n[{}]",
-            EvaSymbols::TRIANGLE,
-            percentage,
-            progress_bar
-        )
+        format!("\n\nProgress: {:.1}%\n[{}]", percentage, progress_bar)
     }
 
     fn get_status_readouts(&self) -> String {
         let timestamp = EvaFormat::timestamp();
         let status = if self.is_loading {
-            "IN PROGRESS"
+            "In Progress"
         } else {
-            "COMPLETE"
+            "Complete"
         };
 
-        format!(
-            "\n\n{} STATUS: {}\n{} TIME: {}",
-            EvaSymbols::DIAMOND,
-            status,
-            EvaSymbols::SQUARE,
-            timestamp
-        )
+        format!("\n\nStatus: {}\nTime: {}", status, timestamp)
     }
 
     fn format_display(&self) -> String {
@@ -101,32 +98,8 @@ impl EvaLoadingWidget {
         let progress = self.get_progress_display();
         let status = self.get_status_readouts();
 
-        let dots = if self.is_loading {
-            match (std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_millis()
-                / 300)
-                % 4
-            {
-                0 => "",
-                1 => ".",
-                2 => "..",
-                _ => "...",
-            }
-        } else {
-            ""
-        };
-
-        format!(
-            "{}\n\n{} {}{}{}{}",
-            animation,
-            EvaSymbols::HEXAGON,
-            self.message.to_uppercase(),
-            dots,
-            progress,
-            status
-        )
+        // Remove flashing dots - just show static message
+        format!("{}\n\n{}{}{}", animation, self.message, progress, status)
     }
 
     fn get_border_style(&self) -> ratatui::widgets::Block<'static> {
@@ -150,16 +123,15 @@ impl Widget for EvaLoadingWidget {
     fn render(&self, f: &mut Frame, area: Rect) {
         let content = self.format_display();
 
-        let paragraph = Paragraph::new(content).style(self.get_text_style()).block(
-            self.get_border_style()
-                .title(EvaFormat::title("NERV OPERATIONS")),
-        );
+        let paragraph = Paragraph::new(content)
+            .style(self.get_text_style())
+            .block(self.get_border_style().title("Operations"));
 
         f.render_widget(paragraph, area);
     }
 
     fn title(&self) -> Option<&str> {
-        Some("NERV OPERATIONS")
+        Some("Operations")
     }
 
     fn border_style(&self) -> Style {

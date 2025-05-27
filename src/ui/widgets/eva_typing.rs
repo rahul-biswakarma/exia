@@ -13,7 +13,7 @@ impl<'a> EvaTypingWidget<'a> {
 
     fn get_coder_performance_level(&self) -> (&'static str, Style) {
         match self.metrics.current_wpm as u32 {
-            0..=20 => ("NOVICE CODER", EvaStyles::text_critical()),
+            0..=20 => ("NOVICE CODER", EvaStyles::text_error()),
             21..=40 => ("JUNIOR DEVELOPER", EvaStyles::text_warning()),
             41..=60 => ("SOFTWARE ENGINEER", EvaStyles::text_success()),
             61..=80 => ("SENIOR DEVELOPER", EvaStyles::sync_rate()),
@@ -64,7 +64,7 @@ impl<'a> EvaTypingWidget<'a> {
         } else if efficiency >= 40.0 {
             EvaBorders::warning()
         } else {
-            EvaBorders::critical()
+            EvaBorders::error()
         }
     }
 }

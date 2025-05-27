@@ -273,9 +273,10 @@ impl App {
             AppState::QuestionView => self.handle_question_keys(key).await?,
             AppState::CodeEditor => self.handle_editor_keys(key, modifiers).await?,
             AppState::Results => self.handle_results_keys(key).await?,
-            AppState::Statistics | AppState::Settings => {
-                // These screens only handle Esc (already handled above)
+            AppState::Statistics => {
+                // Statistics screen only handles Esc (already handled above)
             }
+            AppState::Settings => self.handle_settings_keys(key).await?,
             AppState::Help => self.handle_help_keys(key).await?,
         }
         Ok(())
@@ -568,6 +569,28 @@ impl App {
             }
             KeyCode::Down => {
                 self.data.scroll_offset += 1;
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
+    async fn handle_settings_keys(&mut self, key: KeyCode) -> Result<()> {
+        match key {
+            KeyCode::Char('t') | KeyCode::Char('T') => {
+                // Cycle through available themes
+                let available_themes = self.data.theme_manager.available_themes();
+                let current_theme = self.data.theme_manager.current_theme().name().to_string();
+
+                if let Some(current_index) = available_themes
+                    .iter()
+                    .position(|&name| name == current_theme)
+                {
+                    let next_index = (current_index + 1) % available_themes.len();
+                    let next_theme = available_themes[next_index].to_string();
+                    self.data.theme_manager.switch_theme(&next_theme);
+                    self.data.status_message = format!("Switched to {} theme", next_theme);
+                }
             }
             _ => {}
         }
