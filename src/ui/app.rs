@@ -1,5 +1,6 @@
 use super::{
-    ApiCall, ApiCallStatus, AppData, AppState, NetworkActivity, NetworkActivityType, NetworkStatus,
+    widgets, ApiCall, ApiCallStatus, AppData, AppState, NetworkActivity, NetworkActivityType,
+    NetworkStatus,
 };
 use crate::compiler::RustCompiler;
 use crate::llm::GeminiClient;
@@ -137,6 +138,53 @@ impl App {
             let total_words = self.data.typing_speed.total_characters as f64 / 5.0;
             self.data.typing_speed.average_wpm = total_words / total_minutes;
         }
+    }
+
+    fn update_scroll_for_cursor(&mut self) {
+        // Auto-scroll to keep cursor visible
+        const VISIBLE_LINES: usize = 20; // Approximate visible lines in editor
+
+        if self.data.code_editor_state.cursor_line
+            >= self.data.code_editor_state.scroll_offset + VISIBLE_LINES
+        {
+            self.data.code_editor_state.scroll_offset = self
+                .data
+                .code_editor_state
+                .cursor_line
+                .saturating_sub(VISIBLE_LINES - 1);
+        } else if self.data.code_editor_state.cursor_line
+            < self.data.code_editor_state.scroll_offset
+        {
+            self.data.code_editor_state.scroll_offset = self.data.code_editor_state.cursor_line;
+        }
+    }
+
+    fn update_cursor_from_input(&mut self) {
+        // Update cursor position based on the current input cursor
+        let input_cursor = self.data.code_input.cursor();
+        let text = self.data.code_input.value();
+
+        let mut line = 0;
+        let mut col = 0;
+        let mut pos = 0;
+
+        for ch in text.chars() {
+            if pos >= input_cursor {
+                break;
+            }
+
+            if ch == '\n' {
+                line += 1;
+                col = 0;
+            } else {
+                col += 1;
+            }
+            pos += ch.len_utf8();
+        }
+
+        self.data.code_editor_state.cursor_line = line;
+        self.data.code_editor_state.cursor_col = col;
+        self.update_scroll_for_cursor();
     }
 
     fn log_api_call(&mut self, endpoint: &str, status: ApiCallStatus, message: &str) {
@@ -425,6 +473,40 @@ impl App {
             }
             (KeyCode::Char('c'), KeyModifiers::CONTROL) => {
                 self.data.code_input = tui_input::Input::default();
+                self.data.code_editor_state = widgets::CodeEditorState::default();
+            }
+            // Arrow key navigation
+            (KeyCode::Up, KeyModifiers::NONE) => {
+                let lines: Vec<&str> = self.data.code_input.value().lines().collect();
+                self.data.code_editor_state.move_cursor_up(&lines);
+                self.update_scroll_for_cursor();
+            }
+            (KeyCode::Down, KeyModifiers::NONE) => {
+                let lines: Vec<&str> = self.data.code_input.value().lines().collect();
+                self.data.code_editor_state.move_cursor_down(&lines);
+                self.update_scroll_for_cursor();
+            }
+            (KeyCode::Left, KeyModifiers::NONE) => {
+                let lines: Vec<&str> = self.data.code_input.value().lines().collect();
+                self.data.code_editor_state.move_cursor_left(&lines);
+            }
+            (KeyCode::Right, KeyModifiers::NONE) => {
+                let lines: Vec<&str> = self.data.code_input.value().lines().collect();
+                self.data.code_editor_state.move_cursor_right(&lines);
+            }
+            (KeyCode::Home, KeyModifiers::NONE) => {
+                self.data.code_editor_state.move_to_line_start();
+            }
+            (KeyCode::End, KeyModifiers::NONE) => {
+                let lines: Vec<&str> = self.data.code_input.value().lines().collect();
+                self.data.code_editor_state.move_to_line_end(&lines);
+            }
+            (KeyCode::PageUp, KeyModifiers::NONE) => {
+                self.data.code_editor_state.page_up(10);
+            }
+            (KeyCode::PageDown, KeyModifiers::NONE) => {
+                let lines: Vec<&str> = self.data.code_input.value().lines().collect();
+                self.data.code_editor_state.page_down(&lines, 10);
             }
             _ => {
                 // Handle regular text input and track typing speed
@@ -443,6 +525,9 @@ impl App {
                 if new_len != old_len {
                     // Character was added or removed, update typing speed
                     self.update_typing_speed(1);
+
+                    // Update cursor position based on input changes
+                    self.update_cursor_from_input();
                 }
             }
         }

@@ -17,6 +17,7 @@ use ratatui::{
 };
 use std::io;
 use tui_input::Input;
+use widgets::CodeEditorState;
 
 pub mod app;
 pub mod components;
@@ -59,6 +60,7 @@ pub struct AppData {
     pub current_llm_usage: Vec<LLMUsage>,
     pub network_activity: Vec<NetworkActivity>,
     pub typing_speed: TypingMetrics,
+    pub code_editor_state: CodeEditorState,
 }
 
 #[derive(Debug, Clone)]
@@ -144,6 +146,7 @@ impl Default for AppData {
                 last_keystroke: None,
                 keystroke_intervals: Vec::new(),
             },
+            code_editor_state: CodeEditorState::default(),
         }
     }
 }
@@ -235,10 +238,8 @@ impl UI {
 
         let content_area = if app.data.is_loading {
             // Show loading indicator at the top
-            let loading_widget = LoadingWidget::new(
-                app.data.status_message.clone(),
-                app.data.is_loading,
-            );
+            let loading_widget =
+                LoadingWidget::new(app.data.status_message.clone(), app.data.is_loading);
             loading_widget.render(f, main_chunks[0]);
             main_chunks[1]
         } else {
@@ -290,10 +291,7 @@ impl UI {
         if let Some(stats) = &app.data.statistics {
             self.render_progress_overview(f, chunks[1], stats, app);
         } else {
-            let loading_widget = LoadingWidget::new(
-                "Loading statistics".to_string(),
-                true,
-            );
+            let loading_widget = LoadingWidget::new("Loading statistics".to_string(), true);
             loading_widget.render(f, chunks[1]);
         }
     }
@@ -473,49 +471,42 @@ impl UI {
             ])
             .split(area);
 
-        // Stats bar widget
+        // Split stats bar into two widgets
+        let stats_chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
+            .split(chunks[0]);
+
+        // Session stats widget
         let stats_widget = StatsBarWidget::new(
             app.data.success_count,
             app.data.error_count,
             app.data.api_calls.len(),
             app.data.network_activity.len(),
             &app.data.typing_speed,
-        );
-        stats_widget.render(f, chunks[0]);
+        )
+        .compact();
+        stats_widget.render(f, stats_chunks[0]);
 
-        // Enhanced code input area with line numbers
-        let code_text = app.data.code_input.value();
-        let lines: Vec<&str> = code_text.lines().collect();
-        let line_count = lines.len().max(1);
+        // Typing speed widget
+        let typing_widget = TypingSpeedWidget::new(&app.data.typing_speed);
+        typing_widget.render(f, stats_chunks[1]);
 
-        // Add line numbers and syntax highlighting hints
-        let formatted_code = lines
-            .iter()
-            .enumerate()
-            .map(|(i, line)| {
-                let line_num = format!("{:3} │ ", i + 1);
-                format!("{}{}", line_num, line)
-            })
-            .collect::<Vec<_>>()
-            .join("\n");
-
-        let code_editor = Paragraph::new(formatted_code)
-            .style(Style::default().fg(Color::White))
-            .wrap(Wrap { trim: false })
-            .scroll((app.data.scroll_offset as u16, 0))
-            .block(
-                Block::default()
-                    .title(format!("🦀 Rust Code Editor (Lines: {})", line_count))
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::Green)),
-            );
-        f.render_widget(code_editor, chunks[1]);
+        // Enhanced code editor widget
+        let code_editor_widget = CodeEditorWidget::new(&app.data.code_input)
+            .with_cursor(
+                app.data.code_editor_state.cursor_line,
+                app.data.code_editor_state.cursor_col,
+            )
+            .with_scroll(app.data.code_editor_state.scroll_offset)
+            .with_language(CodeLanguage::Rust);
+        code_editor_widget.render(f, chunks[1]);
 
         // Loading/Status widget
         let status_message = if app.data.is_loading {
             "Compiling and testing solution".to_string()
         } else {
-            "💡 Ctrl+S: Submit | Ctrl+H: Hint | Ctrl+C: Clear | Esc: Back".to_string()
+            "💡 Ctrl+S: Submit | Ctrl+H: Hint | Ctrl+C: Clear | ↑↓←→: Navigate | Home/End: Line start/end".to_string()
         };
 
         let loading_widget = LoadingWidget::new(status_message, app.data.is_loading);
