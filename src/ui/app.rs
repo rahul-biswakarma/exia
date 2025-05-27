@@ -5,6 +5,7 @@ use crate::compiler::RustCompiler;
 use crate::llm::GeminiClient;
 use crate::models::{ActionContext, ActionType, LLMUsage, UserAction};
 use crate::storage::Storage;
+use crate::ui::widgets::{LLMCallInfo, LLMCallStatus};
 use anyhow::Result;
 use crossterm::event::{Event, KeyCode, KeyModifiers};
 use std::collections::HashMap;
@@ -162,6 +163,61 @@ impl App {
         }
     }
 
+    fn start_llm_call(&mut self, operation_type: String) {
+        let mut call_info = LLMCallInfo::new(operation_type);
+        call_info.set_in_progress(0.1); // Start with 10% progress
+        self.data.current_llm_call = Some(call_info);
+
+        // Save current state and switch to LLM call view
+        self.data.previous_state = Some(self.state.clone());
+        self.state = AppState::LLMCallView;
+    }
+
+    fn update_llm_call_progress(&mut self, progress: f64) {
+        if let Some(ref mut call_info) = self.data.current_llm_call {
+            call_info.set_in_progress(progress);
+        }
+    }
+
+    fn complete_llm_call(&mut self, usage: &LLMUsage) {
+        if let Some(ref mut call_info) = self.data.current_llm_call {
+            call_info.set_success(usage);
+        }
+
+        // For now, return immediately to previous state
+        // In a real implementation, you might want to show success for 1-2 seconds
+        if let Some(previous_state) = self.data.previous_state.take() {
+            self.state = previous_state;
+        }
+
+        // Clear the LLM call after returning to previous state
+        self.data.current_llm_call = None;
+    }
+
+    fn error_llm_call(&mut self, error_message: String) {
+        if let Some(ref mut call_info) = self.data.current_llm_call {
+            call_info.set_error(error_message);
+        }
+
+        // Return to previous state on error
+        if let Some(previous_state) = self.data.previous_state.take() {
+            self.state = previous_state;
+        }
+
+        // Clear the LLM call after returning to previous state
+        self.data.current_llm_call = None;
+    }
+
+    fn clear_llm_call(&mut self) {
+        // Return to previous state if we're in LLM call view
+        if self.state == AppState::LLMCallView {
+            if let Some(previous_state) = self.data.previous_state.take() {
+                self.state = previous_state;
+            }
+        }
+        self.data.current_llm_call = None;
+    }
+
     pub fn new() -> Result<Self> {
         let storage = Storage::new()?;
 
@@ -262,6 +318,11 @@ impl App {
             AppState::Statistics | AppState::Settings | AppState::Help => {
                 self.state = AppState::Home;
             }
+            AppState::LLMCallView => {
+                // Cancel LLM operation and return to previous state
+                self.clear_llm_call();
+                self.data.is_llm_loading = false;
+            }
         }
         Ok(())
     }
@@ -278,6 +339,10 @@ impl App {
             }
             AppState::Settings => self.handle_settings_keys(key).await?,
             AppState::Help => self.handle_help_keys(key).await?,
+            AppState::LLMCallView => {
+                // LLM call view only handles Esc (already handled above)
+                // All other keys are ignored during LLM processing
+            }
         }
         Ok(())
     }
@@ -697,6 +762,8 @@ impl App {
             return Ok(());
         }
 
+        // Start LLM call tracking
+        self.start_llm_call("Question Generation".to_string());
         self.data.is_loading = true;
         self.data.is_llm_loading = true;
         self.data.status_message = "Generating new question...".to_string();
@@ -717,16 +784,26 @@ impl App {
 
             if let Some(session_id) = self.current_session_id {
                 let start_time = Instant::now();
+
+                // Update progress to show we're making the API call
+                self.update_llm_call_progress(0.3);
+
                 match client.generate_question(&progress, session_id).await {
                     Ok((question, usage)) => {
                         let latency = start_time.elapsed().as_millis() as u64;
+
+                        // Update progress to show processing response
+                        self.update_llm_call_progress(0.8);
 
                         self.log_api_call(
                             "gemini_api",
                             ApiCallStatus::Success,
                             "Question generated",
                         );
-                        self.log_llm_usage(usage).await;
+                        self.log_llm_usage(usage.clone()).await;
+
+                        // Complete LLM call tracking
+                        self.complete_llm_call(&usage);
 
                         // Log successful network activity
                         self.log_network_activity(
@@ -814,6 +891,9 @@ impl App {
                     }
                     Err(e) => {
                         let latency = start_time.elapsed().as_millis() as u64;
+
+                        // Error LLM call tracking
+                        self.error_llm_call(format!("API Error: {}", e));
 
                         self.log_api_call(
                             "gemini_api",
@@ -940,99 +1020,140 @@ impl App {
     }
 
     async fn get_hint_for_code(&mut self) -> Result<()> {
-        if let (Some(client), Some(question), Some(session_id)) = (
+        // Check if we have all required data first
+        let (client, question, session_id) = match (
             &self.llm_client,
             &self.data.current_question,
             self.current_session_id,
         ) {
-            self.data.is_llm_loading = true;
-            self.data.status_message = "Generating AI hint...".to_string();
-
-            let client = client.clone();
-            let question = question.clone();
-            let code = self.data.text_editor.content().to_string();
-
-            match client.generate_hint(&question, &code, session_id).await {
-                Ok((hint, usage)) => {
-                    self.log_llm_usage(usage).await;
-                    self.data.status_message = format!("Hint: {}", hint);
-                }
-                Err(e) => {
-                    self.data.status_message = format!("Error getting hint: {}", e);
-                }
+            (Some(client), Some(question), Some(session_id)) => {
+                (client.clone(), question.clone(), session_id)
             }
-        } else {
-            self.data.status_message =
-                "Gemini API not available or no question loaded.".to_string();
+            _ => {
+                self.data.status_message =
+                    "Gemini API not available or no question loaded.".to_string();
+                return Ok(());
+            }
+        };
+
+        // Start LLM call tracking
+        self.start_llm_call("Hint Generation".to_string());
+        self.data.is_llm_loading = true;
+        self.data.status_message = "Generating AI hint...".to_string();
+
+        let code = self.data.text_editor.content().to_string();
+
+        // Update progress to show we're making the API call
+        self.update_llm_call_progress(0.4);
+
+        match client.generate_hint(&question, &code, session_id).await {
+            Ok((hint, usage)) => {
+                self.log_llm_usage(usage.clone()).await;
+                self.complete_llm_call(&usage);
+                self.data.status_message = format!("Hint: {}", hint);
+            }
+            Err(e) => {
+                self.error_llm_call(format!("Hint generation failed: {}", e));
+                self.data.status_message = format!("Error getting hint: {}", e);
+            }
         }
+
         self.data.is_llm_loading = false;
         Ok(())
     }
 
     async fn generate_feedback_for_solution(&mut self) -> Result<()> {
-        if let (Some(client), Some(solution), Some(question), Some(session_id)) = (
+        // Check if we have all required data first
+        let (client, solution, question, session_id) = match (
             &self.llm_client,
             &self.data.current_solution,
             &self.data.current_question,
             self.current_session_id,
         ) {
-            self.data.is_llm_loading = true;
-            self.data.feedback_text = "Generating AI feedback...".to_string();
-
-            let client = client.clone();
-            let solution = solution.clone();
-            let question = question.clone();
-
-            match client
-                .provide_feedback(&solution, &question, session_id)
-                .await
-            {
-                Ok((feedback, usage)) => {
-                    self.log_llm_usage(usage).await;
-                    self.data.feedback_text = feedback;
-                }
-                Err(e) => {
-                    self.data.feedback_text = format!("Error generating feedback: {}", e);
-                }
+            (Some(client), Some(solution), Some(question), Some(session_id)) => (
+                client.clone(),
+                solution.clone(),
+                question.clone(),
+                session_id,
+            ),
+            _ => {
+                self.data.feedback_text =
+                    "Cannot generate feedback: missing data or API not available.".to_string();
+                return Ok(());
             }
-        } else {
-            self.data.feedback_text =
-                "Cannot generate feedback: missing data or API not available.".to_string();
+        };
+
+        // Start LLM call tracking
+        self.start_llm_call("Feedback Generation".to_string());
+        self.data.is_llm_loading = true;
+        self.data.feedback_text = "Generating AI feedback...".to_string();
+
+        // Update progress to show we're making the API call
+        self.update_llm_call_progress(0.5);
+
+        match client
+            .provide_feedback(&solution, &question, session_id)
+            .await
+        {
+            Ok((feedback, usage)) => {
+                self.log_llm_usage(usage.clone()).await;
+                self.complete_llm_call(&usage);
+                self.data.feedback_text = feedback;
+            }
+            Err(e) => {
+                self.error_llm_call(format!("Feedback generation failed: {}", e));
+                self.data.feedback_text = format!("Error generating feedback: {}", e);
+            }
         }
+
         self.data.is_llm_loading = false;
         Ok(())
     }
 
     async fn get_detailed_feedback(&mut self) -> Result<()> {
-        if let (Some(client), Some(solution), Some(question), Some(session_id)) = (
+        // Check if we have all required data first
+        let (client, solution, question, session_id) = match (
             &self.llm_client,
             &self.data.current_solution,
             &self.data.current_question,
             self.current_session_id,
         ) {
-            self.data.is_llm_loading = true;
-            self.data.feedback_text = "Generating detailed feedback...".to_string();
-
-            let client = client.clone();
-            let solution = solution.clone();
-            let question = question.clone();
-
-            match client
-                .provide_feedback(&solution, &question, session_id)
-                .await
-            {
-                Ok((feedback, usage)) => {
-                    self.log_llm_usage(usage).await;
-                    self.data.feedback_text = feedback;
-                }
-                Err(e) => {
-                    self.data.feedback_text = format!("Error generating feedback: {}", e);
-                }
+            (Some(client), Some(solution), Some(question), Some(session_id)) => (
+                client.clone(),
+                solution.clone(),
+                question.clone(),
+                session_id,
+            ),
+            _ => {
+                self.data.feedback_text =
+                    "Cannot generate feedback: missing data or API not available.".to_string();
+                return Ok(());
             }
-        } else {
-            self.data.feedback_text =
-                "Cannot generate feedback: missing data or API not available.".to_string();
+        };
+
+        // Start LLM call tracking
+        self.start_llm_call("Detailed Feedback Generation".to_string());
+        self.data.is_llm_loading = true;
+        self.data.feedback_text = "Generating detailed feedback...".to_string();
+
+        // Update progress to show we're making the API call
+        self.update_llm_call_progress(0.6);
+
+        match client
+            .provide_feedback(&solution, &question, session_id)
+            .await
+        {
+            Ok((feedback, usage)) => {
+                self.log_llm_usage(usage.clone()).await;
+                self.complete_llm_call(&usage);
+                self.data.feedback_text = feedback;
+            }
+            Err(e) => {
+                self.error_llm_call(format!("Detailed feedback generation failed: {}", e));
+                self.data.feedback_text = format!("Error generating feedback: {}", e);
+            }
         }
+
         self.data.is_llm_loading = false;
         Ok(())
     }

@@ -17,8 +17,8 @@ use std::io;
 
 use widgets::{
     CornerDecorationWidget, DecoratedBlock, EvaBorders, EvaColors, EvaFormat, EvaLoadingWidget,
-    EvaOperationType, EvaProgressWidget, EvaStyles, EvaSymbols, EvaTypingWidget, TextEditor,
-    ThemeManager,
+    EvaOperationType, EvaProgressWidget, EvaStyles, EvaSymbols, EvaTypingWidget, LLMCallInfo,
+    LLMCallWidget, TextEditor, ThemeManager,
 };
 
 pub mod app;
@@ -38,6 +38,7 @@ pub enum AppState {
     Statistics,
     Settings,
     Help,
+    LLMCallView,
 }
 
 #[derive(Debug, Clone)]
@@ -68,6 +69,8 @@ pub struct AppData {
     pub typing_speed: TypingMetrics,
     pub recent_questions: Vec<Question>,
     pub theme_manager: ThemeManager,
+    pub current_llm_call: Option<LLMCallInfo>,
+    pub previous_state: Option<AppState>,
 }
 
 #[derive(Debug, Clone)]
@@ -158,6 +161,8 @@ impl Default for AppData {
             },
             recent_questions: Vec::new(),
             theme_manager: ThemeManager::new(),
+            current_llm_call: None,
+            previous_state: None,
         }
     }
 }
@@ -210,6 +215,7 @@ impl UI {
             AppState::Statistics => "LEARNING ANALYTICS",
             AppState::Settings => "SYSTEM CONFIGURATION",
             AppState::Help => "OPERATION GUIDANCE",
+            AppState::LLMCallView => "NEURAL NETWORK PROCESSING",
         };
 
         let corner_symbol = theme.symbols().corner_decoration();
@@ -232,6 +238,7 @@ impl UI {
             AppState::Statistics => self.render_statistics(f, area, app),
             AppState::Settings => self.render_settings(f, area, app),
             AppState::Help => self.render_help(f, area, app),
+            AppState::LLMCallView => self.render_llm_call_view(f, area, app),
         }
     }
 
@@ -724,7 +731,6 @@ impl UI {
             .split(area);
 
         // Typing speed widget (full width)
-        use widgets::*;
         let eva_typing = EvaTypingWidget::new(&app.data.typing_speed)
             .with_theme(app.data.theme_manager.current_theme());
         eva_typing.render(f, chunks[0]);
@@ -1069,6 +1075,34 @@ impl UI {
         f.render_widget(help, area);
     }
 
+    fn render_llm_call_view(&self, f: &mut Frame, area: Rect, app: &App) {
+        // Create a centered modal-like area
+        let modal_area = Rect {
+            x: area.width / 8,
+            y: area.height / 8,
+            width: (area.width * 3) / 4,
+            height: (area.height * 3) / 4,
+        };
+
+        // Clear the background
+        f.render_widget(Clear, modal_area);
+
+        // Render the LLM call widget in full detail
+        if let Some(call_info) = &app.data.current_llm_call {
+            let llm_widget = LLMCallWidget::new(Some(call_info))
+                .with_theme(app.data.theme_manager.current_theme())
+                .with_details(true);
+            llm_widget.render(f, modal_area);
+        } else {
+            // Fallback if no call info (shouldn't happen)
+            let fallback = Paragraph::new("No LLM operation in progress")
+                .style(EvaStyles::text_secondary())
+                .alignment(Alignment::Center)
+                .block(EvaBorders::panel().title(EvaFormat::title("NEURAL NETWORK INTERFACE")));
+            f.render_widget(fallback, modal_area);
+        }
+    }
+
     fn render_footer(&self, f: &mut Frame, area: Rect, app: &App) {
         let theme = app.data.theme_manager.current_theme();
 
@@ -1090,6 +1124,7 @@ impl UI {
             AppState::Statistics => "ESC: Return | Q: Quit",
             AppState::Settings => "T: Cycle Theme | ESC: Return | Q: Quit",
             AppState::Help => "↑↓ Scroll | ESC: Return | Q: Quit",
+            AppState::LLMCallView => "Processing... Please wait | ESC: Cancel | Q: Quit",
         };
 
         let footer = Paragraph::new(footer_text)

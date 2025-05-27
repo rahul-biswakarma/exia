@@ -12,6 +12,7 @@ pub mod eva_loading;
 pub mod eva_progress;
 pub mod eva_theme;
 pub mod eva_typing;
+pub mod llm_call;
 pub mod loading;
 pub mod network_activity;
 pub mod progress_overview;
@@ -30,6 +31,7 @@ pub use eva_theme::{
     Gundam00Theme, Theme, ThemeManager,
 };
 pub use eva_typing::EvaTypingWidget;
+pub use llm_call::{LLMCallInfo, LLMCallStatus, LLMCallWidget};
 pub use loading::LoadingWidget;
 pub use network_activity::NetworkActivityWidget;
 pub use progress_overview::ProgressOverviewWidget;
