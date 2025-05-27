@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use uuid::Uuid;
 
+#[derive(Clone)]
 pub struct GeminiClient {
     client: Client,
     api_key: String,
@@ -75,7 +76,9 @@ impl GeminiClient {
         Ok(Self {
             client: Client::new(),
             api_key,
-            base_url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent".to_string(),
+            base_url:
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent"
+                    .to_string(),
         })
     }
 
@@ -85,7 +88,11 @@ impl GeminiClient {
         self.parse_question_response(&response)
     }
 
-    pub async fn provide_feedback(&self, solution: &Solution, question: &Question) -> Result<String> {
+    pub async fn provide_feedback(
+        &self,
+        solution: &Solution,
+        question: &Question,
+    ) -> Result<String> {
         let prompt = self.create_feedback_prompt(solution, question);
         let response = self.call_gemini(&prompt).await?;
         Ok(response)
@@ -118,12 +125,7 @@ impl GeminiClient {
 
         let url = format!("{}?key={}", self.base_url, self.api_key);
 
-        let response = self
-            .client
-            .post(&url)
-            .json(&request)
-            .send()
-            .await?;
+        let response = self.client.post(&url).json(&request).send().await?;
 
         if !response.status().is_success() {
             let error_text = response.text().await?;
@@ -190,18 +192,32 @@ Make sure the question is:
             progress.total_questions_attempted,
             progress.questions_solved,
             progress.streak,
-            if weak_topics.is_empty() { "None identified yet".to_string() } else { weak_topics.join(", ") },
-            if strong_topics.is_empty() { "None identified yet".to_string() } else { strong_topics.join(", ") },
+            if weak_topics.is_empty() {
+                "None identified yet".to_string()
+            } else {
+                weak_topics.join(", ")
+            },
+            if strong_topics.is_empty() {
+                "None identified yet".to_string()
+            } else {
+                strong_topics.join(", ")
+            },
             difficulty_suggestion
         )
     }
 
     fn create_feedback_prompt(&self, solution: &Solution, question: &Question) -> String {
-        let test_results_summary: Vec<String> = solution.test_results.iter()
-            .map(|tr| format!("Test {}: {} (Output: {})",
-                tr.test_case_index + 1,
-                if tr.passed { "PASSED" } else { "FAILED" },
-                tr.actual_output))
+        let test_results_summary: Vec<String> = solution
+            .test_results
+            .iter()
+            .map(|tr| {
+                format!(
+                    "Test {}: {} (Output: {})",
+                    tr.test_case_index + 1,
+                    if tr.passed { "PASSED" } else { "FAILED" },
+                    tr.actual_output
+                )
+            })
             .collect();
 
         format!(
@@ -238,8 +254,12 @@ Keep the feedback constructive and educational."#,
 
     fn parse_question_response(&self, response: &str) -> Result<Question> {
         // Try to extract JSON from the response
-        let json_start = response.find('{').ok_or_else(|| anyhow!("No JSON found in response"))?;
-        let json_end = response.rfind('}').ok_or_else(|| anyhow!("No JSON found in response"))?;
+        let json_start = response
+            .find('{')
+            .ok_or_else(|| anyhow!("No JSON found in response"))?;
+        let json_end = response
+            .rfind('}')
+            .ok_or_else(|| anyhow!("No JSON found in response"))?;
         let json_str = &response[json_start..=json_end];
 
         let generated: GeneratedQuestion = serde_json::from_str(json_str)
@@ -271,7 +291,9 @@ Keep the feedback constructive and educational."#,
             _ => Topic::Arrays,
         };
 
-        let test_cases: Vec<TestCase> = generated.test_cases.into_iter()
+        let test_cases: Vec<TestCase> = generated
+            .test_cases
+            .into_iter()
             .map(|tc| TestCase {
                 input: tc.input,
                 expected_output: tc.expected_output,

@@ -1,4 +1,4 @@
-use super::{AppData, AppState};
+use super::{ApiCall, ApiCallStatus, AppData, AppState};
 use crate::compiler::RustCompiler;
 use crate::llm::GeminiClient;
 // use crate::models::{Question, Solution, SolutionStatus};
@@ -21,6 +21,22 @@ pub struct App {
 }
 
 impl App {
+    fn log_api_call(&mut self, endpoint: &str, status: ApiCallStatus, message: &str) {
+        let timestamp = chrono::Utc::now().format("%H:%M:%S").to_string();
+        let api_call = ApiCall {
+            timestamp,
+            endpoint: endpoint.to_string(),
+            status,
+            message: message.to_string(),
+        };
+        self.data.api_calls.push(api_call);
+
+        // Keep only last 10 calls
+        if self.data.api_calls.len() > 10 {
+            self.data.api_calls.remove(0);
+        }
+    }
+
     pub fn new() -> Result<Self> {
         let storage = Storage::new()?;
 
@@ -55,22 +71,20 @@ impl App {
 
     pub async fn handle_event(&mut self, event: Event) -> Result<()> {
         match event {
-            Event::Key(key) => {
-                match key.code {
-                    KeyCode::Char('q') => {
-                        self.should_quit = true;
-                        if let Some(session_id) = self.current_session_id {
-                            let _ = self.storage.end_session(&session_id);
-                        }
-                    }
-                    KeyCode::Esc => {
-                        self.handle_escape().await?;
-                    }
-                    _ => {
-                        self.handle_key_event(key.code, key.modifiers).await?;
+            Event::Key(key) => match key.code {
+                KeyCode::Char('q') => {
+                    self.should_quit = true;
+                    if let Some(session_id) = self.current_session_id {
+                        let _ = self.storage.end_session(&session_id);
                     }
                 }
-            }
+                KeyCode::Esc => {
+                    self.handle_escape().await?;
+                }
+                _ => {
+                    self.handle_key_event(key.code, key.modifiers).await?;
+                }
+            },
             _ => {}
         }
         Ok(())
@@ -131,23 +145,31 @@ impl App {
                     self.data.selected_tab += 1;
                 }
             }
-            KeyCode::Enter => {
-                match self.data.selected_tab {
-                    0 => self.generate_new_question().await?,
-                    1 => self.view_recent_questions().await?,
-                    2 => self.view_statistics().await?,
-                    3 => self.state = AppState::Settings,
-                    4 => self.state = AppState::Help,
-                    5 => {
-                        self.should_quit = true;
-                        if let Some(session_id) = self.current_session_id {
-                            let _ = self.storage.end_session(&session_id);
-                        }
-                    }
-                    _ => {}
+            KeyCode::Enter => match self.data.selected_tab {
+                0 => {
+                    self.log_api_call(
+                        "user_input",
+                        ApiCallStatus::Pending,
+                        "Selected 'Generate New Question'",
+                    );
+                    self.generate_new_question().await?;
                 }
+                1 => self.view_recent_questions().await?,
+                2 => self.view_statistics().await?,
+                3 => self.state = AppState::Settings,
+                4 => self.state = AppState::Help,
+                5 => {
+                    self.should_quit = true;
+                    if let Some(session_id) = self.current_session_id {
+                        let _ = self.storage.end_session(&session_id);
+                    }
+                }
+                _ => {}
+            },
+            KeyCode::Char('g') => {
+                self.log_api_call("user_input", ApiCallStatus::Pending, "Pressed 'g' key");
+                self.generate_new_question().await?;
             }
-            KeyCode::Char('g') => self.generate_new_question().await?,
             KeyCode::Char('r') => self.view_recent_questions().await?,
             KeyCode::Char('s') => self.view_statistics().await?,
             KeyCode::Char('h') => self.state = AppState::Help,
@@ -215,12 +237,14 @@ impl App {
             }
             _ => {
                 // Handle regular text input
-                self.data.code_input.handle_event(&Event::Key(crossterm::event::KeyEvent {
-                    code: key,
-                    modifiers,
-                    kind: crossterm::event::KeyEventKind::Press,
-                    state: crossterm::event::KeyEventState::NONE,
-                }));
+                self.data
+                    .code_input
+                    .handle_event(&Event::Key(crossterm::event::KeyEvent {
+                        code: key,
+                        modifiers,
+                        kind: crossterm::event::KeyEventKind::Press,
+                        state: crossterm::event::KeyEventState::NONE,
+                    }));
             }
         }
         Ok(())
@@ -266,8 +290,17 @@ impl App {
     }
 
     async fn generate_new_question(&mut self) -> Result<()> {
+        self.log_api_call(
+            "generate_question",
+            ApiCallStatus::Pending,
+            "Starting question generation",
+        );
+
         if self.llm_client.is_none() {
-            self.data.status_message = "Error: Gemini API key not set. Please set GEMINI_API_KEY environment variable.".to_string();
+            self.log_api_call("generate_question", ApiCallStatus::Error, "No API key set");
+            self.data.status_message =
+                "Error: Gemini API key not set. Please set GEMINI_API_KEY environment variable."
+                    .to_string();
             return Ok(());
         }
 
@@ -277,21 +310,34 @@ impl App {
         let progress = self.storage.get_progress()?;
 
         if let Some(client) = &self.llm_client {
+            let client = client.clone(); // Clone the client to avoid borrowing issues
+            self.log_api_call("gemini_api", ApiCallStatus::Pending, "Calling Gemini API");
+
             match client.generate_question(&progress).await {
                 Ok(question) => {
+                    self.log_api_call("gemini_api", ApiCallStatus::Success, "Question generated");
+
                     // Save question to storage
                     self.storage.save_question(&question)?;
 
                     // Add to current session
                     if let Some(session_id) = self.current_session_id {
-                        let _ = self.storage.add_question_to_session(&session_id, &question.id);
+                        let _ = self
+                            .storage
+                            .add_question_to_session(&session_id, &question.id);
                     }
 
                     self.data.current_question = Some(question);
                     self.state = AppState::QuestionView;
                     self.data.status_message = "Question generated successfully!".to_string();
+                    self.log_api_call("generate_question", ApiCallStatus::Success, "Complete");
                 }
                 Err(e) => {
+                    self.log_api_call(
+                        "gemini_api",
+                        ApiCallStatus::Error,
+                        &format!("API Error: {}", e),
+                    );
                     self.data.status_message = format!("Error generating question: {}", e);
                 }
             }
@@ -308,7 +354,8 @@ impl App {
                     self.data.current_question = Some(question.clone());
                     self.state = AppState::QuestionView;
                 } else {
-                    self.data.status_message = "No recent questions found. Generate a new question first.".to_string();
+                    self.data.status_message =
+                        "No recent questions found. Generate a new question first.".to_string();
                 }
             }
             Err(e) => {
@@ -370,7 +417,9 @@ impl App {
 
                     // Add to current session
                     if let Some(session_id) = self.current_session_id {
-                        let _ = self.storage.add_solution_to_session(&session_id, &solution.id);
+                        let _ = self
+                            .storage
+                            .add_solution_to_session(&session_id, &solution.id);
                     }
 
                     self.data.current_solution = Some(solution);
@@ -403,7 +452,8 @@ impl App {
                 }
             }
         } else {
-            self.data.status_message = "Gemini API not available or no question loaded.".to_string();
+            self.data.status_message =
+                "Gemini API not available or no question loaded.".to_string();
         }
         Ok(())
     }
@@ -425,7 +475,8 @@ impl App {
                 }
             }
         } else {
-            self.data.feedback_text = "Cannot generate feedback: missing data or API not available.".to_string();
+            self.data.feedback_text =
+                "Cannot generate feedback: missing data or API not available.".to_string();
         }
         Ok(())
     }

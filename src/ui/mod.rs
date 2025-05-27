@@ -206,7 +206,7 @@ impl UI {
 
         // Right panel - Progress overview
         if let Some(stats) = &app.data.statistics {
-            self.render_progress_overview(f, chunks[1], stats);
+            self.render_progress_overview(f, chunks[1], stats, app);
         } else {
             let loading = Paragraph::new("Loading statistics...")
                 .style(Style::default().fg(Color::Yellow))
@@ -221,7 +221,7 @@ impl UI {
         }
     }
 
-    fn render_progress_overview(&self, f: &mut Frame, area: Rect, stats: &Statistics) {
+    fn render_progress_overview(&self, f: &mut Frame, area: Rect, stats: &Statistics, app: &App) {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -261,6 +261,37 @@ impl UI {
             .style(Style::default().fg(Color::Cyan))
             .block(Block::default().title("Quick Stats").borders(Borders::ALL));
         f.render_widget(quick_stats, chunks[2]);
+
+        // API Calls Debug Panel
+        let api_calls_text = if app.data.api_calls.is_empty() {
+            "No API calls yet\nPress 'g' to generate a question".to_string()
+        } else {
+            app.data
+                .api_calls
+                .iter()
+                .rev()
+                .take(5)
+                .map(|call| {
+                    let status_icon = match call.status {
+                        ApiCallStatus::Pending => "⏳",
+                        ApiCallStatus::Success => "✅",
+                        ApiCallStatus::Error => "❌",
+                    };
+                    format!("{} {} {}", status_icon, call.endpoint, call.message)
+                })
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
+
+        let api_debug = Paragraph::new(api_calls_text)
+            .style(Style::default().fg(Color::Gray))
+            .wrap(Wrap { trim: true })
+            .block(
+                Block::default()
+                    .title("API Calls Debug")
+                    .borders(Borders::ALL),
+            );
+        f.render_widget(api_debug, chunks[3]);
     }
 
     fn render_question_view(&self, f: &mut Frame, area: Rect, app: &App) {
