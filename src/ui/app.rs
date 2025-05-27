@@ -1,6 +1,5 @@
 use super::{
-    widgets, ApiCall, ApiCallStatus, AppData, AppState, NetworkActivity, NetworkActivityType,
-    NetworkStatus,
+    ApiCall, ApiCallStatus, AppData, AppState, NetworkActivity, NetworkActivityType, NetworkStatus,
 };
 use crate::compiler::RustCompiler;
 use crate::llm::GeminiClient;
@@ -138,53 +137,6 @@ impl App {
             let total_words = self.data.typing_speed.total_characters as f64 / 5.0;
             self.data.typing_speed.average_wpm = total_words / total_minutes;
         }
-    }
-
-    fn update_scroll_for_cursor(&mut self) {
-        // Auto-scroll to keep cursor visible
-        const VISIBLE_LINES: usize = 20; // Approximate visible lines in editor
-
-        if self.data.code_editor_state.cursor_line
-            >= self.data.code_editor_state.scroll_offset + VISIBLE_LINES
-        {
-            self.data.code_editor_state.scroll_offset = self
-                .data
-                .code_editor_state
-                .cursor_line
-                .saturating_sub(VISIBLE_LINES - 1);
-        } else if self.data.code_editor_state.cursor_line
-            < self.data.code_editor_state.scroll_offset
-        {
-            self.data.code_editor_state.scroll_offset = self.data.code_editor_state.cursor_line;
-        }
-    }
-
-    fn update_cursor_from_input(&mut self) {
-        // Update cursor position based on the current input cursor
-        let input_cursor = self.data.code_input.cursor();
-        let text = self.data.code_input.value();
-
-        let mut line = 0;
-        let mut col = 0;
-        let mut pos = 0;
-
-        for ch in text.chars() {
-            if pos >= input_cursor {
-                break;
-            }
-
-            if ch == '\n' {
-                line += 1;
-                col = 0;
-            } else {
-                col += 1;
-            }
-            pos += ch.len_utf8();
-        }
-
-        self.data.code_editor_state.cursor_line = line;
-        self.data.code_editor_state.cursor_col = col;
-        self.update_scroll_for_cursor();
     }
 
     fn log_api_call(&mut self, endpoint: &str, status: ApiCallStatus, message: &str) {
@@ -375,7 +327,7 @@ impl App {
             KeyCode::Char('c') => {
                 self.state = AppState::CodeEditor;
                 // Initialize code editor with a better template if empty
-                if self.data.code_input.value().is_empty() {
+                if self.data.text_editor.content().is_empty() {
                     let template = if let Some(question) = &self.data.current_question {
                         match question.topic {
                             crate::models::Topic::Arrays => {
@@ -427,7 +379,7 @@ impl App {
     input.to_string()
 }"#
                     };
-                    self.data.code_input = tui_input::Input::new(template.to_string());
+                    self.data.text_editor.set_content(template.to_string());
                 }
             }
             KeyCode::Char('h') => {
@@ -472,63 +424,59 @@ impl App {
                 self.get_hint_for_code().await?;
             }
             (KeyCode::Char('c'), KeyModifiers::CONTROL) => {
-                self.data.code_input = tui_input::Input::default();
-                self.data.code_editor_state = widgets::CodeEditorState::default();
+                self.data.text_editor.clear();
             }
             // Arrow key navigation
             (KeyCode::Up, KeyModifiers::NONE) => {
-                let lines: Vec<&str> = self.data.code_input.value().lines().collect();
-                self.data.code_editor_state.move_cursor_up(&lines);
-                self.update_scroll_for_cursor();
+                self.data.text_editor.move_cursor_up();
             }
             (KeyCode::Down, KeyModifiers::NONE) => {
-                let lines: Vec<&str> = self.data.code_input.value().lines().collect();
-                self.data.code_editor_state.move_cursor_down(&lines);
-                self.update_scroll_for_cursor();
+                self.data.text_editor.move_cursor_down();
             }
             (KeyCode::Left, KeyModifiers::NONE) => {
-                let lines: Vec<&str> = self.data.code_input.value().lines().collect();
-                self.data.code_editor_state.move_cursor_left(&lines);
+                self.data.text_editor.move_cursor_left();
             }
             (KeyCode::Right, KeyModifiers::NONE) => {
-                let lines: Vec<&str> = self.data.code_input.value().lines().collect();
-                self.data.code_editor_state.move_cursor_right(&lines);
+                self.data.text_editor.move_cursor_right();
             }
             (KeyCode::Home, KeyModifiers::NONE) => {
-                self.data.code_editor_state.move_to_line_start();
+                self.data.text_editor.move_to_line_start();
             }
             (KeyCode::End, KeyModifiers::NONE) => {
-                let lines: Vec<&str> = self.data.code_input.value().lines().collect();
-                self.data.code_editor_state.move_to_line_end(&lines);
+                self.data.text_editor.move_to_line_end();
             }
             (KeyCode::PageUp, KeyModifiers::NONE) => {
-                self.data.code_editor_state.page_up(10);
+                self.data.text_editor.page_up(10);
             }
             (KeyCode::PageDown, KeyModifiers::NONE) => {
-                let lines: Vec<&str> = self.data.code_input.value().lines().collect();
-                self.data.code_editor_state.page_down(&lines, 10);
+                self.data.text_editor.page_down(10);
+            }
+            (KeyCode::Backspace, KeyModifiers::NONE) => {
+                self.data.text_editor.delete_char();
+                self.update_typing_speed(1);
+            }
+            (KeyCode::Delete, KeyModifiers::NONE) => {
+                self.data.text_editor.delete_forward();
+                self.update_typing_speed(1);
+            }
+            (KeyCode::Enter, KeyModifiers::NONE) => {
+                self.data.text_editor.insert_char('\n');
+                self.update_typing_speed(1);
+            }
+            (KeyCode::Tab, KeyModifiers::NONE) => {
+                self.data.text_editor.insert_str("    "); // 4 spaces for tab
+                self.update_typing_speed(4);
+            }
+            (KeyCode::Char(ch), KeyModifiers::NONE) => {
+                self.data.text_editor.insert_char(ch);
+                self.update_typing_speed(1);
+            }
+            (KeyCode::Char(ch), KeyModifiers::SHIFT) => {
+                self.data.text_editor.insert_char(ch);
+                self.update_typing_speed(1);
             }
             _ => {
-                // Handle regular text input and track typing speed
-                let old_len = self.data.code_input.value().len();
-
-                self.data
-                    .code_input
-                    .handle_event(&Event::Key(crossterm::event::KeyEvent {
-                        code: key,
-                        modifiers,
-                        kind: crossterm::event::KeyEventKind::Press,
-                        state: crossterm::event::KeyEventState::NONE,
-                    }));
-
-                let new_len = self.data.code_input.value().len();
-                if new_len != old_len {
-                    // Character was added or removed, update typing speed
-                    self.update_typing_speed(1);
-
-                    // Update cursor position based on input changes
-                    self.update_cursor_from_input();
-                }
+                // Ignore other key combinations
             }
         }
         Ok(())
@@ -724,7 +672,7 @@ impl App {
         self.data.is_loading = true;
         self.data.status_message = "Compiling and testing solution...".to_string();
 
-        let code = self.data.code_input.value().to_string();
+        let code = self.data.text_editor.content().to_string();
         let question = self.data.current_question.as_ref().unwrap();
 
         // Initialize compiler if needed
@@ -783,7 +731,7 @@ impl App {
             &self.data.current_question,
             self.current_session_id,
         ) {
-            let code = self.data.code_input.value();
+            let code = self.data.text_editor.content();
             match client.generate_hint(question, code, session_id).await {
                 Ok((hint, usage)) => {
                     self.log_llm_usage(usage).await;

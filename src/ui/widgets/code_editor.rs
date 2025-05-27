@@ -1,4 +1,5 @@
 use super::syntax_highlighter::RustSyntaxHighlighter;
+use super::text_editor::TextEditor;
 use super::Widget;
 use ratatui::{
     layout::Rect,
@@ -7,13 +8,9 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Wrap},
     Frame,
 };
-use tui_input::Input;
 
 pub struct CodeEditorWidget<'a> {
-    pub input: &'a Input,
-    pub cursor_line: usize,
-    pub cursor_col: usize,
-    pub scroll_offset: usize,
+    pub editor: &'a TextEditor,
     pub show_line_numbers: bool,
     pub language: CodeLanguage,
     pub highlighter: RustSyntaxHighlighter,
@@ -28,27 +25,13 @@ pub enum CodeLanguage {
 }
 
 impl<'a> CodeEditorWidget<'a> {
-    pub fn new(input: &'a Input) -> Self {
+    pub fn new(editor: &'a TextEditor) -> Self {
         Self {
-            input,
-            cursor_line: 0,
-            cursor_col: 0,
-            scroll_offset: 0,
+            editor,
             show_line_numbers: true,
             language: CodeLanguage::Rust,
             highlighter: RustSyntaxHighlighter::default(),
         }
-    }
-
-    pub fn with_cursor(mut self, line: usize, col: usize) -> Self {
-        self.cursor_line = line;
-        self.cursor_col = col;
-        self
-    }
-
-    pub fn with_scroll(mut self, offset: usize) -> Self {
-        self.scroll_offset = offset;
-        self
     }
 
     pub fn with_language(mut self, language: CodeLanguage) -> Self {
@@ -57,8 +40,8 @@ impl<'a> CodeEditorWidget<'a> {
     }
 
     fn get_syntax_highlighted_lines(&self) -> Vec<Line> {
-        let code = self.input.value();
-        let lines: Vec<&str> = code.lines().collect();
+        let lines = self.editor.lines();
+        let (cursor_line, cursor_col) = self.editor.cursor_position();
 
         lines
             .iter()
@@ -68,7 +51,7 @@ impl<'a> CodeEditorWidget<'a> {
 
                 // Add line number
                 if self.show_line_numbers {
-                    let line_num_style = if i == self.cursor_line {
+                    let line_num_style = if i == cursor_line {
                         Style::default()
                             .fg(Color::Yellow)
                             .add_modifier(Modifier::BOLD)
@@ -83,9 +66,9 @@ impl<'a> CodeEditorWidget<'a> {
                 spans.extend(highlighted_line.spans);
 
                 // Add cursor indicator if this is the cursor line
-                if i == self.cursor_line {
+                if i == cursor_line {
                     // Insert cursor at the correct position
-                    self.insert_cursor_in_spans(&mut spans, self.cursor_col);
+                    self.insert_cursor_in_spans(&mut spans, cursor_col);
                 }
 
                 Line::from(spans)
@@ -157,16 +140,16 @@ impl<'a> CodeEditorWidget<'a> {
     }
 
     fn get_editor_info(&self) -> String {
-        let lines: Vec<&str> = self.input.value().lines().collect();
-        let total_lines = lines.len().max(1);
-        let total_chars = self.input.value().len();
+        let total_lines = self.editor.line_count();
+        let total_chars = self.editor.char_count();
+        let (cursor_line, cursor_col) = self.editor.cursor_position();
 
         format!(
             "Lines: {} | Chars: {} | Pos: {}:{} | Lang: {:?}",
             total_lines,
             total_chars,
-            self.cursor_line + 1,
-            self.cursor_col + 1,
+            cursor_line + 1,
+            cursor_col + 1,
             self.language
         )
     }
@@ -183,7 +166,7 @@ impl<'a> Widget for CodeEditorWidget<'a> {
 
         let paragraph = Paragraph::new(lines)
             .wrap(Wrap { trim: false })
-            .scroll((self.scroll_offset as u16, 0))
+            .scroll((self.editor.scroll_offset() as u16, 0))
             .block(block);
 
         f.render_widget(paragraph, area);
@@ -195,94 +178,5 @@ impl<'a> Widget for CodeEditorWidget<'a> {
 
     fn border_style(&self) -> Style {
         Style::default().fg(Color::Green)
-    }
-}
-
-/// Enhanced code editor state management
-#[derive(Debug, Clone)]
-pub struct CodeEditorState {
-    pub cursor_line: usize,
-    pub cursor_col: usize,
-    pub scroll_offset: usize,
-    pub selection_start: Option<(usize, usize)>,
-    pub selection_end: Option<(usize, usize)>,
-}
-
-impl Default for CodeEditorState {
-    fn default() -> Self {
-        Self {
-            cursor_line: 0,
-            cursor_col: 0,
-            scroll_offset: 0,
-            selection_start: None,
-            selection_end: None,
-        }
-    }
-}
-
-impl CodeEditorState {
-    pub fn move_cursor_up(&mut self, lines: &[&str]) {
-        if self.cursor_line > 0 {
-            self.cursor_line -= 1;
-            if self.cursor_line < lines.len() {
-                self.cursor_col = self.cursor_col.min(lines[self.cursor_line].len());
-            }
-        }
-    }
-
-    pub fn move_cursor_down(&mut self, lines: &[&str]) {
-        if self.cursor_line < lines.len().saturating_sub(1) {
-            self.cursor_line += 1;
-            if self.cursor_line < lines.len() {
-                self.cursor_col = self.cursor_col.min(lines[self.cursor_line].len());
-            }
-        }
-    }
-
-    pub fn move_cursor_left(&mut self, lines: &[&str]) {
-        if self.cursor_col > 0 {
-            self.cursor_col -= 1;
-        } else if self.cursor_line > 0 {
-            self.cursor_line -= 1;
-            if self.cursor_line < lines.len() {
-                self.cursor_col = lines[self.cursor_line].len();
-            }
-        }
-    }
-
-    pub fn move_cursor_right(&mut self, lines: &[&str]) {
-        if self.cursor_line < lines.len() {
-            let line_len = lines[self.cursor_line].len();
-            if self.cursor_col < line_len {
-                self.cursor_col += 1;
-            } else if self.cursor_line < lines.len() - 1 {
-                self.cursor_line += 1;
-                self.cursor_col = 0;
-            }
-        }
-    }
-
-    pub fn move_to_line_start(&mut self) {
-        self.cursor_col = 0;
-    }
-
-    pub fn move_to_line_end(&mut self, lines: &[&str]) {
-        if self.cursor_line < lines.len() {
-            self.cursor_col = lines[self.cursor_line].len();
-        }
-    }
-
-    pub fn page_up(&mut self, page_size: usize) {
-        self.cursor_line = self.cursor_line.saturating_sub(page_size);
-        if self.scroll_offset > page_size {
-            self.scroll_offset -= page_size;
-        } else {
-            self.scroll_offset = 0;
-        }
-    }
-
-    pub fn page_down(&mut self, lines: &[&str], page_size: usize) {
-        self.cursor_line = (self.cursor_line + page_size).min(lines.len().saturating_sub(1));
-        self.scroll_offset += page_size;
     }
 }

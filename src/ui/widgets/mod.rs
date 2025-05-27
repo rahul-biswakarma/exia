@@ -12,14 +12,16 @@ pub mod network_activity;
 pub mod progress_overview;
 pub mod stats_bar;
 pub mod syntax_highlighter;
+pub mod text_editor;
 pub mod typing_speed;
 
 pub use api_debug::ApiDebugWidget;
-pub use code_editor::{CodeEditorState, CodeEditorWidget, CodeLanguage};
+pub use code_editor::{CodeEditorWidget, CodeLanguage};
 pub use loading::LoadingWidget;
 pub use network_activity::NetworkActivityWidget;
 pub use progress_overview::ProgressOverviewWidget;
 pub use stats_bar::StatsBarWidget;
+pub use text_editor::TextEditor;
 pub use typing_speed::TypingSpeedWidget;
 
 /// Base trait for all widgets in the application

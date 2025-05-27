@@ -17,7 +17,7 @@ use ratatui::{
 };
 use std::io;
 use tui_input::Input;
-use widgets::CodeEditorState;
+use widgets::TextEditor;
 
 pub mod app;
 pub mod components;
@@ -42,7 +42,7 @@ pub struct AppData {
     pub current_question: Option<Question>,
     pub current_solution: Option<Solution>,
     pub statistics: Option<Statistics>,
-    pub code_input: Input,
+    pub text_editor: TextEditor,
     pub selected_tab: usize,
     pub list_state: ListState,
     pub scroll_state: ScrollbarState,
@@ -60,7 +60,6 @@ pub struct AppData {
     pub current_llm_usage: Vec<LLMUsage>,
     pub network_activity: Vec<NetworkActivity>,
     pub typing_speed: TypingMetrics,
-    pub code_editor_state: CodeEditorState,
 }
 
 #[derive(Debug, Clone)]
@@ -121,7 +120,7 @@ impl Default for AppData {
             current_question: None,
             current_solution: None,
             statistics: None,
-            code_input: Input::default(),
+            text_editor: TextEditor::default(),
             selected_tab: 0,
             list_state: ListState::default(),
             scroll_state: ScrollbarState::default(),
@@ -146,7 +145,6 @@ impl Default for AppData {
                 last_keystroke: None,
                 keystroke_intervals: Vec::new(),
             },
-            code_editor_state: CodeEditorState::default(),
         }
     }
 }
@@ -493,13 +491,8 @@ impl UI {
         typing_widget.render(f, stats_chunks[1]);
 
         // Enhanced code editor widget
-        let code_editor_widget = CodeEditorWidget::new(&app.data.code_input)
-            .with_cursor(
-                app.data.code_editor_state.cursor_line,
-                app.data.code_editor_state.cursor_col,
-            )
-            .with_scroll(app.data.code_editor_state.scroll_offset)
-            .with_language(CodeLanguage::Rust);
+        let code_editor_widget =
+            CodeEditorWidget::new(&app.data.text_editor).with_language(CodeLanguage::Rust);
         code_editor_widget.render(f, chunks[1]);
 
         // Loading/Status widget
