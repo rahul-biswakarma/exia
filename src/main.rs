@@ -55,7 +55,7 @@ async fn main() -> Result<()> {
     // Main application loop
     loop {
         // Draw the UI
-        if let Err(e) = ui.draw(&app) {
+        if let Err(e) = ui.draw(&mut app) {
             error!("Failed to draw UI: {}", e);
             break;
         }

@@ -88,6 +88,11 @@ pub struct AppData {
     pub theme_manager: ThemeManager,
     pub current_llm_call: Option<LLMCallInfo>,
     pub previous_state: Option<AppState>,
+    // Real-time system metrics
+    pub current_system_metrics: Option<SystemMetrics>,
+    pub cpu_history: std::collections::VecDeque<(f64, f64)>,
+    pub ram_history: std::collections::VecDeque<(f64, f64)>,
+    pub last_metrics_update: Option<std::time::Instant>,
 }
 
 #[derive(Debug, Clone)]
@@ -180,6 +185,11 @@ impl Default for AppData {
             theme_manager: ThemeManager::new(),
             current_llm_call: None,
             previous_state: None,
+            // Initialize system metrics
+            current_system_metrics: None,
+            cpu_history: std::collections::VecDeque::with_capacity(60),
+            ram_history: std::collections::VecDeque::with_capacity(60),
+            last_metrics_update: None,
         }
     }
 }
@@ -203,7 +213,287 @@ impl UI {
         app.data.theme_manager.current_theme()
     }
 
-    pub fn draw(&mut self, app: &App) -> Result<()> {
+    pub fn update_system_metrics(&self, app: &mut App) {
+        let now = std::time::Instant::now();
+
+        // Update metrics every second
+        if let Some(last_update) = app.data.last_metrics_update {
+            if now.duration_since(last_update).as_secs() < 1 {
+                return;
+            }
+        }
+
+        // Get real system metrics
+        let (cpu_usage, ram_usage, ram_total) = self.get_real_system_metrics();
+
+        // Create new metrics
+        let metrics = SystemMetrics {
+            cpu_usage,
+            ram_usage,
+            ram_total,
+            timestamp: now,
+        };
+
+        // Update current metrics
+        app.data.current_system_metrics = Some(metrics);
+
+        // Add to history with time in seconds since start
+        let time_seconds = app.data.cpu_history.len() as f64;
+
+        // Add to CPU history
+        app.data.cpu_history.push_back((time_seconds, cpu_usage));
+        if app.data.cpu_history.len() > 60 {
+            app.data.cpu_history.pop_front();
+        }
+
+        // Add to RAM history (convert to percentage)
+        let ram_percentage = if ram_total > 0.0 {
+            (ram_usage / ram_total) * 100.0
+        } else {
+            0.0
+        };
+        app.data
+            .ram_history
+            .push_back((time_seconds, ram_percentage));
+        if app.data.ram_history.len() > 60 {
+            app.data.ram_history.pop_front();
+        }
+
+        app.data.last_metrics_update = Some(now);
+    }
+
+    fn get_real_system_metrics(&self) -> (f64, f64, f64) {
+        // Try to get real system metrics
+        // For cross-platform compatibility, we'll use a simple approach
+
+        #[cfg(target_os = "macos")]
+        {
+            self.get_macos_metrics()
+        }
+
+        #[cfg(target_os = "linux")]
+        {
+            self.get_linux_metrics()
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            self.get_windows_metrics()
+        }
+
+        #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+        {
+            // Fallback to simulated metrics for unsupported platforms
+            self.get_simulated_metrics()
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    fn get_macos_metrics(&self) -> (f64, f64, f64) {
+        use std::process::Command;
+
+        // Get CPU usage using top command
+        let cpu_usage = Command::new("top")
+            .args(&["-l", "1", "-n", "0"])
+            .output()
+            .ok()
+            .and_then(|output| {
+                let output_str = String::from_utf8_lossy(&output.stdout);
+                // Parse CPU usage from top output
+                for line in output_str.lines() {
+                    if line.contains("CPU usage:") {
+                        // Format: "CPU usage: 5.32% user, 9.44% sys, 85.23% idle"
+                        // We want to calculate total usage = user + sys
+                        let mut user_cpu = 0.0;
+                        let mut sys_cpu = 0.0;
+
+                        // Extract user CPU
+                        if let Some(user_start) = line.find("CPU usage:") {
+                            let rest = &line[user_start + 10..];
+                            if let Some(user_end) = rest.find("% user") {
+                                let user_str = rest[..user_end].trim();
+                                user_cpu = user_str.parse().unwrap_or(0.0);
+                            }
+                        }
+
+                        // Extract sys CPU
+                        if let Some(sys_start) = line.find("% user, ") {
+                            let rest = &line[sys_start + 8..];
+                            if let Some(sys_end) = rest.find("% sys") {
+                                let sys_str = rest[..sys_end].trim();
+                                sys_cpu = sys_str.parse().unwrap_or(0.0);
+                            }
+                        }
+
+                        return Some(user_cpu + sys_cpu);
+                    }
+                }
+                None
+            })
+            .unwrap_or(0.0);
+
+        // Get memory usage using vm_stat
+        let (ram_usage, ram_total) = Command::new("vm_stat")
+            .output()
+            .ok()
+            .and_then(|output| {
+                let output_str = String::from_utf8_lossy(&output.stdout);
+                let mut pages_free = 0u64;
+                let mut pages_active = 0u64;
+                let mut pages_inactive = 0u64;
+                let mut pages_speculative = 0u64;
+                let mut pages_wired = 0u64;
+
+                let mut page_size = 4096u64; // Default page size
+
+                for line in output_str.lines() {
+                    if line.contains("page size of") {
+                        // Extract page size from first line: "Mach Virtual Memory Statistics: (page size of 16384 bytes)"
+                        if let Some(start) = line.find("page size of ") {
+                            let rest = &line[start + 13..];
+                            if let Some(end) = rest.find(" bytes") {
+                                let size_str = &rest[..end];
+                                page_size = size_str.parse().unwrap_or(4096);
+                            }
+                        }
+                    } else if line.contains("Pages free:") {
+                        pages_free = line
+                            .split_whitespace()
+                            .nth(2)?
+                            .trim_end_matches('.')
+                            .parse()
+                            .ok()?;
+                    } else if line.contains("Pages active:") {
+                        pages_active = line
+                            .split_whitespace()
+                            .nth(2)?
+                            .trim_end_matches('.')
+                            .parse()
+                            .ok()?;
+                    } else if line.contains("Pages inactive:") {
+                        pages_inactive = line
+                            .split_whitespace()
+                            .nth(2)?
+                            .trim_end_matches('.')
+                            .parse()
+                            .ok()?;
+                    } else if line.contains("Pages speculative:") {
+                        pages_speculative = line
+                            .split_whitespace()
+                            .nth(2)?
+                            .trim_end_matches('.')
+                            .parse()
+                            .ok()?;
+                    } else if line.contains("Pages wired down:") {
+                        pages_wired = line
+                            .split_whitespace()
+                            .nth(3)?
+                            .trim_end_matches('.')
+                            .parse()
+                            .ok()?;
+                    }
+                }
+                let total_pages =
+                    pages_free + pages_active + pages_inactive + pages_speculative + pages_wired;
+                let used_pages = pages_active + pages_inactive + pages_speculative + pages_wired;
+
+                let ram_total_gb = (total_pages * page_size) as f64 / (1024.0 * 1024.0 * 1024.0);
+                let ram_used_gb = (used_pages * page_size) as f64 / (1024.0 * 1024.0 * 1024.0);
+
+                Some((ram_used_gb, ram_total_gb))
+            })
+            .unwrap_or((2.0, 8.0)); // Fallback values
+
+        (cpu_usage, ram_usage, ram_total)
+    }
+
+    #[cfg(target_os = "linux")]
+    fn get_linux_metrics(&self) -> (f64, f64, f64) {
+        use std::fs;
+
+        // Get CPU usage from /proc/stat
+        let cpu_usage = fs::read_to_string("/proc/stat")
+            .ok()
+            .and_then(|content| {
+                let line = content.lines().next()?;
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 5 && parts[0] == "cpu" {
+                    let user: u64 = parts[1].parse().ok()?;
+                    let nice: u64 = parts[2].parse().ok()?;
+                    let system: u64 = parts[3].parse().ok()?;
+                    let idle: u64 = parts[4].parse().ok()?;
+
+                    let total = user + nice + system + idle;
+                    let used = user + nice + system;
+
+                    if total > 0 {
+                        Some((used as f64 / total as f64) * 100.0)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .unwrap_or(0.0);
+
+        // Get memory usage from /proc/meminfo
+        let (ram_usage, ram_total) = fs::read_to_string("/proc/meminfo")
+            .ok()
+            .and_then(|content| {
+                let mut mem_total = 0u64;
+                let mut mem_available = 0u64;
+
+                for line in content.lines() {
+                    if line.starts_with("MemTotal:") {
+                        mem_total = line.split_whitespace().nth(1)?.parse().ok()?;
+                    } else if line.starts_with("MemAvailable:") {
+                        mem_available = line.split_whitespace().nth(1)?.parse().ok()?;
+                    }
+                }
+
+                if mem_total > 0 {
+                    let ram_total_gb = mem_total as f64 / (1024.0 * 1024.0);
+                    let ram_used_gb = (mem_total - mem_available) as f64 / (1024.0 * 1024.0);
+                    Some((ram_used_gb, ram_total_gb))
+                } else {
+                    None
+                }
+            })
+            .unwrap_or((2.0, 8.0));
+
+        (cpu_usage, ram_usage, ram_total)
+    }
+
+    #[cfg(target_os = "windows")]
+    fn get_windows_metrics(&self) -> (f64, f64, f64) {
+        // For Windows, we'll use a simulated approach for now
+        // In a real implementation, you'd use Windows APIs
+        self.get_simulated_metrics()
+    }
+
+    fn get_simulated_metrics(&self) -> (f64, f64, f64) {
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs_f64();
+
+        // Generate realistic-looking metrics
+        let cpu_usage = (45.0 + 15.0 * (time * 0.1).sin() + 5.0 * (time * 0.3).cos())
+            .max(0.0)
+            .min(100.0);
+        let ram_usage = 2.5 + 1.0 * (time * 0.05).sin();
+        let ram_total = 8.0;
+
+        (cpu_usage, ram_usage, ram_total)
+    }
+
+    pub fn draw(&mut self, app: &mut App) -> Result<()> {
+        // Update system metrics before drawing
+        self.update_system_metrics(app);
+
         let ui_ref = self as *const Self;
         self.terminal.draw(move |f| {
             let ui = unsafe { &*ui_ref };
@@ -291,54 +581,59 @@ impl UI {
 
         // Use the new HomeLayoutWidget if statistics are available
         if let Some(stats) = &app.data.statistics {
-            // Create sample system history for demonstration
-            let mut cpu_history = std::collections::VecDeque::new();
-            let mut ram_history = std::collections::VecDeque::new();
+            // Only show LLM stream info if there's actual LLM activity
+            let llm_stream_info = if app.data.is_llm_loading || app.data.current_llm_call.is_some()
+            {
+                // Create LLM stream info based on current activity
+                app.data.current_llm_call.as_ref().map(|call_info| {
+                    use crate::ui::widgets::{LLMStreamInfo, LLMStreamStatus};
+                    let mut info = LLMStreamInfo::new(call_info.operation_type.clone());
 
-            // Generate sample data for the last 60 seconds
-            for i in 0..60 {
-                let time = i as f64;
-                let cpu_usage = (45.0 + 10.0 * (time * 0.1).sin()).max(0.0).min(100.0);
-                let ram_usage = (35.0 + 5.0 * (time * 0.05).cos()).max(0.0).min(100.0);
-                cpu_history.push_back((time, cpu_usage));
-                ram_history.push_back((time, ram_usage));
-            }
+                    info.status = match call_info.status {
+                        crate::ui::widgets::LLMCallStatus::Initializing => {
+                            LLMStreamStatus::Initializing
+                        }
+                        crate::ui::widgets::LLMCallStatus::InProgress => LLMStreamStatus::Streaming,
+                        crate::ui::widgets::LLMCallStatus::Success => LLMStreamStatus::Complete,
+                        crate::ui::widgets::LLMCallStatus::Error => LLMStreamStatus::Error,
+                    };
 
-            // Create sample LLM stream info for demonstration
-            let sample_llm_info = {
-                use crate::ui::widgets::{LLMStreamInfo, LLMStreamStatus};
-                let mut info = LLMStreamInfo::new("Code Analysis".to_string());
-                info.status = LLMStreamStatus::Streaming;
-                info.progress = 0.65;
-                info.input_tokens = Some(1250);
-                info.output_tokens = Some(890);
-                info.estimated_cost_usd = Some(0.0003);
-                info.model_name = Some("gemini-1.5-flash".to_string());
-                info.streamed_content = "Analyzing your algorithm implementation...\n\nI can see you're using a dynamic programming approach, which is excellent for this type of problem. Here are my observations:\n\n1. Time Complexity: O(n²) - This is optimal for the given constraints\n2. Space Complexity: O(n²) - Could be optimized to O(n)\n3. Edge Cases: Consider handling empty arrays\n\nLet me suggest some optimizations...".to_string();
-                info
-            };
+                    info.progress = call_info.progress;
+                    info.input_tokens = call_info.input_tokens;
+                    info.output_tokens = call_info.output_tokens;
+                    info.estimated_cost_usd = call_info.cost_usd;
+                    info.model_name = call_info.model_name.clone();
+                    info.error_message = call_info.error_message.clone();
+                    info.start_time = call_info.start_time;
+                    info.duration_ms = call_info.duration_ms;
 
-            // Create sample system metrics
-            let sample_metrics = {
-                use crate::ui::widgets::SystemMetrics;
-                SystemMetrics {
-                    cpu_usage: 45.2,
-                    ram_usage: 2.8,
-                    ram_total: 8.0,
-                    timestamp: std::time::Instant::now(),
-                }
+                    // Set appropriate content based on operation type
+                    info.streamed_content = match call_info.operation_type.as_str() {
+                        "Question Generation" => {
+                            "Generating new algorithm challenge...".to_string()
+                        }
+                        "Code Analysis" => "Analyzing your code implementation...".to_string(),
+                        "Feedback Generation" => "Generating detailed feedback...".to_string(),
+                        _ => format!("Processing {}...", call_info.operation_type),
+                    };
+
+                    info
+                })
+            } else {
+                None
             };
 
             // Create Exia operations widget
             let exia_widget = self.create_exia_operations_widget(app, theme);
 
-            // Use the new home layout
-            let home_layout = HomeLayoutWidget::new(stats, &cpu_history, &ram_history)
-                .with_cost_analytics(app.data.cost_analytics.as_ref())
-                .with_llm_stream_info(Some(&sample_llm_info))
-                .with_system_metrics(Some(&sample_metrics))
-                .with_exia_operations(exia_widget)
-                .with_animation_frame(0);
+            // Use the new home layout with real system metrics
+            let home_layout =
+                HomeLayoutWidget::new(stats, &app.data.cpu_history, &app.data.ram_history)
+                    .with_cost_analytics(app.data.cost_analytics.as_ref())
+                    .with_llm_stream_info(llm_stream_info.as_ref())
+                    .with_system_metrics(app.data.current_system_metrics.as_ref())
+                    .with_exia_operations(exia_widget)
+                    .with_animation_frame(0);
 
             home_layout.render(f, content_area);
         } else {
