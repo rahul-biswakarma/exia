@@ -17,7 +17,10 @@ use ratatui::{
 };
 use std::io;
 use tui_input::Input;
-use widgets::TextEditor;
+use widgets::{
+    EvaBorders, EvaColors, EvaFormat, EvaGradientWidget, EvaLoadingWidget, EvaOperationType,
+    EvaProgressWidget, EvaStyles, EvaSymbols, EvaTypingWidget, TextEditor,
+};
 
 pub mod app;
 pub mod components;
@@ -173,6 +176,11 @@ impl UI {
         let ui_ref = self as *const Self;
         self.terminal.draw(move |f| {
             let ui = unsafe { &*ui_ref };
+
+            // Render gradient background first
+            let gradient = EvaGradientWidget::new();
+            gradient.render(f, f.size());
+
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([
@@ -190,29 +198,24 @@ impl UI {
     }
 
     fn render_header(&self, f: &mut Frame, area: Rect, app: &App) {
+        use widgets::*;
+
         let title = match app.state {
-            AppState::Home => "🏠 DSA Learning Assistant - Home",
-            AppState::AllQuestions => "📚 All Questions",
-            AppState::QuestionView => "📝 Question View",
-            AppState::CodeEditor => "💻 Code Editor",
-            AppState::Results => "📊 Results",
-            AppState::Statistics => "📈 Statistics",
-            AppState::Settings => "⚙️ Settings",
-            AppState::Help => "❓ Help",
+            AppState::Home => "CENTRAL DOGMA - DSA LEARNING COMMAND CENTER",
+            AppState::AllQuestions => "ALGORITHM DATABASE - PROBLEM ARCHIVE",
+            AppState::QuestionView => "PROBLEM ANALYSIS - ALGORITHM BRIEFING",
+            AppState::CodeEditor => "CODE SYNTHESIS INTERFACE - SOLUTION MODE",
+            AppState::Results => "EXECUTION REPORT - SOLUTION ANALYSIS",
+            AppState::Statistics => "MAGI ANALYTICS - LEARNING PERFORMANCE",
+            AppState::Settings => "SYSTEM CONFIGURATION - LEARNING PARAMETERS",
+            AppState::Help => "TECHNICAL MANUAL - OPERATION GUIDANCE",
         };
 
-        let header = Paragraph::new(title)
-            .style(
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            )
+        let header_text = format!("{} {} {}", EvaSymbols::HEXAGON, title, EvaSymbols::HEXAGON);
+        let header = Paragraph::new(header_text)
+            .style(EvaStyles::text_highlight())
             .alignment(Alignment::Center)
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::Blue)),
-            );
+            .block(EvaBorders::header("NERV HEADQUARTERS"));
 
         f.render_widget(header, area);
     }
@@ -258,12 +261,12 @@ impl UI {
 
         // Left panel - Quick actions
         let actions = vec![
-            "🎯 Generate New Question",
-            "📚 All Questions",
-            "📊 View Statistics",
-            "⚙️ Settings",
-            "❓ Help",
-            "🚪 Exit",
+            format!("{} GENERATE NEW ALGORITHM CHALLENGE", EvaSymbols::TRIANGLE),
+            format!("{} ACCESS PROBLEM DATABASE", EvaSymbols::SQUARE),
+            format!("{} REVIEW LEARNING ANALYTICS", EvaSymbols::DIAMOND),
+            format!("{} SYSTEM CONFIGURATION", EvaSymbols::HEXAGON),
+            format!("{} TECHNICAL DOCUMENTATION", EvaSymbols::OPERATIONAL),
+            format!("{} TERMINATE SESSION", EvaSymbols::CRITICAL),
         ];
 
         let action_items: Vec<ListItem> = actions
@@ -271,32 +274,29 @@ impl UI {
             .enumerate()
             .map(|(i, action)| {
                 let style = if i == app.data.selected_tab {
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD)
+                    EvaStyles::selected()
                 } else {
-                    Style::default().fg(Color::White)
+                    EvaStyles::text_primary()
                 };
-                ListItem::new(*action).style(style)
+                ListItem::new(action.as_str()).style(style)
             })
             .collect();
 
         let actions_list = List::new(action_items)
-            .block(
-                Block::default()
-                    .title("Quick Actions")
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::Green)),
-            )
-            .highlight_style(Style::default().bg(Color::DarkGray));
+            .block(EvaBorders::panel().title(EvaFormat::title("LEARNING OPERATIONS")))
+            .highlight_style(EvaStyles::selected());
 
         f.render_stateful_widget(actions_list, chunks[0], &mut app.data.list_state.clone());
 
         // Right panel - Progress overview only
         if let Some(stats) = &app.data.statistics {
-            self.render_progress_overview(f, chunks[1], stats, app);
+            let eva_progress = EvaProgressWidget::new(stats)
+                .with_cost_analytics(app.data.cost_analytics.as_ref())
+                .with_details(false);
+            eva_progress.render(f, chunks[1]);
         } else {
-            let loading_widget = LoadingWidget::new("Loading statistics".to_string(), true);
+            let loading_widget = EvaLoadingWidget::new("LOADING MAGI STATISTICS".to_string(), true)
+                .with_operation_type(EvaOperationType::MagiCalculation);
             loading_widget.render(f, chunks[1]);
         }
     }
@@ -361,49 +361,54 @@ impl UI {
         let all_questions = &app.data.recent_questions; // For now, use recent questions as all questions
 
         if all_questions.is_empty() {
-            let no_questions =
-                Paragraph::new("No questions found.\nPress 'g' to generate your first question!")
-                    .style(Style::default().fg(Color::Gray))
-                    .alignment(Alignment::Center)
-                    .wrap(Wrap { trim: true })
-                    .block(
-                        Block::default()
-                            .title("📚 All Questions")
-                            .borders(Borders::ALL)
-                            .border_style(Style::default().fg(Color::Blue)),
-                    );
+            let no_questions_text = format!(
+                "{} NO PROBLEMS DETECTED\n\n{} INITIATE PROBLEM GENERATION PROTOCOL\n{} PRESS 'G' TO BEGIN ALGORITHM SYNTHESIS",
+                EvaSymbols::OPERATIONAL,
+                EvaSymbols::ARROW_RIGHT,
+                EvaSymbols::TRIANGLE
+            );
+            let no_questions = Paragraph::new(no_questions_text)
+                .style(EvaStyles::text_secondary())
+                .alignment(Alignment::Center)
+                .wrap(Wrap { trim: true })
+                .block(EvaBorders::panel().title(EvaFormat::title("ALGORITHM DATABASE")));
             f.render_widget(no_questions, area);
         } else {
             let question_items: Vec<ListItem> = all_questions
                 .iter()
                 .enumerate()
                 .map(|(i, question)| {
-                    let difficulty_color = match question.difficulty {
-                        crate::models::Difficulty::Easy => Color::Green,
-                        crate::models::Difficulty::Medium => Color::Yellow,
-                        crate::models::Difficulty::Hard => Color::Red,
+                    let (difficulty_color, difficulty_symbol) = match question.difficulty {
+                        crate::models::Difficulty::Easy => {
+                            (EvaStyles::text_success(), EvaSymbols::OPERATIONAL)
+                        }
+                        crate::models::Difficulty::Medium => {
+                            (EvaStyles::text_warning(), EvaSymbols::WARNING)
+                        }
+                        crate::models::Difficulty::Hard => {
+                            (EvaStyles::text_critical(), EvaSymbols::CRITICAL)
+                        }
                     };
 
                     let content = format!(
-                        "{}. {} [{}] - {}",
+                        "{} PROBLEM-{:02}: {} | COMPLEXITY: {:?} | CATEGORY: {:?}",
+                        difficulty_symbol,
                         i + 1,
                         question.title,
-                        format!("{:?}", question.difficulty),
-                        format!("{:?}", question.topic)
+                        question.difficulty,
+                        question.topic
                     );
 
-                    ListItem::new(content).style(Style::default().fg(difficulty_color))
+                    ListItem::new(content).style(difficulty_color)
                 })
                 .collect();
 
             let questions_list = List::new(question_items)
                 .block(
-                    Block::default()
-                        .title("📚 All Questions (Enter to select)")
-                        .borders(Borders::ALL)
-                        .border_style(Style::default().fg(Color::Blue)),
+                    EvaBorders::panel()
+                        .title(EvaFormat::title("ALGORITHM ARCHIVE - SELECT PROBLEM")),
                 )
-                .highlight_style(Style::default().bg(Color::DarkGray));
+                .highlight_style(EvaStyles::selected());
 
             f.render_stateful_widget(
                 questions_list,
@@ -454,62 +459,60 @@ impl UI {
                 .split(area);
 
             // Question title
+            let difficulty_symbol = match question.difficulty {
+                crate::models::Difficulty::Easy => EvaSymbols::OPERATIONAL,
+                crate::models::Difficulty::Medium => EvaSymbols::WARNING,
+                crate::models::Difficulty::Hard => EvaSymbols::CRITICAL,
+            };
+
             let title_text = format!(
-                "{} [{}] - {}",
-                question.title, question.difficulty, question.topic
+                "{} PROBLEM DESIGNATION: {} | COMPLEXITY LEVEL: {:?} | ALGORITHM TYPE: {:?}",
+                difficulty_symbol, question.title, question.difficulty, question.topic
             );
             let title = Paragraph::new(title_text)
-                .style(
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
-                )
+                .style(EvaStyles::text_highlight())
                 .alignment(Alignment::Center)
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .border_style(Style::default().fg(Color::Blue)),
-                );
+                .block(EvaBorders::header("ALGORITHM BRIEFING"));
             f.render_widget(title, chunks[0]);
 
             // Question description
-            let description = Paragraph::new(question.description.as_str())
-                .style(Style::default().fg(Color::White))
+            let description_text = format!(
+                "{} PROBLEM ANALYSIS:\n\n{}",
+                EvaSymbols::HEXAGON,
+                question.description
+            );
+            let description = Paragraph::new(description_text)
+                .style(EvaStyles::text_primary())
                 .wrap(Wrap { trim: true })
                 .scroll((app.data.scroll_offset as u16, 0))
-                .block(
-                    Block::default()
-                        .title("Description")
-                        .borders(Borders::ALL)
-                        .border_style(Style::default().fg(Color::Green)),
-                );
+                .block(EvaBorders::panel().title(EvaFormat::title("TECHNICAL SPECIFICATION")));
             f.render_widget(description, chunks[1]);
 
             // Test cases
-            let test_cases_text = question
-                .test_cases
-                .iter()
-                .enumerate()
-                .map(|(i, tc)| {
-                    format!(
-                        "Test {}: Input: {} | Expected: {}",
-                        i + 1,
-                        tc.input,
-                        tc.expected_output
-                    )
-                })
-                .collect::<Vec<_>>()
-                .join("\n");
+            let test_cases_text = format!(
+                "{} TEST SCENARIOS:\n\n{}",
+                EvaSymbols::TRIANGLE,
+                question
+                    .test_cases
+                    .iter()
+                    .enumerate()
+                    .map(|(i, tc)| {
+                        format!(
+                            "{} TEST CASE {}: INPUT: {} | EXPECTED: {}",
+                            EvaSymbols::ARROW_RIGHT,
+                            i + 1,
+                            tc.input,
+                            tc.expected_output
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            );
 
             let test_cases = Paragraph::new(test_cases_text)
-                .style(Style::default().fg(Color::Cyan))
+                .style(EvaStyles::sync_rate())
                 .wrap(Wrap { trim: true })
-                .block(
-                    Block::default()
-                        .title("Test Cases")
-                        .borders(Borders::ALL)
-                        .border_style(Style::default().fg(Color::Magenta)),
-                );
+                .block(EvaBorders::operational().title(EvaFormat::title("VALIDATION PROTOCOLS")));
             f.render_widget(test_cases, chunks[2]);
 
             // Hints panel (if enabled)
@@ -576,20 +579,25 @@ impl UI {
             .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
             .split(chunks[0]);
 
-        // Session stats widget (compact, no borders)
-        let stats_widget = StatsBarWidget::new(
+        // EVA Unit status (compact display)
+        let eva_status_text = format!(
+            "{} UNIT STATUS: {} VICTORIES | {} DEFEATS | {} OPERATIONS\n{} NEURAL LINK: {} ACTIVE CONNECTIONS",
+            EvaSymbols::OPERATIONAL,
             app.data.success_count,
             app.data.error_count,
             app.data.api_calls.len(),
-            app.data.network_activity.len(),
-            &app.data.typing_speed,
-        )
-        .compact();
-        stats_widget.render(f, stats_chunks[0]);
+            EvaSymbols::HEXAGON,
+            app.data.network_activity.len()
+        );
 
-        // Typing speed widget (with borders)
-        let typing_widget = TypingSpeedWidget::new(&app.data.typing_speed);
-        typing_widget.render(f, stats_chunks[1]);
+        let eva_status = Paragraph::new(eva_status_text)
+            .style(EvaStyles::text_secondary())
+            .block(EvaBorders::panel().title(EvaFormat::title("EVA UNIT-01")));
+        f.render_widget(eva_status, stats_chunks[0]);
+
+        // Entry Plug Interface (typing speed)
+        let eva_typing = EvaTypingWidget::new(&app.data.typing_speed);
+        eva_typing.render(f, stats_chunks[1]);
 
         // Enhanced code editor widget
         let code_editor_widget =
@@ -598,13 +606,20 @@ impl UI {
 
         // Loading/Status widget
         let status_message = if app.data.is_loading {
-            "Compiling and testing solution".to_string()
+            "COMPILING EVA UNIT COMBAT PROTOCOLS".to_string()
         } else {
-            "💡 Ctrl+S: Submit | Ctrl+H: Hint | Ctrl+C: Clear | ↑↓←→: Navigate | Home/End: Line start/end".to_string()
+            "ENTRY PLUG SYNCHRONIZED - AWAITING PILOT COMMANDS".to_string()
         };
 
-        let loading_widget = LoadingWidget::new(status_message, app.data.is_loading);
-        loading_widget.render(f, chunks[2]);
+        let operation_type = if app.data.is_loading {
+            EvaOperationType::EvaActivation
+        } else {
+            EvaOperationType::SyncTest
+        };
+
+        let eva_loading = EvaLoadingWidget::new(status_message, app.data.is_loading)
+            .with_operation_type(operation_type);
+        eva_loading.render(f, chunks[2]);
     }
 
     fn render_results(&self, f: &mut Frame, area: Rect, app: &App) {
@@ -873,25 +888,23 @@ impl UI {
     }
 
     fn render_footer(&self, f: &mut Frame, area: Rect, app: &App) {
+        use widgets::*;
+
         let footer_text = match app.state {
-            AppState::Home => "↑↓: Menu | Enter: Select | g: Generate | r: All Questions | s: Statistics | q: Quit",
-            AppState::AllQuestions => "↑↓: Navigate | Enter: Select Question | Esc: Back | q: Quit",
-            AppState::QuestionView => "c: Code | h: Hints | Esc: Back | q: Quit",
-            AppState::CodeEditor => "Ctrl+S: Submit | Ctrl+H: Hint | Esc: Back | q: Quit",
-            AppState::Results => "f: Feedback | r: Retry | n: Next | Esc: Back | q: Quit",
-            AppState::Statistics => "Esc: Back | q: Quit",
-            AppState::Settings => "Esc: Back | q: Quit",
-            AppState::Help => "↑/↓: Scroll | Esc: Back | q: Quit",
+            AppState::Home => format!("{} COMMAND: ↑↓ NAVIGATE | ENTER: EXECUTE | G: GENERATE PROBLEM | R: ARCHIVE | S: ANALYTICS | Q: SHUTDOWN", EvaSymbols::ARROW_RIGHT),
+            AppState::AllQuestions => format!("{} ARCHIVE: ↑↓ BROWSE | ENTER: SELECT PROBLEM | ESC: RETURN | Q: SHUTDOWN", EvaSymbols::ARROW_RIGHT),
+            AppState::QuestionView => format!("{} BRIEFING: C: START CODING | H: HINTS | ESC: RETURN | Q: SHUTDOWN", EvaSymbols::ARROW_RIGHT),
+            AppState::CodeEditor => format!("{} CODING: CTRL+S: SUBMIT SOLUTION | CTRL+H: REQUEST HINT | ESC: RETURN | Q: SHUTDOWN", EvaSymbols::ARROW_RIGHT),
+            AppState::Results => format!("{} REPORT: F: DETAILED ANALYSIS | R: RETRY PROBLEM | N: NEXT PROBLEM | ESC: RETURN | Q: SHUTDOWN", EvaSymbols::ARROW_RIGHT),
+            AppState::Statistics => format!("{} ANALYTICS: ESC: RETURN | Q: SHUTDOWN", EvaSymbols::ARROW_RIGHT),
+            AppState::Settings => format!("{} CONFIG: ESC: RETURN | Q: SHUTDOWN", EvaSymbols::ARROW_RIGHT),
+            AppState::Help => format!("{} MANUAL: ↑↓ SCROLL | ESC: RETURN | Q: SHUTDOWN", EvaSymbols::ARROW_RIGHT),
         };
 
         let footer = Paragraph::new(footer_text)
-            .style(Style::default().fg(Color::Gray))
+            .style(EvaStyles::text_secondary())
             .alignment(Alignment::Center)
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::DarkGray)),
-            );
+            .block(EvaBorders::panel().title(EvaFormat::title("PILOT INTERFACE")));
 
         f.render_widget(footer, area);
     }

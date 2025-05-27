@@ -7,6 +7,11 @@ use ratatui::{
 
 pub mod api_debug;
 pub mod code_editor;
+pub mod eva_gradient;
+pub mod eva_loading;
+pub mod eva_progress;
+pub mod eva_theme;
+pub mod eva_typing;
 pub mod loading;
 pub mod network_activity;
 pub mod progress_overview;
@@ -17,6 +22,11 @@ pub mod typing_speed;
 
 pub use api_debug::ApiDebugWidget;
 pub use code_editor::{CodeEditorWidget, CodeLanguage};
+pub use eva_gradient::EvaGradientWidget;
+pub use eva_loading::{EvaLoadingWidget, EvaOperationType};
+pub use eva_progress::EvaProgressWidget;
+pub use eva_theme::{EvaBorders, EvaColors, EvaFormat, EvaStyles, EvaSymbols};
+pub use eva_typing::EvaTypingWidget;
 pub use loading::LoadingWidget;
 pub use network_activity::NetworkActivityWidget;
 pub use progress_overview::ProgressOverviewWidget;
