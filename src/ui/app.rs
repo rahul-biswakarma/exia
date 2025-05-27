@@ -398,6 +398,7 @@ impl App {
                 (KeyCode::Backspace, KeyModifiers::NONE) => {
                     self.data.text_editor.delete_char();
                     self.update_typing_speed(1);
+                    self.data.compilation_error = None; // Clear compilation error when editing
                     return Ok(());
                 }
                 (KeyCode::Delete, KeyModifiers::NONE) => {
@@ -408,11 +409,13 @@ impl App {
                 (KeyCode::Enter, KeyModifiers::NONE) => {
                     self.data.text_editor.insert_char('\n');
                     self.update_typing_speed(1);
+                    self.data.compilation_error = None; // Clear compilation error when editing
                     return Ok(());
                 }
                 (KeyCode::Tab, KeyModifiers::NONE) => {
                     self.data.text_editor.insert_str("    "); // 4 spaces for tab
                     self.update_typing_speed(4);
+                    self.data.compilation_error = None; // Clear compilation error when editing
                     return Ok(());
                 }
                 (KeyCode::Char(ch), KeyModifiers::NONE) => {
@@ -420,12 +423,14 @@ impl App {
                     if !matches!(ch, 'c' | 'h' | 'n' | 'p') {
                         self.data.text_editor.insert_char(ch);
                         self.update_typing_speed(1);
+                        self.data.compilation_error = None; // Clear compilation error when editing
                         return Ok(());
                     }
                 }
                 (KeyCode::Char(ch), KeyModifiers::SHIFT) => {
                     self.data.text_editor.insert_char(ch);
                     self.update_typing_speed(1);
+                    self.data.compilation_error = None; // Clear compilation error when editing
                     return Ok(());
                 }
                 // Arrow keys for editor navigation in side-by-side mode
@@ -582,26 +587,32 @@ impl App {
             (KeyCode::Backspace, KeyModifiers::NONE) => {
                 self.data.text_editor.delete_char();
                 self.update_typing_speed(1);
+                self.data.compilation_error = None; // Clear compilation error when editing
             }
             (KeyCode::Delete, KeyModifiers::NONE) => {
                 self.data.text_editor.delete_forward();
                 self.update_typing_speed(1);
+                self.data.compilation_error = None; // Clear compilation error when editing
             }
             (KeyCode::Enter, KeyModifiers::NONE) => {
                 self.data.text_editor.insert_char('\n');
                 self.update_typing_speed(1);
+                self.data.compilation_error = None; // Clear compilation error when editing
             }
             (KeyCode::Tab, KeyModifiers::NONE) => {
                 self.data.text_editor.insert_str("    "); // 4 spaces for tab
                 self.update_typing_speed(4);
+                self.data.compilation_error = None; // Clear compilation error when editing
             }
             (KeyCode::Char(ch), KeyModifiers::NONE) => {
                 self.data.text_editor.insert_char(ch);
                 self.update_typing_speed(1);
+                self.data.compilation_error = None; // Clear compilation error when editing
             }
             (KeyCode::Char(ch), KeyModifiers::SHIFT) => {
                 self.data.text_editor.insert_char(ch);
                 self.update_typing_speed(1);
+                self.data.compilation_error = None; // Clear compilation error when editing
             }
             _ => {
                 // Ignore other key combinations
@@ -687,6 +698,7 @@ impl App {
         }
 
         self.data.is_loading = true;
+        self.data.is_llm_loading = true;
         self.data.status_message = "Generating new question...".to_string();
 
         let progress = self.storage.get_progress()?;
@@ -833,6 +845,7 @@ impl App {
         }
 
         self.data.is_loading = false;
+        self.data.is_llm_loading = false;
         Ok(())
     }
 
@@ -856,6 +869,7 @@ impl App {
         }
 
         self.data.is_loading = true;
+        self.data.compilation_error = None;
         self.data.status_message = "Compiling and testing solution...".to_string();
 
         let code = self.data.text_editor.content().to_string();
@@ -868,7 +882,8 @@ impl App {
                 match RustCompiler::new() {
                     Ok(compiler) => *compiler_guard = Some(compiler),
                     Err(e) => {
-                        self.data.status_message = format!("Error initializing compiler: {}", e);
+                        self.data.compilation_error =
+                            Some(format!("Error initializing compiler: {}", e));
                         self.data.is_loading = false;
                         return Ok(());
                     }
@@ -877,33 +892,46 @@ impl App {
         }
 
         // Compile and test
-        let compiler_guard = self.compiler.lock().await;
-        if let Some(compiler) = compiler_guard.as_ref() {
-            match compiler.compile_and_test(&code, &question.test_cases).await {
-                Ok(mut solution) => {
-                    solution.question_id = question.id;
+        let compilation_result = {
+            let compiler_guard = self.compiler.lock().await;
+            if let Some(compiler) = compiler_guard.as_ref() {
+                compiler.compile_and_test(&code, &question.test_cases).await
+            } else {
+                return Ok(());
+            }
+        };
 
-                    // Save solution
-                    self.storage.save_solution(&solution)?;
+        match compilation_result {
+            Ok(mut solution) => {
+                solution.question_id = question.id;
 
-                    // Add to current session
-                    if let Some(session_id) = self.current_session_id {
-                        let _ = self
-                            .storage
-                            .add_solution_to_session(&session_id, &solution.id);
-                    }
+                // Save solution
+                self.storage.save_solution(&solution)?;
 
-                    self.data.current_solution = Some(solution);
-                    self.state = AppState::Results;
-
-                    // Update statistics
-                    if let Ok(stats) = self.storage.get_statistics() {
-                        self.data.statistics = Some(stats);
-                    }
+                // Add to current session
+                if let Some(session_id) = self.current_session_id {
+                    let _ = self
+                        .storage
+                        .add_solution_to_session(&session_id, &solution.id);
                 }
-                Err(e) => {
-                    self.data.status_message = format!("Error compiling solution: {}", e);
+
+                self.data.current_solution = Some(solution.clone());
+                self.state = AppState::Results;
+
+                // Update statistics
+                if let Ok(stats) = self.storage.get_statistics() {
+                    self.data.statistics = Some(stats);
                 }
+
+                // Only generate feedback if all tests passed
+                if solution.status == crate::models::SolutionStatus::Accepted {
+                    self.generate_feedback_for_solution().await?;
+                }
+            }
+            Err(e) => {
+                self.data.compilation_error = Some(e.to_string());
+                self.data.status_message =
+                    "Compilation failed. Check the error details below.".to_string();
             }
         }
 
@@ -917,8 +945,14 @@ impl App {
             &self.data.current_question,
             self.current_session_id,
         ) {
-            let code = self.data.text_editor.content();
-            match client.generate_hint(question, code, session_id).await {
+            self.data.is_llm_loading = true;
+            self.data.status_message = "Generating AI hint...".to_string();
+
+            let client = client.clone();
+            let question = question.clone();
+            let code = self.data.text_editor.content().to_string();
+
+            match client.generate_hint(&question, &code, session_id).await {
                 Ok((hint, usage)) => {
                     self.log_llm_usage(usage).await;
                     self.data.status_message = format!("Hint: {}", hint);
@@ -931,20 +965,26 @@ impl App {
             self.data.status_message =
                 "Gemini API not available or no question loaded.".to_string();
         }
+        self.data.is_llm_loading = false;
         Ok(())
     }
 
-    async fn get_detailed_feedback(&mut self) -> Result<()> {
+    async fn generate_feedback_for_solution(&mut self) -> Result<()> {
         if let (Some(client), Some(solution), Some(question), Some(session_id)) = (
             &self.llm_client,
             &self.data.current_solution,
             &self.data.current_question,
             self.current_session_id,
         ) {
-            self.data.feedback_text = "Generating detailed feedback...".to_string();
+            self.data.is_llm_loading = true;
+            self.data.feedback_text = "Generating AI feedback...".to_string();
+
+            let client = client.clone();
+            let solution = solution.clone();
+            let question = question.clone();
 
             match client
-                .provide_feedback(solution, question, session_id)
+                .provide_feedback(&solution, &question, session_id)
                 .await
             {
                 Ok((feedback, usage)) => {
@@ -959,6 +999,41 @@ impl App {
             self.data.feedback_text =
                 "Cannot generate feedback: missing data or API not available.".to_string();
         }
+        self.data.is_llm_loading = false;
+        Ok(())
+    }
+
+    async fn get_detailed_feedback(&mut self) -> Result<()> {
+        if let (Some(client), Some(solution), Some(question), Some(session_id)) = (
+            &self.llm_client,
+            &self.data.current_solution,
+            &self.data.current_question,
+            self.current_session_id,
+        ) {
+            self.data.is_llm_loading = true;
+            self.data.feedback_text = "Generating detailed feedback...".to_string();
+
+            let client = client.clone();
+            let solution = solution.clone();
+            let question = question.clone();
+
+            match client
+                .provide_feedback(&solution, &question, session_id)
+                .await
+            {
+                Ok((feedback, usage)) => {
+                    self.log_llm_usage(usage).await;
+                    self.data.feedback_text = feedback;
+                }
+                Err(e) => {
+                    self.data.feedback_text = format!("Error generating feedback: {}", e);
+                }
+            }
+        } else {
+            self.data.feedback_text =
+                "Cannot generate feedback: missing data or API not available.".to_string();
+        }
+        self.data.is_llm_loading = false;
         Ok(())
     }
 }

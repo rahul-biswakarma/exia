@@ -55,7 +55,9 @@ pub struct AppData {
     pub hint_index: usize,
     pub feedback_text: String,
     pub status_message: String,
+    pub compilation_error: Option<String>,
     pub is_loading: bool,
+    pub is_llm_loading: bool,
     pub api_calls: Vec<ApiCall>,
     pub error_count: usize,
     pub success_count: usize,
@@ -136,7 +138,9 @@ impl Default for AppData {
             hint_index: 0,
             feedback_text: String::new(),
             status_message: String::new(),
+            compilation_error: None,
             is_loading: false,
+            is_llm_loading: false,
             api_calls: Vec::new(),
             error_count: 0,
             success_count: 0,
@@ -542,26 +546,15 @@ impl UI {
                 let right_chunks = Layout::default()
                     .direction(Direction::Vertical)
                     .constraints([
-                        Constraint::Length(3), // Editor stats
+                        Constraint::Length(3), // Typing speed widget
                         Constraint::Min(0),    // Code editor
                     ])
                     .split(content_chunks[1]);
 
-                // Editor stats (compact)
-                let (cursor_line, cursor_col) = app.data.text_editor.cursor_position();
-                let editor_stats_text = format!(
-                    "{} LINES: {} | CHARS: {} | POS: {}:{}",
-                    EvaSymbols::HEXAGON,
-                    app.data.text_editor.line_count(),
-                    app.data.text_editor.char_count(),
-                    cursor_line + 1,
-                    cursor_col + 1
-                );
-                let editor_stats = Paragraph::new(editor_stats_text)
-                    .style(EvaStyles::text_secondary())
-                    .alignment(Alignment::Center)
-                    .block(EvaBorders::panel().title(EvaFormat::title("CODE EDITOR")));
-                f.render_widget(editor_stats, right_chunks[0]);
+                // Typing speed widget (compact)
+                let eva_typing = EvaTypingWidget::new(&app.data.typing_speed)
+                    .with_theme(app.data.theme_manager.current_theme());
+                eva_typing.render(f, right_chunks[0]);
 
                 // Code editor widget
                 use widgets::*;
@@ -724,58 +717,50 @@ impl UI {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(3), // Stats bar
+                Constraint::Length(3), // Typing speed widget
                 Constraint::Min(10),   // Code editor
                 Constraint::Length(3), // Status/Loading bar
             ])
             .split(area);
 
-        // Split stats bar into two widgets
-        let stats_chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
-            .split(chunks[0]);
-
-        // EVA Unit status (compact display)
-        let eva_status_text = format!(
-            "{} UNIT STATUS: {} VICTORIES | {} DEFEATS | {} OPERATIONS\n{} NEURAL LINK: {} ACTIVE CONNECTIONS",
-            EvaSymbols::OPERATIONAL,
-            app.data.success_count,
-            app.data.error_count,
-            app.data.api_calls.len(),
-            EvaSymbols::HEXAGON,
-            app.data.network_activity.len()
-        );
-
-        let eva_status = Paragraph::new(eva_status_text)
-            .style(EvaStyles::text_secondary())
-            .block(EvaBorders::panel().title(EvaFormat::title("EVA UNIT-01")));
-        f.render_widget(eva_status, stats_chunks[0]);
-
-        // Entry Plug Interface (typing speed)
+        // Typing speed widget (full width)
         let eva_typing = EvaTypingWidget::new(&app.data.typing_speed)
             .with_theme(app.data.theme_manager.current_theme());
-        eva_typing.render(f, stats_chunks[1]);
+        eva_typing.render(f, chunks[0]);
 
         // Enhanced code editor widget
         let code_editor_widget =
             CodeEditorWidget::new(&app.data.text_editor).with_language(CodeLanguage::Rust);
         code_editor_widget.render(f, chunks[1]);
 
-        // Loading/Status widget
-        let status_message = if app.data.is_loading {
-            "COMPILING EVA UNIT COMBAT PROTOCOLS".to_string()
+        // Status/Loading widget
+        let (status_message, is_loading, operation_type) = if app.data.is_llm_loading {
+            (
+                "NEURAL NETWORK PROCESSING - GENERATING FEEDBACK".to_string(),
+                true,
+                EvaOperationType::MagiCalculation,
+            )
+        } else if app.data.is_loading {
+            (
+                "COMPILING EVA UNIT COMBAT PROTOCOLS".to_string(),
+                true,
+                EvaOperationType::EvaActivation,
+            )
+        } else if let Some(ref error) = app.data.compilation_error {
+            (
+                format!("COMPILATION ERROR: {}", error),
+                false,
+                EvaOperationType::SyncTest,
+            )
         } else {
-            "ENTRY PLUG SYNCHRONIZED - AWAITING PILOT COMMANDS".to_string()
+            (
+                "ENTRY PLUG SYNCHRONIZED - AWAITING PILOT COMMANDS".to_string(),
+                false,
+                EvaOperationType::SyncTest,
+            )
         };
 
-        let operation_type = if app.data.is_loading {
-            EvaOperationType::EvaActivation
-        } else {
-            EvaOperationType::SyncTest
-        };
-
-        let eva_loading = EvaLoadingWidget::new(status_message, app.data.is_loading)
+        let eva_loading = EvaLoadingWidget::new(status_message, is_loading)
             .with_theme(app.data.theme_manager.current_theme())
             .with_operation_type(operation_type);
         eva_loading.render(f, chunks[2]);
