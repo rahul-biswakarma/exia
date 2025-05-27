@@ -1,10 +1,12 @@
-use crate::models::{Difficulty, LearningProgress, Question, Solution, TestCase, Topic};
+use crate::models::{
+    Difficulty, LLMRequestType, LLMUsage, LearningProgress, Question, Solution, TestCase, Topic,
+};
 use anyhow::{anyhow, Result};
 use chrono::Utc;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-// use serde_json::json;
 use std::env;
+use std::time::Instant;
 use uuid::Uuid;
 
 #[derive(Clone)]
@@ -82,30 +84,102 @@ impl GeminiClient {
         })
     }
 
-    pub async fn generate_question(&self, progress: &LearningProgress) -> Result<Question> {
+    pub async fn generate_question(
+        &self,
+        progress: &LearningProgress,
+        session_id: Uuid,
+    ) -> Result<(Question, LLMUsage)> {
         let prompt = self.create_question_prompt(progress);
-        let response = self.call_gemini(&prompt).await?;
-        self.parse_question_response(&response)
+        let (response, usage) = self
+            .call_gemini_with_tracking(&prompt, LLMRequestType::QuestionGeneration, session_id)
+            .await?;
+        let question = self.parse_question_response(&response)?;
+        Ok((question, usage))
     }
 
     pub async fn provide_feedback(
         &self,
         solution: &Solution,
         question: &Question,
-    ) -> Result<String> {
+        session_id: Uuid,
+    ) -> Result<(String, LLMUsage)> {
         let prompt = self.create_feedback_prompt(solution, question);
-        let response = self.call_gemini(&prompt).await?;
-        Ok(response)
+        let (response, usage) = self
+            .call_gemini_with_tracking(&prompt, LLMRequestType::FeedbackGeneration, session_id)
+            .await?;
+        Ok((response, usage))
     }
 
-    pub async fn generate_hint(&self, question: &Question, current_code: &str) -> Result<String> {
+    pub async fn generate_hint(
+        &self,
+        question: &Question,
+        current_code: &str,
+        session_id: Uuid,
+    ) -> Result<(String, LLMUsage)> {
         let prompt = format!(
             "Given this DSA problem:\n\nTitle: {}\nDescription: {}\n\nAnd the current code attempt:\n```rust\n{}\n```\n\nProvide a helpful hint to guide the solution without giving away the complete answer. Focus on the approach or a specific technique that might help.",
             question.title, question.description, current_code
         );
 
-        let response = self.call_gemini(&prompt).await?;
-        Ok(response)
+        let (response, usage) = self
+            .call_gemini_with_tracking(&prompt, LLMRequestType::HintGeneration, session_id)
+            .await?;
+        Ok((response, usage))
+    }
+
+    async fn call_gemini_with_tracking(
+        &self,
+        prompt: &str,
+        request_type: LLMRequestType,
+        session_id: Uuid,
+    ) -> Result<(String, LLMUsage)> {
+        let start_time = Instant::now();
+        let input_tokens = self.estimate_tokens(prompt);
+
+        let result = self.call_gemini(prompt).await;
+        let latency_ms = start_time.elapsed().as_millis() as u64;
+
+        let (response, success, error_message) = match result {
+            Ok(resp) => (resp, true, None),
+            Err(e) => (String::new(), false, Some(e.to_string())),
+        };
+
+        let output_tokens = if success {
+            self.estimate_tokens(&response)
+        } else {
+            0
+        };
+        let total_tokens = input_tokens + output_tokens;
+
+        // Gemini 2.5 Flash pricing (as of 2024)
+        // Input: $0.075 per 1M tokens, Output: $0.30 per 1M tokens
+        let cost_usd = (input_tokens as f64 * 0.075 / 1_000_000.0)
+            + (output_tokens as f64 * 0.30 / 1_000_000.0);
+
+        let usage = LLMUsage {
+            id: Uuid::new_v4(),
+            session_id,
+            timestamp: Utc::now(),
+            model_name: "gemini-2.5-flash-preview-05-20".to_string(),
+            endpoint: self.base_url.clone(),
+            input_tokens,
+            output_tokens,
+            total_tokens,
+            cost_usd,
+            latency_ms,
+            request_type,
+            success,
+            error_message,
+        };
+
+        if success {
+            Ok((response, usage))
+        } else {
+            Err(anyhow!(
+                "LLM request failed: {}",
+                usage.error_message.unwrap_or_default()
+            ))
+        }
     }
 
     async fn call_gemini(&self, prompt: &str) -> Result<String> {
@@ -311,5 +385,11 @@ Keep the feedback constructive and educational."#,
             test_cases,
             created_at: Utc::now(),
         })
+    }
+
+    fn estimate_tokens(&self, text: &str) -> u32 {
+        // Rough estimation: ~4 characters per token for English text
+        // This is a simplified estimation; real tokenization would be more accurate
+        (text.len() as f32 / 4.0).ceil() as u32
     }
 }

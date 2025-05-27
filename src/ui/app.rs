@@ -1,11 +1,15 @@
-use super::{ApiCall, ApiCallStatus, AppData, AppState};
+use super::{
+    ApiCall, ApiCallStatus, AppData, AppState, NetworkActivity, NetworkActivityType, NetworkStatus,
+};
 use crate::compiler::RustCompiler;
 use crate::llm::GeminiClient;
-// use crate::models::{Question, Solution, SolutionStatus};
+use crate::models::{ActionContext, ActionType, LLMUsage, UserAction};
 use crate::storage::Storage;
 use anyhow::Result;
 use crossterm::event::{Event, KeyCode, KeyModifiers};
+use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Instant;
 use tokio::sync::Mutex;
 use tui_input::backend::crossterm::EventHandler;
 use uuid::Uuid;
@@ -18,18 +22,139 @@ pub struct App {
     llm_client: Option<GeminiClient>,
     compiler: Arc<Mutex<Option<RustCompiler>>>,
     current_session_id: Option<Uuid>,
+    user_id: String,
+    action_start_time: Option<Instant>,
 }
 
 impl App {
+    async fn log_user_action(
+        &mut self,
+        action_type: ActionType,
+        screen: &str,
+        element: Option<&str>,
+        previous_screen: Option<&str>,
+    ) {
+        if let Some(session_id) = self.current_session_id {
+            let duration_ms = self
+                .action_start_time
+                .map(|start| start.elapsed().as_millis() as u64);
+
+            let mut metadata = HashMap::new();
+            metadata.insert("user_id".to_string(), self.user_id.clone());
+            metadata.insert("app_state".to_string(), format!("{:?}", self.state));
+
+            let action = UserAction {
+                id: Uuid::new_v4(),
+                session_id,
+                timestamp: chrono::Utc::now(),
+                action_type,
+                context: ActionContext {
+                    screen: screen.to_string(),
+                    element: element.map(|s| s.to_string()),
+                    previous_screen: previous_screen.map(|s| s.to_string()),
+                    question_id: self.data.current_question.as_ref().map(|q| q.id),
+                    solution_id: self.data.current_solution.as_ref().map(|s| s.id),
+                },
+                duration_ms,
+                metadata,
+            };
+
+            let _ = self.storage.save_user_action(&action);
+            self.action_start_time = Some(Instant::now());
+        }
+    }
+
+    async fn log_llm_usage(&mut self, usage: LLMUsage) {
+        self.data.current_llm_usage.push(usage.clone());
+        let _ = self.storage.save_llm_usage(&usage);
+
+        // Update cost analytics
+        if let Ok(cost_analytics) = self.storage.get_cost_analytics() {
+            self.data.cost_analytics = Some(cost_analytics);
+        }
+    }
+
+    fn log_network_activity(
+        &mut self,
+        endpoint: &str,
+        activity_type: NetworkActivityType,
+        status: NetworkStatus,
+        latency_ms: u64,
+    ) {
+        let activity = NetworkActivity {
+            timestamp: chrono::Utc::now().format("%H:%M:%S").to_string(),
+            activity_type,
+            endpoint: endpoint.to_string(),
+            status,
+            latency_ms,
+            bytes_sent: 0, // Could be enhanced to track actual bytes
+            bytes_received: 0,
+        };
+
+        self.data.network_activity.push(activity);
+
+        // Keep only last 10 activities
+        if self.data.network_activity.len() > 10 {
+            self.data.network_activity.remove(0);
+        }
+    }
+
+    fn update_typing_speed(&mut self, char_count: usize) {
+        let now = Instant::now();
+
+        if let Some(last_keystroke) = self.data.typing_speed.last_keystroke {
+            let interval_ms = now.duration_since(last_keystroke).as_millis() as u64;
+
+            // Add interval to history
+            self.data.typing_speed.keystroke_intervals.push(interval_ms);
+
+            // Keep only last 10 intervals for WPM calculation
+            if self.data.typing_speed.keystroke_intervals.len() > 10 {
+                self.data.typing_speed.keystroke_intervals.remove(0);
+            }
+
+            // Calculate current WPM based on recent intervals
+            if self.data.typing_speed.keystroke_intervals.len() >= 2 {
+                let total_time_ms: u64 = self.data.typing_speed.keystroke_intervals.iter().sum();
+                let avg_interval_ms =
+                    total_time_ms as f64 / self.data.typing_speed.keystroke_intervals.len() as f64;
+
+                if avg_interval_ms > 0.0 {
+                    // WPM = (characters per minute) / 5 (average word length)
+                    let chars_per_minute = 60000.0 / avg_interval_ms;
+                    self.data.typing_speed.current_wpm = chars_per_minute / 5.0;
+                }
+            }
+        }
+
+        // Update totals
+        self.data.typing_speed.total_characters += char_count as u64;
+        self.data.typing_speed.last_keystroke = Some(now);
+
+        // Update average WPM
+        if self.data.typing_speed.total_time_ms > 0 {
+            let total_minutes = self.data.typing_speed.total_time_ms as f64 / 60000.0;
+            let total_words = self.data.typing_speed.total_characters as f64 / 5.0;
+            self.data.typing_speed.average_wpm = total_words / total_minutes;
+        }
+    }
+
     fn log_api_call(&mut self, endpoint: &str, status: ApiCallStatus, message: &str) {
         let timestamp = chrono::Utc::now().format("%H:%M:%S").to_string();
         let api_call = ApiCall {
             timestamp,
             endpoint: endpoint.to_string(),
-            status,
+            status: status.clone(),
             message: message.to_string(),
         };
         self.data.api_calls.push(api_call);
+
+        // Update error/success counters
+        match status {
+            ApiCallStatus::Success => self.data.success_count += 1,
+            ApiCallStatus::Error => self.data.error_count += 1,
+            ApiCallStatus::Pending => {} // Don't count pending
+        }
 
         // Keep only last 10 calls
         if self.data.api_calls.len() > 10 {
@@ -46,6 +171,8 @@ impl App {
             Err(_) => None,
         };
 
+        let user_id = format!("user_{}", Uuid::new_v4().to_string()[..8].to_string());
+
         let mut app = Self {
             state: AppState::Home,
             data: AppData::default(),
@@ -54,6 +181,8 @@ impl App {
             llm_client,
             compiler: Arc::new(Mutex::new(None)),
             current_session_id: None,
+            user_id: user_id.clone(),
+            action_start_time: None,
         };
 
         // Load initial statistics
@@ -64,6 +193,17 @@ impl App {
         // Start a new session
         if let Ok(session) = app.storage.start_session() {
             app.current_session_id = Some(session.id);
+
+            // Note: Session start logging will be done after app is created
+        }
+
+        // Load analytics data
+        if let Ok(cost_analytics) = app.storage.get_cost_analytics() {
+            app.data.cost_analytics = Some(cost_analytics);
+        }
+
+        if let Ok(user_analytics) = app.storage.get_user_analytics(&user_id) {
+            app.data.user_analytics = Some(user_analytics);
         }
 
         Ok(app)
@@ -182,12 +322,59 @@ impl App {
         match key {
             KeyCode::Char('c') => {
                 self.state = AppState::CodeEditor;
-                // Initialize code editor with a template if empty
+                // Initialize code editor with a better template if empty
                 if self.data.code_input.value().is_empty() {
-                    let template = r#"fn solution(input: &str) -> String {
+                    let template = if let Some(question) = &self.data.current_question {
+                        match question.topic {
+                            crate::models::Topic::Arrays => {
+                                r#"fn solution(input: &str) -> String {
+    // Parse input - example for array problems
+    let nums: Vec<i32> = input
+        .trim()
+        .split_whitespace()
+        .map(|s| s.parse().unwrap())
+        .collect();
+
     // Your solution here
+    // TODO: Implement your algorithm
+
+    // Return result as string
+    "0".to_string()
+}"#
+                            }
+                            crate::models::Topic::Strings => {
+                                r#"fn solution(input: &str) -> String {
+    // Parse input string
+    let s = input.trim();
+
+    // Your solution here
+    // TODO: Implement your string algorithm
+
+    // Return result
+    s.to_string()
+}"#
+                            }
+                            _ => {
+                                r#"fn solution(input: &str) -> String {
+    // Parse input based on problem requirements
+    let data = input.trim();
+
+    // Your solution here
+    // TODO: Implement your algorithm
+
+    // Return result as string
+    "0".to_string()
+}"#
+                            }
+                        }
+                    } else {
+                        r#"fn solution(input: &str) -> String {
+    // Your solution here
+    // TODO: Implement your algorithm
+
     input.to_string()
-}"#;
+}"#
+                    };
                     self.data.code_input = tui_input::Input::new(template.to_string());
                 }
             }
@@ -313,32 +500,85 @@ impl App {
             let client = client.clone(); // Clone the client to avoid borrowing issues
             self.log_api_call("gemini_api", ApiCallStatus::Pending, "Calling Gemini API");
 
-            match client.generate_question(&progress).await {
-                Ok(question) => {
-                    self.log_api_call("gemini_api", ApiCallStatus::Success, "Question generated");
+            // Log network activity start
+            self.log_network_activity(
+                "Gemini API",
+                NetworkActivityType::ApiCall,
+                NetworkStatus::InProgress,
+                0,
+            );
 
-                    // Save question to storage
-                    self.storage.save_question(&question)?;
+            if let Some(session_id) = self.current_session_id {
+                let start_time = Instant::now();
+                match client.generate_question(&progress, session_id).await {
+                    Ok((question, usage)) => {
+                        let latency = start_time.elapsed().as_millis() as u64;
 
-                    // Add to current session
-                    if let Some(session_id) = self.current_session_id {
+                        self.log_api_call(
+                            "gemini_api",
+                            ApiCallStatus::Success,
+                            "Question generated",
+                        );
+                        self.log_llm_usage(usage).await;
+
+                        // Log successful network activity
+                        self.log_network_activity(
+                            "Gemini API",
+                            NetworkActivityType::ApiCall,
+                            NetworkStatus::Success,
+                            latency,
+                        );
+
+                        // Save question to storage
+                        self.storage.save_question(&question)?;
+
+                        // Add to current session
                         let _ = self
                             .storage
                             .add_question_to_session(&session_id, &question.id);
-                    }
 
-                    self.data.current_question = Some(question);
-                    self.state = AppState::QuestionView;
-                    self.data.status_message = "Question generated successfully!".to_string();
-                    self.log_api_call("generate_question", ApiCallStatus::Success, "Complete");
-                }
-                Err(e) => {
-                    self.log_api_call(
-                        "gemini_api",
-                        ApiCallStatus::Error,
-                        &format!("API Error: {}", e),
-                    );
-                    self.data.status_message = format!("Error generating question: {}", e);
+                        self.data.current_question = Some(question);
+                        self.state = AppState::QuestionView;
+                        self.data.status_message = "Question generated successfully!".to_string();
+                        self.log_api_call("generate_question", ApiCallStatus::Success, "Complete");
+
+                        // Log navigation action
+                        self.log_user_action(
+                            ActionType::Navigation,
+                            "QuestionView",
+                            None,
+                            Some("Home"),
+                        )
+                        .await;
+                    }
+                    Err(e) => {
+                        let latency = start_time.elapsed().as_millis() as u64;
+
+                        self.log_api_call(
+                            "gemini_api",
+                            ApiCallStatus::Error,
+                            &format!("API Error: {}", e),
+                        );
+
+                        // Log failed network activity
+                        self.log_network_activity(
+                            "Gemini API",
+                            NetworkActivityType::ApiCall,
+                            NetworkStatus::Failed,
+                            latency,
+                        );
+
+                        self.data.status_message = format!("Error generating question: {}", e);
+
+                        // Log error action
+                        self.log_user_action(
+                            ActionType::Error,
+                            "Home",
+                            Some("question_generation"),
+                            None,
+                        )
+                        .await;
+                    }
                 }
             }
         }
@@ -441,10 +681,15 @@ impl App {
     }
 
     async fn get_hint_for_code(&mut self) -> Result<()> {
-        if let (Some(client), Some(question)) = (&self.llm_client, &self.data.current_question) {
+        if let (Some(client), Some(question), Some(session_id)) = (
+            &self.llm_client,
+            &self.data.current_question,
+            self.current_session_id,
+        ) {
             let code = self.data.code_input.value();
-            match client.generate_hint(question, code).await {
-                Ok(hint) => {
+            match client.generate_hint(question, code, session_id).await {
+                Ok((hint, usage)) => {
+                    self.log_llm_usage(usage).await;
                     self.data.status_message = format!("Hint: {}", hint);
                 }
                 Err(e) => {
@@ -459,15 +704,20 @@ impl App {
     }
 
     async fn get_detailed_feedback(&mut self) -> Result<()> {
-        if let (Some(client), Some(solution), Some(question)) = (
+        if let (Some(client), Some(solution), Some(question), Some(session_id)) = (
             &self.llm_client,
             &self.data.current_solution,
             &self.data.current_question,
+            self.current_session_id,
         ) {
             self.data.feedback_text = "Generating detailed feedback...".to_string();
 
-            match client.provide_feedback(solution, question).await {
-                Ok(feedback) => {
+            match client
+                .provide_feedback(solution, question, session_id)
+                .await
+            {
+                Ok((feedback, usage)) => {
+                    self.log_llm_usage(usage).await;
                     self.data.feedback_text = feedback;
                 }
                 Err(e) => {

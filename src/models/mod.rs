@@ -117,6 +117,123 @@ pub struct Session {
     pub solutions_submitted: Vec<Uuid>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LLMUsage {
+    pub id: Uuid,
+    pub session_id: Uuid,
+    pub timestamp: DateTime<Utc>,
+    pub model_name: String,
+    pub endpoint: String,
+    pub input_tokens: u32,
+    pub output_tokens: u32,
+    pub total_tokens: u32,
+    pub cost_usd: f64,
+    pub latency_ms: u64,
+    pub request_type: LLMRequestType,
+    pub success: bool,
+    pub error_message: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum LLMRequestType {
+    QuestionGeneration,
+    HintGeneration,
+    FeedbackGeneration,
+    CodeAnalysis,
+    Other(String),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserAction {
+    pub id: Uuid,
+    pub session_id: Uuid,
+    pub timestamp: DateTime<Utc>,
+    pub action_type: ActionType,
+    pub context: ActionContext,
+    pub duration_ms: Option<u64>,
+    pub metadata: std::collections::HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ActionType {
+    Navigation,
+    KeyPress,
+    CodeEdit,
+    QuestionGeneration,
+    SolutionSubmission,
+    HintRequest,
+    FeedbackRequest,
+    ScrollAction,
+    TabSwitch,
+    SessionStart,
+    SessionEnd,
+    Error,
+    Other(String),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ActionContext {
+    pub screen: String,
+    pub element: Option<String>,
+    pub previous_screen: Option<String>,
+    pub question_id: Option<Uuid>,
+    pub solution_id: Option<Uuid>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserBehaviorPattern {
+    pub id: Uuid,
+    pub user_id: String, // Could be device ID or user identifier
+    pub pattern_type: BehaviorPatternType,
+    pub frequency: u32,
+    pub last_occurrence: DateTime<Utc>,
+    pub confidence_score: f64,
+    pub metadata: std::collections::HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum BehaviorPatternType {
+    FrequentKeySequence,
+    NavigationPattern,
+    CodingStyle,
+    ErrorPattern,
+    TimePattern,
+    PerformancePattern,
+    Other(String),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CostAnalytics {
+    pub total_cost_usd: f64,
+    pub cost_by_model: std::collections::HashMap<String, f64>,
+    pub cost_by_request_type: std::collections::HashMap<String, f64>,
+    pub tokens_used: u64,
+    pub requests_count: u64,
+    pub average_cost_per_request: f64,
+    pub cost_trend: Vec<CostDataPoint>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CostDataPoint {
+    pub timestamp: DateTime<Utc>,
+    pub cumulative_cost: f64,
+    pub session_cost: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserAnalytics {
+    pub user_id: String,
+    pub total_sessions: u64,
+    pub total_time_spent_ms: u64,
+    pub actions_count: u64,
+    pub most_used_features: Vec<(String, u64)>,
+    pub error_rate: f64,
+    pub productivity_score: f64,
+    pub learning_velocity: f64,
+    pub behavior_patterns: Vec<UserBehaviorPattern>,
+    pub cost_analytics: CostAnalytics,
+}
+
 impl std::fmt::Display for Difficulty {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

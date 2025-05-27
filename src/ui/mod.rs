@@ -1,4 +1,4 @@
-use crate::models::{Question, Solution, SolutionStatus};
+use crate::models::{CostAnalytics, LLMUsage, Question, Solution, SolutionStatus, UserAnalytics};
 use crate::storage::Statistics;
 use anyhow::Result;
 use crossterm::{
@@ -50,6 +50,13 @@ pub struct AppData {
     pub status_message: String,
     pub is_loading: bool,
     pub api_calls: Vec<ApiCall>,
+    pub error_count: usize,
+    pub success_count: usize,
+    pub cost_analytics: Option<CostAnalytics>,
+    pub user_analytics: Option<UserAnalytics>,
+    pub current_llm_usage: Vec<LLMUsage>,
+    pub network_activity: Vec<NetworkActivity>,
+    pub typing_speed: TypingMetrics,
 }
 
 #[derive(Debug, Clone)]
@@ -65,6 +72,43 @@ pub enum ApiCallStatus {
     Pending,
     Success,
     Error,
+}
+
+#[derive(Debug, Clone)]
+pub struct NetworkActivity {
+    pub timestamp: String,
+    pub activity_type: NetworkActivityType,
+    pub endpoint: String,
+    pub status: NetworkStatus,
+    pub latency_ms: u64,
+    pub bytes_sent: u64,
+    pub bytes_received: u64,
+}
+
+#[derive(Debug, Clone)]
+pub enum NetworkActivityType {
+    ApiCall,
+    DataSync,
+    FileUpload,
+    FileDownload,
+}
+
+#[derive(Debug, Clone)]
+pub enum NetworkStatus {
+    InProgress,
+    Success,
+    Failed,
+    Timeout,
+}
+
+#[derive(Debug, Clone)]
+pub struct TypingMetrics {
+    pub current_wpm: f64,
+    pub average_wpm: f64,
+    pub total_characters: u64,
+    pub total_time_ms: u64,
+    pub last_keystroke: Option<std::time::Instant>,
+    pub keystroke_intervals: Vec<u64>, // Last 10 intervals for WPM calculation
 }
 
 impl Default for AppData {
@@ -84,6 +128,20 @@ impl Default for AppData {
             status_message: String::new(),
             is_loading: false,
             api_calls: Vec::new(),
+            error_count: 0,
+            success_count: 0,
+            cost_analytics: None,
+            user_analytics: None,
+            current_llm_usage: Vec::new(),
+            network_activity: Vec::new(),
+            typing_speed: TypingMetrics {
+                current_wpm: 0.0,
+                average_wpm: 0.0,
+                total_characters: 0,
+                total_time_ms: 0,
+                last_keystroke: None,
+                keystroke_intervals: Vec::new(),
+            },
         }
     }
 }
@@ -225,10 +283,11 @@ impl UI {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(3),
-                Constraint::Length(3),
-                Constraint::Length(3),
-                Constraint::Min(0),
+                Constraint::Length(3), // Success rate
+                Constraint::Length(3), // Streak
+                Constraint::Length(5), // Enhanced stats with cost
+                Constraint::Length(4), // Network activity
+                Constraint::Min(0),    // API calls debug
             ])
             .split(area.inner(&Margin {
                 vertical: 1,
@@ -252,25 +311,89 @@ impl UI {
             .block(Block::default().borders(Borders::ALL));
         f.render_widget(streak, chunks[1]);
 
-        // Quick stats
-        let stats_text = format!(
-            "📝 Total Questions: {}\n✅ Solved: {}\n⏱️ Avg Time: {:.1}ms",
-            stats.total_questions, stats.accepted_solutions, stats.avg_execution_time
-        );
+        // Enhanced stats with cost analytics
+        let stats_text = if let Some(cost_analytics) = &app.data.cost_analytics {
+            format!(
+                "📝 Total Questions: {}\n✅ Solved: {}\n⏱️ Avg Time: {:.1}ms\n💰 Total Cost: ${:.4}\n🎯 Tokens Used: {}",
+                stats.total_questions,
+                stats.accepted_solutions,
+                stats.avg_execution_time,
+                cost_analytics.total_cost_usd,
+                cost_analytics.tokens_used
+            )
+        } else {
+            format!(
+                "📝 Total Questions: {}\n✅ Solved: {}\n⏱️ Avg Time: {:.1}ms\n💰 Loading cost data...",
+                stats.total_questions, stats.accepted_solutions, stats.avg_execution_time
+            )
+        };
         let quick_stats = Paragraph::new(stats_text)
             .style(Style::default().fg(Color::Cyan))
             .block(Block::default().title("Quick Stats").borders(Borders::ALL));
         f.render_widget(quick_stats, chunks[2]);
 
-        // API Calls Debug Panel
+        // Network Activity Widget
+        let network_text = if app.data.network_activity.is_empty() {
+            "🌐 No network activity yet".to_string()
+        } else {
+            app.data
+                .network_activity
+                .iter()
+                .rev()
+                .take(2)
+                .map(|activity| {
+                    let status_icon = match activity.status {
+                        NetworkStatus::InProgress => "🔄",
+                        NetworkStatus::Success => "✅",
+                        NetworkStatus::Failed => "❌",
+                        NetworkStatus::Timeout => "⏰",
+                    };
+                    format!(
+                        "{} {} ({}ms)",
+                        status_icon, activity.endpoint, activity.latency_ms
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
+
+        let network_widget = Paragraph::new(network_text)
+            .style(Style::default().fg(Color::Green))
+            .block(
+                Block::default()
+                    .title("🌐 Network Activity")
+                    .borders(Borders::ALL),
+            );
+        f.render_widget(network_widget, chunks[3]);
+
+        // API Calls Debug Panel with Loading Animation
         let api_calls_text = if app.data.api_calls.is_empty() {
             "No API calls yet\nPress 'g' to generate a question".to_string()
         } else {
-            app.data
+            let loading_animation = if app.data.is_loading {
+                let dots = match (std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis()
+                    / 500)
+                    % 4
+                {
+                    0 => "",
+                    1 => ".",
+                    2 => "..",
+                    _ => "...",
+                };
+                format!("🔄 Loading{}\n", dots)
+            } else {
+                String::new()
+            };
+
+            let calls_text = app
+                .data
                 .api_calls
                 .iter()
                 .rev()
-                .take(5)
+                .take(4)
                 .map(|call| {
                     let status_icon = match call.status {
                         ApiCallStatus::Pending => "⏳",
@@ -280,7 +403,9 @@ impl UI {
                     format!("{} {} {}", status_icon, call.endpoint, call.message)
                 })
                 .collect::<Vec<_>>()
-                .join("\n")
+                .join("\n");
+
+            format!("{}{}", loading_animation, calls_text)
         };
 
         let api_debug = Paragraph::new(api_calls_text)
@@ -291,7 +416,7 @@ impl UI {
                     .title("API Calls Debug")
                     .borders(Borders::ALL),
             );
-        f.render_widget(api_debug, chunks[3]);
+        f.render_widget(api_debug, chunks[4]);
     }
 
     fn render_question_view(&self, f: &mut Frame, area: Rect, app: &App) {
@@ -413,28 +538,78 @@ impl UI {
     fn render_code_editor(&self, f: &mut Frame, area: Rect, app: &App) {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Min(10), Constraint::Length(3)])
+            .constraints([
+                Constraint::Length(3), // Stats bar
+                Constraint::Min(10),   // Code editor
+                Constraint::Length(3), // Status bar
+            ])
             .split(area);
 
-        // Code input area
+        // Enhanced stats bar with typing speed
+        let stats_text = format!(
+            "✅ Success: {} | ❌ Errors: {} | 📊 API: {} | ⌨️ WPM: {:.1} | 🌐 Network: {}",
+            app.data.success_count,
+            app.data.error_count,
+            app.data.api_calls.len(),
+            app.data.typing_speed.current_wpm,
+            app.data.network_activity.len()
+        );
+        let stats_bar = Paragraph::new(stats_text)
+            .style(Style::default().fg(Color::Cyan))
+            .alignment(Alignment::Center)
+            .block(
+                Block::default()
+                    .title("Session Stats")
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(Color::Cyan)),
+            );
+        f.render_widget(stats_bar, chunks[0]);
+
+        // Enhanced code input area with line numbers
         let code_text = app.data.code_input.value();
-        let code_editor = Paragraph::new(code_text)
+        let lines: Vec<&str> = code_text.lines().collect();
+        let line_count = lines.len().max(1);
+
+        // Add line numbers and syntax highlighting hints
+        let formatted_code = lines
+            .iter()
+            .enumerate()
+            .map(|(i, line)| {
+                let line_num = format!("{:3} │ ", i + 1);
+                format!("{}{}", line_num, line)
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        let code_editor = Paragraph::new(formatted_code)
             .style(Style::default().fg(Color::White))
             .wrap(Wrap { trim: false })
             .scroll((app.data.scroll_offset as u16, 0))
             .block(
                 Block::default()
-                    .title("Code Editor (Rust)")
+                    .title(format!("🦀 Rust Code Editor (Lines: {})", line_count))
                     .borders(Borders::ALL)
                     .border_style(Style::default().fg(Color::Green)),
             );
-        f.render_widget(code_editor, chunks[0]);
+        f.render_widget(code_editor, chunks[1]);
 
-        // Status bar
+        // Enhanced status bar with loading animation
         let status_text = if app.data.is_loading {
-            "⏳ Compiling and testing..."
+            let dots = match (std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+                / 300)
+                % 4
+            {
+                0 => "⏳ Compiling",
+                1 => "⏳ Compiling.",
+                2 => "⏳ Compiling..",
+                _ => "⏳ Compiling...",
+            };
+            dots
         } else {
-            "💡 Press Ctrl+S to submit | Ctrl+H for hint | Esc to go back"
+            "💡 Ctrl+S: Submit | Ctrl+H: Hint | Ctrl+C: Clear | Esc: Back"
         };
 
         let status_bar = Paragraph::new(status_text)
@@ -445,7 +620,7 @@ impl UI {
                     .borders(Borders::ALL)
                     .border_style(Style::default().fg(Color::Blue)),
             );
-        f.render_widget(status_bar, chunks[1]);
+        f.render_widget(status_bar, chunks[2]);
     }
 
     fn render_results(&self, f: &mut Frame, area: Rect, app: &App) {
