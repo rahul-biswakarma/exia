@@ -16,10 +16,11 @@ use ratatui::{
 use std::io;
 
 use widgets::{
-    CornerDecorationWidget, DecoratedBlock, EvaBorders, EvaColors, EvaFormat, EvaLoadingWidget,
-    EvaOperationType, EvaProgressWidget, EvaStyles, EvaSymbols, EvaTypingWidget, HomeLayoutWidget,
-    LLMCallInfo, LLMCallWidget, LLMStreamInfo, LLMStreamStatus, SystemMetrics, TextEditor, Theme,
-    ThemeManager,
+    CornerDecorationWidget, DecoratedBlock, EvaBorders, EvaColors, EvaFormat, // EvaLoadingWidget, EvaOperationType, EvaProgressWidget removed
+    EvaStyles, EvaSymbols, // EvaTypingWidget removed. Eva* specific items might be removed later
+    HomeLayoutWidget, LLMCallInfo, LLMCallWidget, LLMStreamInfo, LLMStreamStatus, SystemMetrics,
+    TextEditor, Theme, ThemeManager, LoadingOperationType, ThemedLoadingWidget,
+    ThemedProgressWidget, ThemedTypingIndicatorWidget, // Added new types
 };
 
 pub mod app;
@@ -256,10 +257,14 @@ impl UI {
 
         let content_area = if app.data.is_loading {
             // Show loading indicator at the top
-            let loading_widget =
-                EvaLoadingWidget::new(app.data.status_message.clone(), app.data.is_loading)
-                    .with_theme(app.data.theme_manager.current_theme());
-            loading_widget.render(f, main_chunks[0]);
+            let loading_widget = ThemedLoadingWidget::new(
+                app.data.status_message.clone(),
+                app.data.is_loading,
+                app.data.theme_manager.current_theme(),
+            );
+            // Assuming ThemedLoadingWidget now implements the Widget trait directly for render
+            // If it needs to be rendered as &ThemedLoadingWidget, adjust accordingly.
+            f.render_widget(&loading_widget, main_chunks[0]);
             main_chunks[1]
         } else {
             area
@@ -319,10 +324,13 @@ impl UI {
             home_layout.render(f, content_area);
         } else {
             // Fallback to loading widget
-            let loading_widget = EvaLoadingWidget::new("Loading Statistics".to_string(), true)
-                .with_theme(app.data.theme_manager.current_theme())
-                .with_operation_type(EvaOperationType::MagiCalculation);
-            loading_widget.render(f, content_area);
+            let loading_widget = ThemedLoadingWidget::new(
+                "Loading Statistics".to_string(),
+                true,
+                app.data.theme_manager.current_theme(),
+            )
+            .with_operation_type(LoadingOperationType::MagiCalculation);
+            f.render_widget(&loading_widget, content_area);
         }
     }
 
@@ -510,16 +518,16 @@ impl UI {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(6), // Progress overview widget
+                Constraint::Length(8), // Changed to accommodate ThemedProgressWidget's typical main display height
                 Constraint::Length(5), // Network activity widget
                 Constraint::Min(0),    // API debug widget
             ])
             .split(area);
 
-        // Progress overview widget
-        let progress_widget = ProgressOverviewWidget::new(stats)
+        // Progress overview widget (now ThemedProgressWidget)
+        let progress_widget = ThemedProgressWidget::new(stats, app.data.theme_manager.current_theme())
             .with_cost_analytics(app.data.cost_analytics.as_ref())
-            .with_details(false);
+            .with_details(false); // Assuming 'false' shows the main_display
         progress_widget.render(f, chunks[0]);
 
         // Network activity widget
@@ -550,9 +558,9 @@ impl UI {
 
                 // Question title (full width)
                 let difficulty_symbol = match question.difficulty {
-                    crate::models::Difficulty::Easy => EvaSymbols::OPERATIONAL,
-                    crate::models::Difficulty::Medium => EvaSymbols::WARNING,
-                    crate::models::Difficulty::Hard => EvaSymbols::CRITICAL,
+                    crate::models::Difficulty::Easy => self.theme(app).symbols().operational(),
+                    crate::models::Difficulty::Medium => self.theme(app).symbols().warning(),
+                    crate::models::Difficulty::Hard => self.theme(app).symbols().critical(),
                 };
 
                 let title_text = format!(
@@ -560,9 +568,9 @@ impl UI {
                     difficulty_symbol, question.title, question.difficulty, question.topic
                 );
                 let title = Paragraph::new(title_text)
-                    .style(EvaStyles::text_highlight())
+                    .style(self.theme(app).styles().text_highlight())
                     .alignment(Alignment::Center)
-                    .block(EvaBorders::header("ALGORITHM BRIEFING"));
+                    .block(self.theme(app).borders().header_block("ALGORITHM BRIEFING"));
                 f.render_widget(title, main_chunks[0]);
 
                 // Split main content horizontally
@@ -583,20 +591,20 @@ impl UI {
                 // Question description
                 let description_text = format!(
                     "{} PROBLEM ANALYSIS:\n\n{}",
-                    EvaSymbols::HEXAGON,
+                    self.theme(app).symbols().geometric_shapes().get(0).cloned().unwrap_or_default(),
                     question.description
                 );
                 let description = Paragraph::new(description_text)
-                    .style(EvaStyles::text_primary())
+                    .style(self.theme(app).styles().text_primary())
                     .wrap(Wrap { trim: true })
                     .scroll((app.data.scroll_offset as u16, 0))
-                    .block(EvaBorders::panel().title(EvaFormat::title("TECHNICAL SPECIFICATION")));
+                    .block(self.theme(app).borders().panel().title(self.theme(app).formats().title("TECHNICAL SPECIFICATION")));
                 f.render_widget(description, left_chunks[0]);
 
                 // Test cases
                 let test_cases_text = format!(
                     "{} TEST SCENARIOS:\n\n{}",
-                    EvaSymbols::TRIANGLE,
+                    self.theme(app).symbols().geometric_shapes().get(2).cloned().unwrap_or_default(),
                     question
                         .test_cases
                         .iter()
@@ -604,7 +612,7 @@ impl UI {
                         .map(|(i, tc)| {
                             format!(
                                 "{} TEST CASE {}: INPUT: {} | EXPECTED: {}",
-                                "→",
+                                "→", 
                                 i + 1,
                                 tc.input,
                                 tc.expected_output
@@ -615,10 +623,10 @@ impl UI {
                 );
 
                 let test_cases = Paragraph::new(test_cases_text)
-                    .style(EvaStyles::sync_rate())
+                    .style(self.theme(app).styles().text_secondary())
                     .wrap(Wrap { trim: true })
                     .block(
-                        EvaBorders::operational().title(EvaFormat::title("VALIDATION PROTOCOLS")),
+                        self.theme(app).borders().operational_block().title(self.theme(app).formats().title("VALIDATION PROTOCOLS")),
                     );
                 f.render_widget(test_cases, left_chunks[1]);
 
@@ -626,21 +634,20 @@ impl UI {
                 let right_chunks = Layout::default()
                     .direction(Direction::Vertical)
                     .constraints([
-                        Constraint::Length(3), // Typing speed widget
+                        Constraint::Length(8), 
                         Constraint::Min(0),    // Code editor
                     ])
                     .split(content_chunks[1]);
 
-                // Typing speed widget (compact)
-                let eva_typing = EvaTypingWidget::new(&app.data.typing_speed)
-                    .with_theme(app.data.theme_manager.current_theme());
-                eva_typing.render(f, right_chunks[0]);
+                // Typing indicator widget (compact)
+                let typing_indicator = ThemedTypingIndicatorWidget::new(&app.data.typing_speed, self.theme(app));
+                typing_indicator.render(f, right_chunks[0]);
 
-                // Code editor widget
-                use widgets::*;
-                let code_editor_widget =
-                    CodeEditorWidget::new(&app.data.text_editor).with_language(CodeLanguage::Rust);
-                code_editor_widget.render(f, right_chunks[1]);
+                // Syntax editor widget
+                use widgets::*; // Ensure CodeLanguage is in scope
+                let syntax_editor_widget =
+                    SyntaxEditorWidget::new(&app.data.text_editor).with_language(CodeLanguage::Rust); // Renamed
+                syntax_editor_widget.render(f, right_chunks[1]);
 
                 // Hints panel (if enabled) for side-by-side mode
                 if app.data.show_hints && !question.hints.is_empty() {
@@ -687,9 +694,9 @@ impl UI {
 
                 // Question title
                 let difficulty_symbol = match question.difficulty {
-                    crate::models::Difficulty::Easy => EvaSymbols::OPERATIONAL,
-                    crate::models::Difficulty::Medium => EvaSymbols::WARNING,
-                    crate::models::Difficulty::Hard => EvaSymbols::CRITICAL,
+                    crate::models::Difficulty::Easy => self.theme(app).symbols().operational(), // EvaSymbols replaced
+                    crate::models::Difficulty::Medium => self.theme(app).symbols().warning(), // EvaSymbols replaced
+                    crate::models::Difficulty::Hard => self.theme(app).symbols().critical(), // EvaSymbols replaced
                 };
 
                 let title_text = format!(
@@ -697,28 +704,28 @@ impl UI {
                     difficulty_symbol, question.title, question.difficulty, question.topic
                 );
                 let title = Paragraph::new(title_text)
-                    .style(EvaStyles::text_highlight())
+                    .style(self.theme(app).styles().text_highlight()) // EvaStyles replaced
                     .alignment(Alignment::Center)
-                    .block(EvaBorders::header("ALGORITHM BRIEFING"));
+                    .block(self.theme(app).borders().header_block("ALGORITHM BRIEFING")); // EvaBorders replaced
                 f.render_widget(title, chunks[0]);
 
                 // Question description
                 let description_text = format!(
                     "{} PROBLEM ANALYSIS:\n\n{}",
-                    EvaSymbols::HEXAGON,
+                    self.theme(app).symbols().geometric_shapes().get(0).cloned().unwrap_or_default(), // EvaSymbols replaced
                     question.description
                 );
                 let description = Paragraph::new(description_text)
-                    .style(EvaStyles::text_primary())
+                    .style(self.theme(app).styles().text_primary()) // EvaStyles replaced
                     .wrap(Wrap { trim: true })
                     .scroll((app.data.scroll_offset as u16, 0))
-                    .block(EvaBorders::panel().title(EvaFormat::title("TECHNICAL SPECIFICATION")));
+                    .block(self.theme(app).borders().panel().title(self.theme(app).formats().title("TECHNICAL SPECIFICATION"))); // EvaBorders and EvaFormat replaced
                 f.render_widget(description, chunks[1]);
 
                 // Test cases
                 let test_cases_text = format!(
                     "{} TEST SCENARIOS:\n\n{}",
-                    EvaSymbols::TRIANGLE,
+                    self.theme(app).symbols().geometric_shapes().get(2).cloned().unwrap_or_default(), // EvaSymbols replaced (triangle)
                     question
                         .test_cases
                         .iter()
@@ -726,7 +733,7 @@ impl UI {
                         .map(|(i, tc)| {
                             format!(
                                 "{} TEST CASE {}: INPUT: {} | EXPECTED: {}",
-                                "→",
+                                "→", // Standard arrow
                                 i + 1,
                                 tc.input,
                                 tc.expected_output
@@ -737,10 +744,10 @@ impl UI {
                 );
 
                 let test_cases = Paragraph::new(test_cases_text)
-                    .style(EvaStyles::sync_rate())
+                    .style(self.theme(app).styles().text_secondary()) // EvaStyles replaced (sync_rate to text_secondary)
                     .wrap(Wrap { trim: true })
                     .block(
-                        EvaBorders::operational().title(EvaFormat::title("VALIDATION PROTOCOLS")),
+                        self.theme(app).borders().operational_block().title(self.theme(app).formats().title("VALIDATION PROTOCOLS")), // EvaBorders and EvaFormat replaced
                     );
                 f.render_widget(test_cases, chunks[2]);
 
@@ -797,53 +804,55 @@ impl UI {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(3), // Typing speed widget
+                Constraint::Length(8), // Typing indicator widget - increased height for ThemedTypingIndicatorWidget
                 Constraint::Min(10),   // Code editor
                 Constraint::Length(3), // Status/Loading bar
             ])
             .split(area);
 
-        // Typing speed widget (full width)
-        let eva_typing = EvaTypingWidget::new(&app.data.typing_speed)
-            .with_theme(app.data.theme_manager.current_theme());
-        eva_typing.render(f, chunks[0]);
+        // Typing indicator widget (full width)
+        let typing_indicator = ThemedTypingIndicatorWidget::new(&app.data.typing_speed, self.theme(app));
+        typing_indicator.render(f, chunks[0]);
 
         // Enhanced code editor widget
-        let code_editor_widget =
-            CodeEditorWidget::new(&app.data.text_editor).with_language(CodeLanguage::Rust);
-        code_editor_widget.render(f, chunks[1]);
+        let syntax_editor_widget =
+            SyntaxEditorWidget::new(&app.data.text_editor).with_language(CodeLanguage::Rust); // Renamed
+        syntax_editor_widget.render(f, chunks[1]);
 
         // Status/Loading widget
         let (status_message, is_loading, operation_type) = if app.data.is_llm_loading {
             (
                 "NEURAL NETWORK PROCESSING - GENERATING FEEDBACK".to_string(),
                 true,
-                EvaOperationType::MagiCalculation,
+                LoadingOperationType::MagiCalculation,
             )
         } else if app.data.is_loading {
             (
                 "COMPILING EVA UNIT COMBAT PROTOCOLS".to_string(),
                 true,
-                EvaOperationType::EvaActivation,
+                LoadingOperationType::EvaActivation,
             )
         } else if let Some(ref error) = app.data.compilation_error {
             (
                 format!("COMPILATION ERROR: {}", error),
                 false,
-                EvaOperationType::SyncTest,
+                LoadingOperationType::SyncTest,
             )
         } else {
             (
                 "ENTRY PLUG SYNCHRONIZED - AWAITING PILOT COMMANDS".to_string(),
                 false,
-                EvaOperationType::SyncTest,
+                LoadingOperationType::SyncTest,
             )
         };
 
-        let eva_loading = EvaLoadingWidget::new(status_message, is_loading)
-            .with_theme(app.data.theme_manager.current_theme())
-            .with_operation_type(operation_type);
-        eva_loading.render(f, chunks[2]);
+        let themed_loading = ThemedLoadingWidget::new(
+            status_message,
+            is_loading,
+            app.data.theme_manager.current_theme(),
+        )
+        .with_operation_type(operation_type);
+        f.render_widget(&themed_loading, chunks[2]);
     }
 
     fn render_results(&self, f: &mut Frame, area: Rect, app: &App) {

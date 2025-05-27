@@ -9,7 +9,7 @@ use ratatui::{
     Frame,
 };
 
-pub struct CodeEditorWidget<'a> {
+pub struct SyntaxEditorWidget<'a> { // Renamed struct
     pub editor: &'a TextEditor,
     pub show_line_numbers: bool,
     pub language: CodeLanguage,
@@ -24,7 +24,7 @@ pub enum CodeLanguage {
     Other,
 }
 
-impl<'a> CodeEditorWidget<'a> {
+impl<'a> SyntaxEditorWidget<'a> { // Renamed struct
     pub fn new(editor: &'a TextEditor) -> Self {
         Self {
             editor,
@@ -161,7 +161,7 @@ impl<'a> CodeEditorWidget<'a> {
     }
 }
 
-impl<'a> Widget for CodeEditorWidget<'a> {
+impl<'a> Widget for SyntaxEditorWidget<'a> { // Renamed struct
     fn render(&self, f: &mut Frame, area: Rect) {
         let lines = self.get_syntax_highlighted_lines();
 
