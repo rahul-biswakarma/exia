@@ -20,8 +20,10 @@ use tui_input::Input;
 
 pub mod app;
 pub mod components;
+pub mod widgets;
 
 pub use app::App;
+pub use widgets::Widget;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AppState {
@@ -221,10 +223,32 @@ impl UI {
     }
 
     fn render_home(&self, f: &mut Frame, area: Rect, app: &App) {
+        use widgets::*;
+
+        let main_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(3), // Loading indicator (if active)
+                Constraint::Min(0),    // Main content
+            ])
+            .split(area);
+
+        let content_area = if app.data.is_loading {
+            // Show loading indicator at the top
+            let loading_widget = LoadingWidget::new(
+                app.data.status_message.clone(),
+                app.data.is_loading,
+            );
+            loading_widget.render(f, main_chunks[0]);
+            main_chunks[1]
+        } else {
+            area
+        };
+
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-            .split(area);
+            .split(content_area);
 
         // Left panel - Quick actions
         let actions = vec![
@@ -266,28 +290,25 @@ impl UI {
         if let Some(stats) = &app.data.statistics {
             self.render_progress_overview(f, chunks[1], stats, app);
         } else {
-            let loading = Paragraph::new("Loading statistics...")
-                .style(Style::default().fg(Color::Yellow))
-                .alignment(Alignment::Center)
-                .block(
-                    Block::default()
-                        .title("Progress Overview")
-                        .borders(Borders::ALL)
-                        .border_style(Style::default().fg(Color::Green)),
-                );
-            f.render_widget(loading, chunks[1]);
+            let loading_widget = LoadingWidget::new(
+                "Loading statistics".to_string(),
+                true,
+            );
+            loading_widget.render(f, chunks[1]);
         }
     }
 
     fn render_progress_overview(&self, f: &mut Frame, area: Rect, stats: &Statistics, app: &App) {
+        use widgets::*;
+
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(3), // Success rate
-                Constraint::Length(3), // Streak
-                Constraint::Length(5), // Enhanced stats with cost
-                Constraint::Length(4), // Network activity
-                Constraint::Min(0),    // API calls debug
+                Constraint::Length(3), // Success rate gauge
+                Constraint::Length(6), // Progress overview widget
+                Constraint::Length(5), // Network activity widget
+                Constraint::Length(5), // Typing speed widget
+                Constraint::Min(0),    // API debug widget
             ])
             .split(area.inner(&Margin {
                 vertical: 1,
@@ -296,127 +317,32 @@ impl UI {
 
         // Success rate gauge
         let success_rate = stats.success_rate / 100.0;
-        let success_gauge = Gauge::default()
-            .block(Block::default().title("Success Rate").borders(Borders::ALL))
-            .gauge_style(Style::default().fg(Color::Green))
-            .ratio(success_rate)
-            .label(format!("{:.1}%", stats.success_rate));
-        f.render_widget(success_gauge, chunks[0]);
+        let progress_bar = ProgressBar::new(
+            format!("Success Rate: {:.1}%", stats.success_rate),
+            success_rate,
+            Color::Green,
+        );
+        progress_bar.render(f, chunks[0]);
 
-        // Current streak
-        let streak_text = format!("🔥 Current Streak: {} problems", stats.current_streak);
-        let streak = Paragraph::new(streak_text)
-            .style(Style::default().fg(Color::Red))
-            .alignment(Alignment::Center)
-            .block(Block::default().borders(Borders::ALL));
-        f.render_widget(streak, chunks[1]);
+        // Progress overview widget
+        let progress_widget = ProgressOverviewWidget::new(stats)
+            .with_cost_analytics(app.data.cost_analytics.as_ref())
+            .with_details(false);
+        progress_widget.render(f, chunks[1]);
 
-        // Enhanced stats with cost analytics
-        let stats_text = if let Some(cost_analytics) = &app.data.cost_analytics {
-            format!(
-                "📝 Total Questions: {}\n✅ Solved: {}\n⏱️ Avg Time: {:.1}ms\n💰 Total Cost: ${:.4}\n🎯 Tokens Used: {}",
-                stats.total_questions,
-                stats.accepted_solutions,
-                stats.avg_execution_time,
-                cost_analytics.total_cost_usd,
-                cost_analytics.tokens_used
-            )
-        } else {
-            format!(
-                "📝 Total Questions: {}\n✅ Solved: {}\n⏱️ Avg Time: {:.1}ms\n💰 Loading cost data...",
-                stats.total_questions, stats.accepted_solutions, stats.avg_execution_time
-            )
-        };
-        let quick_stats = Paragraph::new(stats_text)
-            .style(Style::default().fg(Color::Cyan))
-            .block(Block::default().title("Quick Stats").borders(Borders::ALL));
-        f.render_widget(quick_stats, chunks[2]);
+        // Network activity widget
+        let network_widget =
+            NetworkActivityWidget::new(&app.data.network_activity).with_details(false);
+        network_widget.render(f, chunks[2]);
 
-        // Network Activity Widget
-        let network_text = if app.data.network_activity.is_empty() {
-            "🌐 No network activity yet".to_string()
-        } else {
-            app.data
-                .network_activity
-                .iter()
-                .rev()
-                .take(2)
-                .map(|activity| {
-                    let status_icon = match activity.status {
-                        NetworkStatus::InProgress => "🔄",
-                        NetworkStatus::Success => "✅",
-                        NetworkStatus::Failed => "❌",
-                        NetworkStatus::Timeout => "⏰",
-                    };
-                    format!(
-                        "{} {} ({}ms)",
-                        status_icon, activity.endpoint, activity.latency_ms
-                    )
-                })
-                .collect::<Vec<_>>()
-                .join("\n")
-        };
+        // Typing speed widget
+        let typing_widget = TypingSpeedWidget::new(&app.data.typing_speed);
+        typing_widget.render(f, chunks[3]);
 
-        let network_widget = Paragraph::new(network_text)
-            .style(Style::default().fg(Color::Green))
-            .block(
-                Block::default()
-                    .title("🌐 Network Activity")
-                    .borders(Borders::ALL),
-            );
-        f.render_widget(network_widget, chunks[3]);
-
-        // API Calls Debug Panel with Loading Animation
-        let api_calls_text = if app.data.api_calls.is_empty() {
-            "No API calls yet\nPress 'g' to generate a question".to_string()
-        } else {
-            let loading_animation = if app.data.is_loading {
-                let dots = match (std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_millis()
-                    / 500)
-                    % 4
-                {
-                    0 => "",
-                    1 => ".",
-                    2 => "..",
-                    _ => "...",
-                };
-                format!("🔄 Loading{}\n", dots)
-            } else {
-                String::new()
-            };
-
-            let calls_text = app
-                .data
-                .api_calls
-                .iter()
-                .rev()
-                .take(4)
-                .map(|call| {
-                    let status_icon = match call.status {
-                        ApiCallStatus::Pending => "⏳",
-                        ApiCallStatus::Success => "✅",
-                        ApiCallStatus::Error => "❌",
-                    };
-                    format!("{} {} {}", status_icon, call.endpoint, call.message)
-                })
-                .collect::<Vec<_>>()
-                .join("\n");
-
-            format!("{}{}", loading_animation, calls_text)
-        };
-
-        let api_debug = Paragraph::new(api_calls_text)
-            .style(Style::default().fg(Color::Gray))
-            .wrap(Wrap { trim: true })
-            .block(
-                Block::default()
-                    .title("API Calls Debug")
-                    .borders(Borders::ALL),
-            );
-        f.render_widget(api_debug, chunks[4]);
+        // API debug widget
+        let api_widget =
+            ApiDebugWidget::new(&app.data.api_calls, app.data.is_loading).with_details(true);
+        api_widget.render(f, chunks[4]);
     }
 
     fn render_question_view(&self, f: &mut Frame, area: Rect, app: &App) {
@@ -536,34 +462,26 @@ impl UI {
     }
 
     fn render_code_editor(&self, f: &mut Frame, area: Rect, app: &App) {
+        use widgets::*;
+
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
                 Constraint::Length(3), // Stats bar
                 Constraint::Min(10),   // Code editor
-                Constraint::Length(3), // Status bar
+                Constraint::Length(3), // Status/Loading bar
             ])
             .split(area);
 
-        // Enhanced stats bar with typing speed
-        let stats_text = format!(
-            "✅ Success: {} | ❌ Errors: {} | 📊 API: {} | ⌨️ WPM: {:.1} | 🌐 Network: {}",
+        // Stats bar widget
+        let stats_widget = StatsBarWidget::new(
             app.data.success_count,
             app.data.error_count,
             app.data.api_calls.len(),
-            app.data.typing_speed.current_wpm,
-            app.data.network_activity.len()
+            app.data.network_activity.len(),
+            &app.data.typing_speed,
         );
-        let stats_bar = Paragraph::new(stats_text)
-            .style(Style::default().fg(Color::Cyan))
-            .alignment(Alignment::Center)
-            .block(
-                Block::default()
-                    .title("Session Stats")
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::Cyan)),
-            );
-        f.render_widget(stats_bar, chunks[0]);
+        stats_widget.render(f, chunks[0]);
 
         // Enhanced code input area with line numbers
         let code_text = app.data.code_input.value();
@@ -593,34 +511,15 @@ impl UI {
             );
         f.render_widget(code_editor, chunks[1]);
 
-        // Enhanced status bar with loading animation
-        let status_text = if app.data.is_loading {
-            let dots = match (std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_millis()
-                / 300)
-                % 4
-            {
-                0 => "⏳ Compiling",
-                1 => "⏳ Compiling.",
-                2 => "⏳ Compiling..",
-                _ => "⏳ Compiling...",
-            };
-            dots
+        // Loading/Status widget
+        let status_message = if app.data.is_loading {
+            "Compiling and testing solution".to_string()
         } else {
-            "💡 Ctrl+S: Submit | Ctrl+H: Hint | Ctrl+C: Clear | Esc: Back"
+            "💡 Ctrl+S: Submit | Ctrl+H: Hint | Ctrl+C: Clear | Esc: Back".to_string()
         };
 
-        let status_bar = Paragraph::new(status_text)
-            .style(Style::default().fg(Color::Yellow))
-            .alignment(Alignment::Center)
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::Blue)),
-            );
-        f.render_widget(status_bar, chunks[2]);
+        let loading_widget = LoadingWidget::new(status_message, app.data.is_loading);
+        loading_widget.render(f, chunks[2]);
     }
 
     fn render_results(&self, f: &mut Frame, area: Rect, app: &App) {

@@ -292,6 +292,8 @@ impl App {
                         ApiCallStatus::Pending,
                         "Selected 'Generate New Question'",
                     );
+                    self.data.is_loading = true; // Set loading state immediately
+                    self.data.status_message = "Preparing to generate question...".to_string();
                     self.generate_new_question().await?;
                 }
                 1 => self.view_recent_questions().await?,
@@ -308,6 +310,8 @@ impl App {
             },
             KeyCode::Char('g') => {
                 self.log_api_call("user_input", ApiCallStatus::Pending, "Pressed 'g' key");
+                self.data.is_loading = true; // Set loading state immediately
+                self.data.status_message = "Preparing to generate question...".to_string();
                 self.generate_new_question().await?;
             }
             KeyCode::Char('r') => self.view_recent_questions().await?,
@@ -423,7 +427,9 @@ impl App {
                 self.data.code_input = tui_input::Input::default();
             }
             _ => {
-                // Handle regular text input
+                // Handle regular text input and track typing speed
+                let old_len = self.data.code_input.value().len();
+
                 self.data
                     .code_input
                     .handle_event(&Event::Key(crossterm::event::KeyEvent {
@@ -432,6 +438,12 @@ impl App {
                         kind: crossterm::event::KeyEventKind::Press,
                         state: crossterm::event::KeyEventState::NONE,
                     }));
+
+                let new_len = self.data.code_input.value().len();
+                if new_len != old_len {
+                    // Character was added or removed, update typing speed
+                    self.update_typing_speed(1);
+                }
             }
         }
         Ok(())
