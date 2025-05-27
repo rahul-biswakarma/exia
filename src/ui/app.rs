@@ -270,7 +270,7 @@ impl App {
         match self.state {
             AppState::Home => self.handle_home_keys(key).await?,
             AppState::AllQuestions => self.handle_all_questions_keys(key).await?,
-            AppState::QuestionView => self.handle_question_keys(key).await?,
+            AppState::QuestionView => self.handle_question_keys(key, modifiers).await?,
             AppState::CodeEditor => self.handle_editor_keys(key, modifiers).await?,
             AppState::Results => self.handle_results_keys(key).await?,
             AppState::Statistics => {
@@ -376,7 +376,81 @@ impl App {
         Ok(())
     }
 
-    async fn handle_question_keys(&mut self, key: KeyCode) -> Result<()> {
+    async fn handle_question_keys(&mut self, key: KeyCode, modifiers: KeyModifiers) -> Result<()> {
+        // Check if we're in side-by-side mode (terminal width >= 120)
+        let terminal_size = crossterm::terminal::size().unwrap_or((80, 24));
+        let is_side_by_side = terminal_size.0 >= 120;
+
+        // Handle side-by-side editor keys first
+        if is_side_by_side {
+            match (key, modifiers) {
+                (KeyCode::Char('s'), KeyModifiers::CONTROL) => {
+                    // Submit solution directly from question view when in side-by-side mode
+                    self.submit_solution().await?;
+                    return Ok(());
+                }
+                (KeyCode::Char('h'), KeyModifiers::CONTROL) => {
+                    // Get hint for current code
+                    self.get_hint_for_code().await?;
+                    return Ok(());
+                }
+                // Text editing keys for side-by-side editor
+                (KeyCode::Backspace, KeyModifiers::NONE) => {
+                    self.data.text_editor.delete_char();
+                    self.update_typing_speed(1);
+                    return Ok(());
+                }
+                (KeyCode::Delete, KeyModifiers::NONE) => {
+                    self.data.text_editor.delete_forward();
+                    self.update_typing_speed(1);
+                    return Ok(());
+                }
+                (KeyCode::Enter, KeyModifiers::NONE) => {
+                    self.data.text_editor.insert_char('\n');
+                    self.update_typing_speed(1);
+                    return Ok(());
+                }
+                (KeyCode::Tab, KeyModifiers::NONE) => {
+                    self.data.text_editor.insert_str("    "); // 4 spaces for tab
+                    self.update_typing_speed(4);
+                    return Ok(());
+                }
+                (KeyCode::Char(ch), KeyModifiers::NONE) => {
+                    // Only handle regular characters, not special keys like 'c', 'h', etc.
+                    if !matches!(ch, 'c' | 'h' | 'n' | 'p') {
+                        self.data.text_editor.insert_char(ch);
+                        self.update_typing_speed(1);
+                        return Ok(());
+                    }
+                }
+                (KeyCode::Char(ch), KeyModifiers::SHIFT) => {
+                    self.data.text_editor.insert_char(ch);
+                    self.update_typing_speed(1);
+                    return Ok(());
+                }
+                // Arrow keys for editor navigation in side-by-side mode
+                (KeyCode::Left, KeyModifiers::NONE) => {
+                    self.data.text_editor.move_cursor_left();
+                    return Ok(());
+                }
+                (KeyCode::Right, KeyModifiers::NONE) => {
+                    self.data.text_editor.move_cursor_right();
+                    return Ok(());
+                }
+                (KeyCode::Home, KeyModifiers::NONE) => {
+                    self.data.text_editor.move_to_line_start();
+                    return Ok(());
+                }
+                (KeyCode::End, KeyModifiers::NONE) => {
+                    self.data.text_editor.move_to_line_end();
+                    return Ok(());
+                }
+                _ => {
+                    // Fall through to regular question view handling
+                }
+            }
+        }
+
         match key {
             KeyCode::Char('c') => {
                 self.state = AppState::CodeEditor;
@@ -659,6 +733,53 @@ impl App {
                             .add_question_to_session(&session_id, &question.id);
 
                         self.data.current_question = Some(question.clone());
+
+                        // Initialize code editor with template for side-by-side view
+                        if self.data.text_editor.content().is_empty() {
+                            let template = match question.topic {
+                                crate::models::Topic::Arrays => {
+                                    r#"fn solution(input: &str) -> String {
+    // Parse input - example for array problems
+    let nums: Vec<i32> = input
+        .trim()
+        .split_whitespace()
+        .map(|s| s.parse().unwrap())
+        .collect();
+
+    // Your solution here
+    // TODO: Implement your algorithm
+
+    // Return result as string
+    "0".to_string()
+}"#
+                                }
+                                crate::models::Topic::Strings => {
+                                    r#"fn solution(input: &str) -> String {
+    // Parse input string
+    let s = input.trim();
+
+    // Your solution here
+    // TODO: Implement your string algorithm
+
+    // Return result
+    s.to_string()
+}"#
+                                }
+                                _ => {
+                                    r#"fn solution(input: &str) -> String {
+    // Parse input based on problem requirements
+    let data = input.trim();
+
+    // Your solution here
+    // TODO: Implement your algorithm
+
+    // Return result as string
+    "0".to_string()
+}"#
+                                }
+                            };
+                            self.data.text_editor.set_content(template.to_string());
+                        }
 
                         // Update recent questions list
                         self.data.recent_questions.insert(0, question);

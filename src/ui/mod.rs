@@ -451,103 +451,258 @@ impl UI {
 
     fn render_question_view(&self, f: &mut Frame, area: Rect, app: &App) {
         if let Some(question) = &app.data.current_question {
-            let chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints([
-                    Constraint::Length(3), // Title
-                    Constraint::Min(10),   // Description
-                    Constraint::Length(5), // Test cases
-                ])
-                .split(area);
+            // Check if we have enough width for side-by-side layout (minimum 120 columns)
+            let use_side_by_side = area.width >= 120;
 
-            // Question title
-            let difficulty_symbol = match question.difficulty {
-                crate::models::Difficulty::Easy => EvaSymbols::OPERATIONAL,
-                crate::models::Difficulty::Medium => EvaSymbols::WARNING,
-                crate::models::Difficulty::Hard => EvaSymbols::CRITICAL,
-            };
+            if use_side_by_side {
+                // Side-by-side layout: Technical specification on left, code editor on right
+                let main_chunks = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints([
+                        Constraint::Length(3), // Title
+                        Constraint::Min(0),    // Main content
+                    ])
+                    .split(area);
 
-            let title_text = format!(
-                "{} PROBLEM DESIGNATION: {} | COMPLEXITY LEVEL: {:?} | ALGORITHM TYPE: {:?}",
-                difficulty_symbol, question.title, question.difficulty, question.topic
-            );
-            let title = Paragraph::new(title_text)
-                .style(EvaStyles::text_highlight())
-                .alignment(Alignment::Center)
-                .block(EvaBorders::header("ALGORITHM BRIEFING"));
-            f.render_widget(title, chunks[0]);
-
-            // Question description
-            let description_text = format!(
-                "{} PROBLEM ANALYSIS:\n\n{}",
-                EvaSymbols::HEXAGON,
-                question.description
-            );
-            let description = Paragraph::new(description_text)
-                .style(EvaStyles::text_primary())
-                .wrap(Wrap { trim: true })
-                .scroll((app.data.scroll_offset as u16, 0))
-                .block(EvaBorders::panel().title(EvaFormat::title("TECHNICAL SPECIFICATION")));
-            f.render_widget(description, chunks[1]);
-
-            // Test cases
-            let test_cases_text = format!(
-                "{} TEST SCENARIOS:\n\n{}",
-                EvaSymbols::TRIANGLE,
-                question
-                    .test_cases
-                    .iter()
-                    .enumerate()
-                    .map(|(i, tc)| {
-                        format!(
-                            "{} TEST CASE {}: INPUT: {} | EXPECTED: {}",
-                            "→",
-                            i + 1,
-                            tc.input,
-                            tc.expected_output
-                        )
-                    })
-                    .collect::<Vec<_>>()
-                    .join("\n")
-            );
-
-            let test_cases = Paragraph::new(test_cases_text)
-                .style(EvaStyles::sync_rate())
-                .wrap(Wrap { trim: true })
-                .block(EvaBorders::operational().title(EvaFormat::title("VALIDATION PROTOCOLS")));
-            f.render_widget(test_cases, chunks[2]);
-
-            // Hints panel (if enabled)
-            if app.data.show_hints && !question.hints.is_empty() {
-                let hint_area = Rect {
-                    x: area.width / 4,
-                    y: area.height / 4,
-                    width: area.width / 2,
-                    height: area.height / 2,
+                // Question title (full width)
+                let difficulty_symbol = match question.difficulty {
+                    crate::models::Difficulty::Easy => EvaSymbols::OPERATIONAL,
+                    crate::models::Difficulty::Medium => EvaSymbols::WARNING,
+                    crate::models::Difficulty::Hard => EvaSymbols::CRITICAL,
                 };
 
-                f.render_widget(Clear, hint_area);
+                let title_text = format!(
+                    "{} PROBLEM DESIGNATION: {} | COMPLEXITY LEVEL: {:?} | ALGORITHM TYPE: {:?}",
+                    difficulty_symbol, question.title, question.difficulty, question.topic
+                );
+                let title = Paragraph::new(title_text)
+                    .style(EvaStyles::text_highlight())
+                    .alignment(Alignment::Center)
+                    .block(EvaBorders::header("ALGORITHM BRIEFING"));
+                f.render_widget(title, main_chunks[0]);
 
-                let hint_text = if app.data.hint_index < question.hints.len() {
-                    &question.hints[app.data.hint_index]
-                } else {
-                    "No more hints available"
-                };
+                // Split main content horizontally
+                let content_chunks = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+                    .split(main_chunks[1]);
 
-                let hint_popup = Paragraph::new(hint_text)
-                    .style(Style::default().fg(Color::Yellow))
+                // Left side: Technical specification and test cases
+                let left_chunks = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints([
+                        Constraint::Min(8),    // Description
+                        Constraint::Length(6), // Test cases
+                    ])
+                    .split(content_chunks[0]);
+
+                // Question description
+                let description_text = format!(
+                    "{} PROBLEM ANALYSIS:\n\n{}",
+                    EvaSymbols::HEXAGON,
+                    question.description
+                );
+                let description = Paragraph::new(description_text)
+                    .style(EvaStyles::text_primary())
+                    .wrap(Wrap { trim: true })
+                    .scroll((app.data.scroll_offset as u16, 0))
+                    .block(EvaBorders::panel().title(EvaFormat::title("TECHNICAL SPECIFICATION")));
+                f.render_widget(description, left_chunks[0]);
+
+                // Test cases
+                let test_cases_text = format!(
+                    "{} TEST SCENARIOS:\n\n{}",
+                    EvaSymbols::TRIANGLE,
+                    question
+                        .test_cases
+                        .iter()
+                        .enumerate()
+                        .map(|(i, tc)| {
+                            format!(
+                                "{} TEST CASE {}: INPUT: {} | EXPECTED: {}",
+                                "→",
+                                i + 1,
+                                tc.input,
+                                tc.expected_output
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join("\n")
+                );
+
+                let test_cases = Paragraph::new(test_cases_text)
+                    .style(EvaStyles::sync_rate())
                     .wrap(Wrap { trim: true })
                     .block(
-                        Block::default()
-                            .title(format!(
-                                "Hint {} of {}",
-                                app.data.hint_index + 1,
-                                question.hints.len()
-                            ))
-                            .borders(Borders::ALL)
-                            .border_style(Style::default().fg(Color::Yellow)),
+                        EvaBorders::operational().title(EvaFormat::title("VALIDATION PROTOCOLS")),
                     );
-                f.render_widget(hint_popup, hint_area);
+                f.render_widget(test_cases, left_chunks[1]);
+
+                // Right side: Code editor
+                let right_chunks = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints([
+                        Constraint::Length(3), // Editor stats
+                        Constraint::Min(0),    // Code editor
+                    ])
+                    .split(content_chunks[1]);
+
+                // Editor stats (compact)
+                let (cursor_line, cursor_col) = app.data.text_editor.cursor_position();
+                let editor_stats_text = format!(
+                    "{} LINES: {} | CHARS: {} | POS: {}:{}",
+                    EvaSymbols::HEXAGON,
+                    app.data.text_editor.line_count(),
+                    app.data.text_editor.char_count(),
+                    cursor_line + 1,
+                    cursor_col + 1
+                );
+                let editor_stats = Paragraph::new(editor_stats_text)
+                    .style(EvaStyles::text_secondary())
+                    .alignment(Alignment::Center)
+                    .block(EvaBorders::panel().title(EvaFormat::title("CODE EDITOR")));
+                f.render_widget(editor_stats, right_chunks[0]);
+
+                // Code editor widget
+                use widgets::*;
+                let code_editor_widget =
+                    CodeEditorWidget::new(&app.data.text_editor).with_language(CodeLanguage::Rust);
+                code_editor_widget.render(f, right_chunks[1]);
+
+                // Hints panel (if enabled) for side-by-side mode
+                if app.data.show_hints && !question.hints.is_empty() {
+                    let hint_area = Rect {
+                        x: area.width / 4,
+                        y: area.height / 4,
+                        width: area.width / 2,
+                        height: area.height / 2,
+                    };
+
+                    f.render_widget(Clear, hint_area);
+
+                    let hint_text = if app.data.hint_index < question.hints.len() {
+                        &question.hints[app.data.hint_index]
+                    } else {
+                        "No more hints available"
+                    };
+
+                    let hint_popup = Paragraph::new(hint_text)
+                        .style(Style::default().fg(Color::Yellow))
+                        .wrap(Wrap { trim: true })
+                        .block(
+                            Block::default()
+                                .title(format!(
+                                    "Hint {} of {}",
+                                    app.data.hint_index + 1,
+                                    question.hints.len()
+                                ))
+                                .borders(Borders::ALL)
+                                .border_style(Style::default().fg(Color::Yellow)),
+                        );
+                    f.render_widget(hint_popup, hint_area);
+                }
+            } else {
+                // Original vertical layout for smaller screens
+                let chunks = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints([
+                        Constraint::Length(3), // Title
+                        Constraint::Min(10),   // Description
+                        Constraint::Length(5), // Test cases
+                    ])
+                    .split(area);
+
+                // Question title
+                let difficulty_symbol = match question.difficulty {
+                    crate::models::Difficulty::Easy => EvaSymbols::OPERATIONAL,
+                    crate::models::Difficulty::Medium => EvaSymbols::WARNING,
+                    crate::models::Difficulty::Hard => EvaSymbols::CRITICAL,
+                };
+
+                let title_text = format!(
+                    "{} PROBLEM DESIGNATION: {} | COMPLEXITY LEVEL: {:?} | ALGORITHM TYPE: {:?}",
+                    difficulty_symbol, question.title, question.difficulty, question.topic
+                );
+                let title = Paragraph::new(title_text)
+                    .style(EvaStyles::text_highlight())
+                    .alignment(Alignment::Center)
+                    .block(EvaBorders::header("ALGORITHM BRIEFING"));
+                f.render_widget(title, chunks[0]);
+
+                // Question description
+                let description_text = format!(
+                    "{} PROBLEM ANALYSIS:\n\n{}",
+                    EvaSymbols::HEXAGON,
+                    question.description
+                );
+                let description = Paragraph::new(description_text)
+                    .style(EvaStyles::text_primary())
+                    .wrap(Wrap { trim: true })
+                    .scroll((app.data.scroll_offset as u16, 0))
+                    .block(EvaBorders::panel().title(EvaFormat::title("TECHNICAL SPECIFICATION")));
+                f.render_widget(description, chunks[1]);
+
+                // Test cases
+                let test_cases_text = format!(
+                    "{} TEST SCENARIOS:\n\n{}",
+                    EvaSymbols::TRIANGLE,
+                    question
+                        .test_cases
+                        .iter()
+                        .enumerate()
+                        .map(|(i, tc)| {
+                            format!(
+                                "{} TEST CASE {}: INPUT: {} | EXPECTED: {}",
+                                "→",
+                                i + 1,
+                                tc.input,
+                                tc.expected_output
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join("\n")
+                );
+
+                let test_cases = Paragraph::new(test_cases_text)
+                    .style(EvaStyles::sync_rate())
+                    .wrap(Wrap { trim: true })
+                    .block(
+                        EvaBorders::operational().title(EvaFormat::title("VALIDATION PROTOCOLS")),
+                    );
+                f.render_widget(test_cases, chunks[2]);
+
+                // Hints panel (if enabled) for compact mode
+                if app.data.show_hints && !question.hints.is_empty() {
+                    let hint_area = Rect {
+                        x: area.width / 4,
+                        y: area.height / 4,
+                        width: area.width / 2,
+                        height: area.height / 2,
+                    };
+
+                    f.render_widget(Clear, hint_area);
+
+                    let hint_text = if app.data.hint_index < question.hints.len() {
+                        &question.hints[app.data.hint_index]
+                    } else {
+                        "No more hints available"
+                    };
+
+                    let hint_popup = Paragraph::new(hint_text)
+                        .style(Style::default().fg(Color::Yellow))
+                        .wrap(Wrap { trim: true })
+                        .block(
+                            Block::default()
+                                .title(format!(
+                                    "Hint {} of {}",
+                                    app.data.hint_index + 1,
+                                    question.hints.len()
+                                ))
+                                .borders(Borders::ALL)
+                                .border_style(Style::default().fg(Color::Yellow)),
+                        );
+                    f.render_widget(hint_popup, hint_area);
+                }
             }
         } else {
             let no_question =
@@ -936,7 +1091,14 @@ impl UI {
                 "↑↓ Navigate | Enter: Execute | G: Generate | R: Archive | S: Analytics | Q: Quit"
             }
             AppState::AllQuestions => "↑↓ Browse | Enter: Select | ESC: Return | Q: Quit",
-            AppState::QuestionView => "C: Start Coding | H: Hints | ESC: Return | Q: Quit",
+            AppState::QuestionView => {
+                // Check if we have enough width for side-by-side layout
+                if area.width >= 120 {
+                    "Type in Editor | Ctrl+S: Submit | C: Full Editor | H: Hints | ESC: Return | Q: Quit"
+                } else {
+                    "C: Start Coding | H: Hints | ESC: Return | Q: Quit"
+                }
+            }
             AppState::CodeEditor => "Ctrl+S: Submit | Ctrl+H: Hint | ESC: Return | Q: Quit",
             AppState::Results => "F: Feedback | R: Retry | N: Next | ESC: Return | Q: Quit",
             AppState::Statistics => "ESC: Return | Q: Quit",
