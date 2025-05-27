@@ -243,6 +243,9 @@ impl App {
                     let _ = self.storage.end_session(&session_id);
                 }
             }
+            AppState::AllQuestions => {
+                self.state = AppState::Home;
+            }
             AppState::QuestionView => {
                 self.state = AppState::Home;
                 self.data.show_hints = false;
@@ -266,6 +269,7 @@ impl App {
     async fn handle_key_event(&mut self, key: KeyCode, modifiers: KeyModifiers) -> Result<()> {
         match self.state {
             AppState::Home => self.handle_home_keys(key).await?,
+            AppState::AllQuestions => self.handle_all_questions_keys(key).await?,
             AppState::QuestionView => self.handle_question_keys(key).await?,
             AppState::CodeEditor => self.handle_editor_keys(key, modifiers).await?,
             AppState::Results => self.handle_results_keys(key).await?,
@@ -290,24 +294,7 @@ impl App {
                     self.data.selected_tab += 1;
                 }
             }
-            KeyCode::Left => {
-                // Navigate recent questions list
-                if !self.data.recent_questions.is_empty() {
-                    let current = self.data.recent_questions_state.selected().unwrap_or(0);
-                    if current > 0 {
-                        self.data.recent_questions_state.select(Some(current - 1));
-                    }
-                }
-            }
-            KeyCode::Right => {
-                // Navigate recent questions list
-                if !self.data.recent_questions.is_empty() {
-                    let current = self.data.recent_questions_state.selected().unwrap_or(0);
-                    if current < self.data.recent_questions.len() - 1 {
-                        self.data.recent_questions_state.select(Some(current + 1));
-                    }
-                }
-            }
+
             KeyCode::Enter => match self.data.selected_tab {
                 0 => {
                     self.log_api_call(
@@ -319,7 +306,7 @@ impl App {
                     self.data.status_message = "Preparing to generate question...".to_string();
                     self.generate_new_question().await?;
                 }
-                1 => self.view_recent_questions().await?,
+                1 => self.state = AppState::AllQuestions,
                 2 => self.view_statistics().await?,
                 3 => self.state = AppState::Settings,
                 4 => self.state = AppState::Help,
@@ -337,11 +324,44 @@ impl App {
                 self.data.status_message = "Preparing to generate question...".to_string();
                 self.generate_new_question().await?;
             }
-            KeyCode::Char('r') => self.view_recent_questions().await?,
+            KeyCode::Char('r') => self.state = AppState::AllQuestions,
             KeyCode::Char('s') => self.view_statistics().await?,
             KeyCode::Char('h') => self.state = AppState::Help,
             KeyCode::Tab => {
                 // Select a recent question if one is highlighted
+                if let Some(selected) = self.data.recent_questions_state.selected() {
+                    if selected < self.data.recent_questions.len() {
+                        self.data.current_question =
+                            Some(self.data.recent_questions[selected].clone());
+                        self.state = AppState::QuestionView;
+                    }
+                }
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
+    async fn handle_all_questions_keys(&mut self, key: KeyCode) -> Result<()> {
+        match key {
+            KeyCode::Up => {
+                if !self.data.recent_questions.is_empty() {
+                    let current = self.data.recent_questions_state.selected().unwrap_or(0);
+                    if current > 0 {
+                        self.data.recent_questions_state.select(Some(current - 1));
+                    }
+                }
+            }
+            KeyCode::Down => {
+                if !self.data.recent_questions.is_empty() {
+                    let current = self.data.recent_questions_state.selected().unwrap_or(0);
+                    if current < self.data.recent_questions.len() - 1 {
+                        self.data.recent_questions_state.select(Some(current + 1));
+                    }
+                }
+            }
+            KeyCode::Enter => {
+                // Select a question if one is highlighted
                 if let Some(selected) = self.data.recent_questions_state.selected() {
                     if selected < self.data.recent_questions.len() {
                         self.data.current_question =
@@ -669,24 +689,6 @@ impl App {
         }
 
         self.data.is_loading = false;
-        Ok(())
-    }
-
-    async fn view_recent_questions(&mut self) -> Result<()> {
-        match self.storage.get_recent_questions(10) {
-            Ok(questions) => {
-                if let Some(question) = questions.first() {
-                    self.data.current_question = Some(question.clone());
-                    self.state = AppState::QuestionView;
-                } else {
-                    self.data.status_message =
-                        "No recent questions found. Generate a new question first.".to_string();
-                }
-            }
-            Err(e) => {
-                self.data.status_message = format!("Error loading recent questions: {}", e);
-            }
-        }
         Ok(())
     }
 

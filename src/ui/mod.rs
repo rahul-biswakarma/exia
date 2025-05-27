@@ -29,6 +29,7 @@ pub use widgets::Widget;
 #[derive(Debug, Clone, PartialEq)]
 pub enum AppState {
     Home,
+    AllQuestions,
     QuestionView,
     CodeEditor,
     Results,
@@ -191,6 +192,7 @@ impl UI {
     fn render_header(&self, f: &mut Frame, area: Rect, app: &App) {
         let title = match app.state {
             AppState::Home => "🏠 DSA Learning Assistant - Home",
+            AppState::AllQuestions => "📚 All Questions",
             AppState::QuestionView => "📝 Question View",
             AppState::CodeEditor => "💻 Code Editor",
             AppState::Results => "📊 Results",
@@ -218,6 +220,7 @@ impl UI {
     fn render_main_content(&self, f: &mut Frame, area: Rect, app: &App) {
         match app.state {
             AppState::Home => self.render_home(f, area, app),
+            AppState::AllQuestions => self.render_all_questions(f, area, app),
             AppState::QuestionView => self.render_question_view(f, area, app),
             AppState::CodeEditor => self.render_code_editor(f, area, app),
             AppState::Results => self.render_results(f, area, app),
@@ -250,13 +253,13 @@ impl UI {
 
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(content_area);
 
         // Left panel - Quick actions
         let actions = vec![
             "🎯 Generate New Question",
-            "📚 View Recent Questions",
+            "📚 All Questions",
             "📊 View Statistics",
             "⚙️ Settings",
             "❓ Help",
@@ -289,21 +292,12 @@ impl UI {
 
         f.render_stateful_widget(actions_list, chunks[0], &mut app.data.list_state.clone());
 
-        // Right panel - Split between recent questions and progress overview
-        let right_chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-            .split(chunks[1]);
-
-        // Recent questions section
-        self.render_recent_questions(f, right_chunks[0], app);
-
-        // Progress overview section
+        // Right panel - Progress overview only
         if let Some(stats) = &app.data.statistics {
-            self.render_progress_overview(f, right_chunks[1], stats, app);
+            self.render_progress_overview(f, chunks[1], stats, app);
         } else {
             let loading_widget = LoadingWidget::new("Loading statistics".to_string(), true);
-            loading_widget.render(f, right_chunks[1]);
+            loading_widget.render(f, chunks[1]);
         }
     }
 
@@ -363,51 +357,89 @@ impl UI {
         }
     }
 
+    fn render_all_questions(&self, f: &mut Frame, area: Rect, app: &App) {
+        let all_questions = &app.data.recent_questions; // For now, use recent questions as all questions
+
+        if all_questions.is_empty() {
+            let no_questions =
+                Paragraph::new("No questions found.\nPress 'g' to generate your first question!")
+                    .style(Style::default().fg(Color::Gray))
+                    .alignment(Alignment::Center)
+                    .wrap(Wrap { trim: true })
+                    .block(
+                        Block::default()
+                            .title("📚 All Questions")
+                            .borders(Borders::ALL)
+                            .border_style(Style::default().fg(Color::Blue)),
+                    );
+            f.render_widget(no_questions, area);
+        } else {
+            let question_items: Vec<ListItem> = all_questions
+                .iter()
+                .enumerate()
+                .map(|(i, question)| {
+                    let difficulty_color = match question.difficulty {
+                        crate::models::Difficulty::Easy => Color::Green,
+                        crate::models::Difficulty::Medium => Color::Yellow,
+                        crate::models::Difficulty::Hard => Color::Red,
+                    };
+
+                    let content = format!(
+                        "{}. {} [{}] - {}",
+                        i + 1,
+                        question.title,
+                        format!("{:?}", question.difficulty),
+                        format!("{:?}", question.topic)
+                    );
+
+                    ListItem::new(content).style(Style::default().fg(difficulty_color))
+                })
+                .collect();
+
+            let questions_list = List::new(question_items)
+                .block(
+                    Block::default()
+                        .title("📚 All Questions (Enter to select)")
+                        .borders(Borders::ALL)
+                        .border_style(Style::default().fg(Color::Blue)),
+                )
+                .highlight_style(Style::default().bg(Color::DarkGray));
+
+            f.render_stateful_widget(
+                questions_list,
+                area,
+                &mut app.data.recent_questions_state.clone(),
+            );
+        }
+    }
+
     fn render_progress_overview(&self, f: &mut Frame, area: Rect, stats: &Statistics, app: &App) {
         use widgets::*;
 
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(3), // Success rate gauge
                 Constraint::Length(6), // Progress overview widget
                 Constraint::Length(5), // Network activity widget
-                Constraint::Length(5), // Typing speed widget
                 Constraint::Min(0),    // API debug widget
             ])
-            .split(area.inner(&Margin {
-                vertical: 1,
-                horizontal: 1,
-            }));
-
-        // Success rate gauge
-        let success_rate = stats.success_rate / 100.0;
-        let progress_bar = ProgressBar::new(
-            format!("Success Rate: {:.1}%", stats.success_rate),
-            success_rate,
-            Color::Green,
-        );
-        progress_bar.render(f, chunks[0]);
+            .split(area);
 
         // Progress overview widget
         let progress_widget = ProgressOverviewWidget::new(stats)
             .with_cost_analytics(app.data.cost_analytics.as_ref())
             .with_details(false);
-        progress_widget.render(f, chunks[1]);
+        progress_widget.render(f, chunks[0]);
 
         // Network activity widget
         let network_widget =
             NetworkActivityWidget::new(&app.data.network_activity).with_details(false);
-        network_widget.render(f, chunks[2]);
-
-        // Typing speed widget
-        let typing_widget = TypingSpeedWidget::new(&app.data.typing_speed);
-        typing_widget.render(f, chunks[3]);
+        network_widget.render(f, chunks[1]);
 
         // API debug widget
         let api_widget =
             ApiDebugWidget::new(&app.data.api_calls, app.data.is_loading).with_details(true);
-        api_widget.render(f, chunks[4]);
+        api_widget.render(f, chunks[2]);
     }
 
     fn render_question_view(&self, f: &mut Frame, area: Rect, app: &App) {
@@ -842,7 +874,8 @@ impl UI {
 
     fn render_footer(&self, f: &mut Frame, area: Rect, app: &App) {
         let footer_text = match app.state {
-            AppState::Home => "↑↓: Menu | ←→: Recent Questions | Enter: Select | Tab: Open Question | g: Generate | q: Quit",
+            AppState::Home => "↑↓: Menu | Enter: Select | g: Generate | r: All Questions | s: Statistics | q: Quit",
+            AppState::AllQuestions => "↑↓: Navigate | Enter: Select Question | Esc: Back | q: Quit",
             AppState::QuestionView => "c: Code | h: Hints | Esc: Back | q: Quit",
             AppState::CodeEditor => "Ctrl+S: Submit | Ctrl+H: Hint | Esc: Back | q: Quit",
             AppState::Results => "f: Feedback | r: Retry | n: Next | Esc: Back | q: Quit",
