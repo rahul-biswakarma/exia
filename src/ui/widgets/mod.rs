@@ -6,20 +6,20 @@ use ratatui::{
 };
 
 pub mod api_debug;
-pub mod code_editor;
+pub mod syntax_editor_widget; // Renamed module
 pub mod corner_decoration;
-pub mod eva_loading;
-pub mod eva_progress;
+pub mod themed_loading_widget;
+pub mod themed_progress_widget;
 pub mod eva_theme;
-pub mod eva_typing;
+pub mod themed_typing_indicator_widget; // Renamed module
 pub mod home_layout;
 pub mod learning_efficiency;
 pub mod learning_unit_status;
 pub mod llm_call;
 pub mod llm_info;
-pub mod loading;
+// pub mod loading; // loading.rs was deleted
 pub mod network_activity;
-pub mod progress_overview;
+// pub mod progress_overview; // progress_overview.rs was deleted
 pub mod stats_bar;
 pub mod syntax_highlighter;
 pub mod system_monitor;
@@ -27,24 +27,32 @@ pub mod text_editor;
 pub mod typing_speed;
 
 pub use api_debug::ApiDebugWidget;
-pub use code_editor::{CodeEditorWidget, CodeLanguage};
+// pub use code_editor::{CodeEditorWidget, CodeLanguage}; // Removed
 pub use corner_decoration::{CornerDecorationWidget, DecoratedBlock};
-pub use eva_loading::{EvaLoadingWidget, EvaOperationType};
-pub use eva_progress::EvaProgressWidget;
+// EvaLoadingWidget and EvaOperationType removed
+// pub use eva_progress::EvaProgressWidget; // Removed
 pub use eva_theme::{
-    CleanTerminalTheme, EvaBorders, EvaColors, EvaFormat, EvaStyles, EvaSymbols, EvangelionTheme,
+    CleanTerminalTheme, EvaBorders, EvaColors, EvaFormat, EvaStyles, EvaSymbols, EvangelionTheme, // Keeping Eva* for now as they are part of the theme module itself
     Gundam00Theme, Theme, ThemeManager,
 };
-pub use eva_typing::EvaTypingWidget;
+// pub use eva_typing::EvaTypingWidget; // Removed
 pub use home_layout::HomeLayoutWidget;
 pub use learning_efficiency::LearningEfficiencyWidget;
 pub use learning_unit_status::LearningUnitStatusWidget;
 pub use llm_call::{LLMCallInfo, LLMCallStatus, LLMCallWidget};
 pub use llm_info::{LLMInfoWidget, LLMStreamInfo, LLMStreamStatus};
-pub use loading::LoadingWidget;
+// pub use loading::LoadingWidget; // Removed
 pub use network_activity::NetworkActivityWidget;
-pub use progress_overview::ProgressOverviewWidget;
+// pub use progress_overview::ProgressOverviewWidget; // Removed
 pub use stats_bar::StatsBarWidget;
+// Add new exports for ThemedLoadingWidget
+pub use themed_loading_widget::{LoadingOperationType, ThemedLoadingWidget};
+// Add new exports for ThemedProgressWidget
+pub use themed_progress_widget::ThemedProgressWidget;
+// Add new exports for ThemedTypingIndicatorWidget
+pub use themed_typing_indicator_widget::ThemedTypingIndicatorWidget;
+// Add new exports for SyntaxEditorWidget
+pub use syntax_editor_widget::{CodeLanguage, SyntaxEditorWidget};
 pub use system_monitor::{SystemMetrics, SystemMonitorWidget};
 pub use text_editor::TextEditor;
 pub use typing_speed::TypingSpeedWidget;
