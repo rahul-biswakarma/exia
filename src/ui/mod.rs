@@ -47,7 +47,8 @@ pub use widgets::Widget;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AppState {
-    Home,
+    FeatureSelection,
+    SynapseGrid,
     AllQuestions,
     QuestionView,
     CodeEditor,
@@ -65,6 +66,7 @@ pub struct AppData {
     pub statistics: Option<Statistics>,
     pub text_editor: TextEditor,
     pub selected_tab: usize,
+    pub selected_feature: usize,
     pub list_state: ListState,
     pub recent_questions_state: ListState,
     pub scroll_state: ScrollbarState,
@@ -155,6 +157,7 @@ impl Default for AppData {
             statistics: None,
             text_editor: TextEditor::default(),
             selected_tab: 0,
+            selected_feature: 0,
             list_state: ListState::default(),
             recent_questions_state: ListState::default(),
             scroll_state: ScrollbarState::default(),
@@ -606,7 +609,8 @@ impl UI {
         let theme = app.data.theme_manager.current_theme();
 
         let title = match app.state {
-            AppState::Home => "EXIA COMMAND CENTER",
+            AppState::FeatureSelection => "EXIA COMMAND CENTER",
+            AppState::SynapseGrid => "SYNAPSE GRID - DSA LEARNING",
             AppState::AllQuestions => "ALGORITHM DATABASE",
             AppState::QuestionView => "PROBLEM ANALYSIS",
             AppState::CodeEditor => "CODE SYNTHESIS INTERFACE",
@@ -629,7 +633,8 @@ impl UI {
 
     fn render_main_content(&self, f: &mut Frame, area: Rect, app: &App) {
         match app.state {
-            AppState::Home => self.render_home(f, area, app),
+            AppState::FeatureSelection => self.render_feature_selection(f, area, app),
+            AppState::SynapseGrid => self.render_synapse_grid(f, area, app),
             AppState::AllQuestions => self.render_all_questions(f, area, app),
             AppState::QuestionView => self.render_question_view(f, area, app),
             AppState::CodeEditor => self.render_code_editor(f, area, app),
@@ -641,7 +646,87 @@ impl UI {
         }
     }
 
-    fn render_home(&self, f: &mut Frame, area: Rect, app: &App) {
+    fn render_feature_selection(&self, f: &mut Frame, area: Rect, app: &App) {
+        let theme = app.data.theme_manager.current_theme();
+
+        // Create main layout
+        let main_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(8), // Header/Title
+                Constraint::Min(0),    // Feature list
+                Constraint::Length(3), // Footer instructions
+            ])
+            .split(area);
+
+        // Render header with Exia branding
+        let header_text = vec![
+            "╔══════════════════════════════════════════════════════════════════════════════════════╗".to_string(),
+            "║                                    🧠 EXIA                                           ║".to_string(),
+            "║                          Advanced Learning & Practice System                         ║".to_string(),
+            "║                                                                                      ║".to_string(),
+            "║                            Select a feature to begin:                               ║".to_string(),
+            "╚══════════════════════════════════════════════════════════════════════════════════════╝".to_string(),
+        ];
+
+        let header = Paragraph::new(header_text.join("\n"))
+            .style(theme.styles().text_primary())
+            .alignment(Alignment::Center)
+            .wrap(Wrap { trim: true });
+
+        f.render_widget(header, main_chunks[0]);
+
+        // Feature list
+        let features = vec![
+            "🧠 Synapse Grid - DSA Learning & Practice",
+            "🎯 Neural Network - Coming Soon",
+            "🔬 Quantum Lab - Coming Soon",
+            "📊 Analytics Hub - Coming Soon",
+            "⚙️  System Settings",
+            "❌ Exit Exia",
+        ];
+
+        let feature_items: Vec<ListItem> = features
+            .iter()
+            .enumerate()
+            .map(|(i, feature)| {
+                let style = if i == app.data.selected_feature {
+                    theme.styles().selected()
+                } else {
+                    theme.styles().text_primary()
+                };
+                ListItem::new(*feature).style(style)
+            })
+            .collect();
+
+        let features_list = List::new(feature_items)
+            .block(
+                theme
+                    .borders()
+                    .default_block()
+                    .title("🚀 Exia Features")
+                    .title_alignment(Alignment::Center),
+            )
+            .highlight_style(theme.styles().selected())
+            .highlight_symbol("► ");
+
+        f.render_widget(features_list, main_chunks[1]);
+
+        // Footer instructions
+        let footer_text = "↑↓ Navigate • Enter: Select • Esc: Exit";
+        let footer = Paragraph::new(footer_text)
+            .style(theme.styles().text_secondary())
+            .alignment(Alignment::Center)
+            .block(
+                Block::default()
+                    .borders(Borders::TOP)
+                    .border_style(theme.styles().text_secondary()),
+            );
+
+        f.render_widget(footer, main_chunks[2]);
+    }
+
+    fn render_synapse_grid(&self, f: &mut Frame, area: Rect, app: &App) {
         let theme = app.data.theme_manager.current_theme();
 
         let main_chunks = Layout::default()
@@ -760,7 +845,10 @@ impl UI {
                         "{} Technical Documentation",
                         self.theme.symbols().operational()
                     ),
-                    format!("{} Terminate Session", self.theme.symbols().error()),
+                    format!(
+                        "{} Return to Feature Selection",
+                        self.theme.symbols().error()
+                    ),
                 ];
 
                 let action_items: Vec<ListItem> = actions
@@ -781,7 +869,7 @@ impl UI {
                         self.theme
                             .borders()
                             .default_block()
-                            .title("Exia Operations"),
+                            .title("Synapse Grid Operations"),
                     )
                     .highlight_style(self.theme.styles().selected());
 
@@ -790,7 +878,7 @@ impl UI {
             }
 
             fn title(&self) -> Option<&str> {
-                Some("EXIA OPERATIONS")
+                Some("SYNAPSE GRID OPERATIONS")
             }
         }
 
@@ -1630,7 +1718,8 @@ impl UI {
         let theme = app.data.theme_manager.current_theme();
 
         let footer_text = match app.state {
-            AppState::Home => {
+            AppState::FeatureSelection => "↑↓ Navigate • Enter: Select • Esc: Exit",
+            AppState::SynapseGrid => {
                 "↑↓ Navigate | Enter: Execute | G: Generate | R: Archive | S: Analytics | Q: Quit"
             }
             AppState::AllQuestions => "↑↓ Browse | Enter: Select | ESC: Return | Q: Quit",

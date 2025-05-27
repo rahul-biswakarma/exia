@@ -230,7 +230,7 @@ impl App {
         let user_id = format!("user_{}", Uuid::new_v4().to_string()[..8].to_string());
 
         let mut app = Self {
-            state: AppState::Home,
+            state: AppState::FeatureSelection,
             data: AppData::default(),
             should_quit: false,
             storage,
@@ -293,17 +293,20 @@ impl App {
 
     async fn handle_escape(&mut self) -> Result<()> {
         match self.state {
-            AppState::Home => {
+            AppState::FeatureSelection => {
                 self.should_quit = true;
                 if let Some(session_id) = self.current_session_id {
                     let _ = self.storage.end_session(&session_id);
                 }
             }
+            AppState::SynapseGrid => {
+                self.state = AppState::FeatureSelection;
+            }
             AppState::AllQuestions => {
-                self.state = AppState::Home;
+                self.state = AppState::SynapseGrid;
             }
             AppState::QuestionView => {
-                self.state = AppState::Home;
+                self.state = AppState::SynapseGrid;
                 self.data.show_hints = false;
                 self.data.hint_index = 0;
             }
@@ -316,7 +319,7 @@ impl App {
                 self.data.feedback_text.clear();
             }
             AppState::Statistics | AppState::Settings | AppState::Help => {
-                self.state = AppState::Home;
+                self.state = AppState::SynapseGrid;
             }
             AppState::LLMCallView => {
                 // Cancel LLM operation and return to previous state
@@ -329,7 +332,8 @@ impl App {
 
     async fn handle_key_event(&mut self, key: KeyCode, modifiers: KeyModifiers) -> Result<()> {
         match self.state {
-            AppState::Home => self.handle_home_keys(key).await?,
+            AppState::FeatureSelection => self.handle_feature_selection_keys(key).await?,
+            AppState::SynapseGrid => self.handle_synapse_grid_keys(key).await?,
             AppState::AllQuestions => self.handle_all_questions_keys(key).await?,
             AppState::QuestionView => self.handle_question_keys(key, modifiers).await?,
             AppState::CodeEditor => self.handle_editor_keys(key, modifiers).await?,
@@ -347,7 +351,48 @@ impl App {
         Ok(())
     }
 
-    async fn handle_home_keys(&mut self, key: KeyCode) -> Result<()> {
+    async fn handle_feature_selection_keys(&mut self, key: KeyCode) -> Result<()> {
+        match key {
+            KeyCode::Up => {
+                if self.data.selected_feature > 0 {
+                    self.data.selected_feature -= 1;
+                }
+            }
+            KeyCode::Down => {
+                if self.data.selected_feature < 5 {
+                    // 6 total features (0-5)
+                    self.data.selected_feature += 1;
+                }
+            }
+            KeyCode::Enter => match self.data.selected_feature {
+                0 => {
+                    // Synapse Grid - DSA Learning & Practice
+                    self.state = AppState::SynapseGrid;
+                }
+                1 | 2 | 3 => {
+                    // Coming soon features
+                    self.data.status_message =
+                        "This feature is coming soon! Stay tuned.".to_string();
+                }
+                4 => {
+                    // System Settings
+                    self.state = AppState::Settings;
+                }
+                5 => {
+                    // Exit
+                    self.should_quit = true;
+                    if let Some(session_id) = self.current_session_id {
+                        let _ = self.storage.end_session(&session_id);
+                    }
+                }
+                _ => {}
+            },
+            _ => {}
+        }
+        Ok(())
+    }
+
+    async fn handle_synapse_grid_keys(&mut self, key: KeyCode) -> Result<()> {
         match key {
             KeyCode::Up => {
                 if self.data.selected_tab > 0 {
@@ -377,10 +422,7 @@ impl App {
                 3 => self.state = AppState::Settings,
                 4 => self.state = AppState::Help,
                 5 => {
-                    self.should_quit = true;
-                    if let Some(session_id) = self.current_session_id {
-                        let _ = self.storage.end_session(&session_id);
-                    }
+                    self.state = AppState::FeatureSelection;
                 }
                 _ => {}
             },
