@@ -77,19 +77,27 @@ impl<'a> CodeEditorWidget<'a> {
     }
 
     fn insert_cursor_in_spans(&self, spans: &mut Vec<Span>, cursor_col: usize) {
-        let line_num_offset = if self.show_line_numbers { 5 } else { 0 }; // "123 │ " = 5 chars
-        let target_col = cursor_col + line_num_offset;
-
+        // Skip line number span if present
+        let start_index = if self.show_line_numbers { 1 } else { 0 };
         let mut current_col = 0;
-        let mut span_index = 0;
+        let mut span_index = start_index;
+
+        // If cursor is at position 0 (start of line content), insert before first content span
+        if cursor_col == 0 && spans.len() > start_index {
+            spans.insert(
+                start_index,
+                Span::styled("█", Style::default().fg(Color::White).bg(Color::Blue)),
+            );
+            return;
+        }
 
         while span_index < spans.len() {
             let span = &spans[span_index];
             let span_len = span.content.chars().count();
 
-            if current_col + span_len > target_col {
-                // Cursor is within this span
-                let offset_in_span = target_col - current_col;
+            if current_col + span_len >= cursor_col {
+                // Cursor is within this span or at its end
+                let offset_in_span = cursor_col - current_col;
                 let span_content = span.content.as_ref();
                 let chars: Vec<char> = span_content.chars().collect();
 
@@ -123,7 +131,7 @@ impl<'a> CodeEditorWidget<'a> {
                         Span::styled("█", Style::default().fg(Color::White).bg(Color::Blue)),
                     );
                 }
-                break;
+                return;
             }
 
             current_col += span_len;
@@ -131,12 +139,10 @@ impl<'a> CodeEditorWidget<'a> {
         }
 
         // If we didn't find the position, add cursor at the end
-        if span_index >= spans.len() {
-            spans.push(Span::styled(
-                "█",
-                Style::default().fg(Color::White).bg(Color::Blue),
-            ));
-        }
+        spans.push(Span::styled(
+            "█",
+            Style::default().fg(Color::White).bg(Color::Blue),
+        ));
     }
 
     fn get_editor_info(&self) -> String {

@@ -45,6 +45,7 @@ pub struct AppData {
     pub text_editor: TextEditor,
     pub selected_tab: usize,
     pub list_state: ListState,
+    pub recent_questions_state: ListState,
     pub scroll_state: ScrollbarState,
     pub scroll_offset: usize,
     pub show_hints: bool,
@@ -60,6 +61,7 @@ pub struct AppData {
     pub current_llm_usage: Vec<LLMUsage>,
     pub network_activity: Vec<NetworkActivity>,
     pub typing_speed: TypingMetrics,
+    pub recent_questions: Vec<Question>,
 }
 
 #[derive(Debug, Clone)]
@@ -123,6 +125,7 @@ impl Default for AppData {
             text_editor: TextEditor::default(),
             selected_tab: 0,
             list_state: ListState::default(),
+            recent_questions_state: ListState::default(),
             scroll_state: ScrollbarState::default(),
             scroll_offset: 0,
             show_hints: false,
@@ -145,6 +148,7 @@ impl Default for AppData {
                 last_keystroke: None,
                 keystroke_intervals: Vec::new(),
             },
+            recent_questions: Vec::new(),
         }
     }
 }
@@ -246,7 +250,7 @@ impl UI {
 
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
             .split(content_area);
 
         // Left panel - Quick actions
@@ -285,12 +289,77 @@ impl UI {
 
         f.render_stateful_widget(actions_list, chunks[0], &mut app.data.list_state.clone());
 
-        // Right panel - Progress overview
+        // Right panel - Split between recent questions and progress overview
+        let right_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .split(chunks[1]);
+
+        // Recent questions section
+        self.render_recent_questions(f, right_chunks[0], app);
+
+        // Progress overview section
         if let Some(stats) = &app.data.statistics {
-            self.render_progress_overview(f, chunks[1], stats, app);
+            self.render_progress_overview(f, right_chunks[1], stats, app);
         } else {
             let loading_widget = LoadingWidget::new("Loading statistics".to_string(), true);
-            loading_widget.render(f, chunks[1]);
+            loading_widget.render(f, right_chunks[1]);
+        }
+    }
+
+    fn render_recent_questions(&self, f: &mut Frame, area: Rect, app: &App) {
+        let recent_questions = &app.data.recent_questions;
+
+        if recent_questions.is_empty() {
+            let no_questions = Paragraph::new(
+                "No recent questions found.\nPress 'g' to generate your first question!",
+            )
+            .style(Style::default().fg(Color::Gray))
+            .alignment(Alignment::Center)
+            .wrap(Wrap { trim: true })
+            .block(
+                Block::default()
+                    .title("📚 Recent Questions")
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(Color::Blue)),
+            );
+            f.render_widget(no_questions, area);
+        } else {
+            let question_items: Vec<ListItem> = recent_questions
+                .iter()
+                .enumerate()
+                .map(|(i, question)| {
+                    let difficulty_color = match question.difficulty {
+                        crate::models::Difficulty::Easy => Color::Green,
+                        crate::models::Difficulty::Medium => Color::Yellow,
+                        crate::models::Difficulty::Hard => Color::Red,
+                    };
+
+                    let content = format!(
+                        "{}. {} [{}]",
+                        i + 1,
+                        question.title,
+                        format!("{:?}", question.difficulty)
+                    );
+
+                    ListItem::new(content).style(Style::default().fg(difficulty_color))
+                })
+                .collect();
+
+            let questions_list = List::new(question_items)
+                .block(
+                    Block::default()
+                        .title("📚 Recent Questions (Enter to select)")
+                        .borders(Borders::ALL)
+                        .border_style(Style::default().fg(Color::Blue)),
+                )
+                .highlight_style(Style::default().bg(Color::DarkGray));
+
+            f.render_stateful_widget(
+                questions_list,
+                area,
+                &mut app.data.recent_questions_state.clone(),
+            );
         }
     }
 
@@ -472,10 +541,10 @@ impl UI {
         // Split stats bar into two widgets
         let stats_chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
+            .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
             .split(chunks[0]);
 
-        // Session stats widget
+        // Session stats widget (compact, no borders)
         let stats_widget = StatsBarWidget::new(
             app.data.success_count,
             app.data.error_count,
@@ -486,7 +555,7 @@ impl UI {
         .compact();
         stats_widget.render(f, stats_chunks[0]);
 
-        // Typing speed widget
+        // Typing speed widget (with borders)
         let typing_widget = TypingSpeedWidget::new(&app.data.typing_speed);
         typing_widget.render(f, stats_chunks[1]);
 
@@ -773,7 +842,7 @@ impl UI {
 
     fn render_footer(&self, f: &mut Frame, area: Rect, app: &App) {
         let footer_text = match app.state {
-            AppState::Home => "Tab: Navigate | Enter: Select | g: Generate Question | s: Statistics | h: Help | q: Quit",
+            AppState::Home => "↑↓: Menu | ←→: Recent Questions | Enter: Select | Tab: Open Question | g: Generate | q: Quit",
             AppState::QuestionView => "c: Code | h: Hints | Esc: Back | q: Quit",
             AppState::CodeEditor => "Ctrl+S: Submit | Ctrl+H: Hint | Esc: Back | q: Quit",
             AppState::Results => "f: Feedback | r: Retry | n: Next | Esc: Back | q: Quit",

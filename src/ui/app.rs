@@ -190,6 +190,11 @@ impl App {
             app.data.statistics = Some(stats);
         }
 
+        // Load recent questions
+        if let Ok(questions) = app.storage.get_recent_questions(5) {
+            app.data.recent_questions = questions;
+        }
+
         // Start a new session
         if let Ok(session) = app.storage.start_session() {
             app.current_session_id = Some(session.id);
@@ -285,6 +290,24 @@ impl App {
                     self.data.selected_tab += 1;
                 }
             }
+            KeyCode::Left => {
+                // Navigate recent questions list
+                if !self.data.recent_questions.is_empty() {
+                    let current = self.data.recent_questions_state.selected().unwrap_or(0);
+                    if current > 0 {
+                        self.data.recent_questions_state.select(Some(current - 1));
+                    }
+                }
+            }
+            KeyCode::Right => {
+                // Navigate recent questions list
+                if !self.data.recent_questions.is_empty() {
+                    let current = self.data.recent_questions_state.selected().unwrap_or(0);
+                    if current < self.data.recent_questions.len() - 1 {
+                        self.data.recent_questions_state.select(Some(current + 1));
+                    }
+                }
+            }
             KeyCode::Enter => match self.data.selected_tab {
                 0 => {
                     self.log_api_call(
@@ -317,6 +340,16 @@ impl App {
             KeyCode::Char('r') => self.view_recent_questions().await?,
             KeyCode::Char('s') => self.view_statistics().await?,
             KeyCode::Char('h') => self.state = AppState::Help,
+            KeyCode::Tab => {
+                // Select a recent question if one is highlighted
+                if let Some(selected) = self.data.recent_questions_state.selected() {
+                    if selected < self.data.recent_questions.len() {
+                        self.data.current_question =
+                            Some(self.data.recent_questions[selected].clone());
+                        self.state = AppState::QuestionView;
+                    }
+                }
+            }
             _ => {}
         }
         Ok(())
@@ -582,7 +615,14 @@ impl App {
                             .storage
                             .add_question_to_session(&session_id, &question.id);
 
-                        self.data.current_question = Some(question);
+                        self.data.current_question = Some(question.clone());
+
+                        // Update recent questions list
+                        self.data.recent_questions.insert(0, question);
+                        if self.data.recent_questions.len() > 5 {
+                            self.data.recent_questions.truncate(5);
+                        }
+
                         self.state = AppState::QuestionView;
                         self.data.status_message = "Question generated successfully!".to_string();
                         self.log_api_call("generate_question", ApiCallStatus::Success, "Complete");
