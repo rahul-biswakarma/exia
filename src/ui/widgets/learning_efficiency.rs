@@ -26,17 +26,17 @@ impl<'a> LearningEfficiencyWidget<'a> {
         self.stats.success_rate
     }
 
-    fn get_themed_sync_symbol(&self, rate: f64) -> &'static str {
+    fn get_themed_sync_symbol(&self, rate: f64) -> String {
         if let Some(theme) = self.theme {
             let indicators = theme.symbols().status_indicators();
             match rate {
-                r if r >= 80.0 => indicators.sync_high,
-                r if r >= 60.0 => indicators.sync_medium,
-                r if r >= 40.0 => indicators.sync_low,
-                _ => indicators.sync_critical,
+                r if r >= 80.0 => indicators.sync_high.clone(),
+                r if r >= 60.0 => indicators.sync_medium.clone(),
+                r if r >= 40.0 => indicators.sync_low.clone(),
+                _ => indicators.sync_critical.clone(),
             }
         } else {
-            EvaSymbols::sync_rate_symbol(rate)
+            EvaSymbols::sync_rate_symbol(rate).to_string()
         }
     }
 

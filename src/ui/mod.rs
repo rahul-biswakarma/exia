@@ -16,11 +16,26 @@ use ratatui::{
 use std::io;
 
 use widgets::{
-    CornerDecorationWidget, DecoratedBlock, EvaBorders, EvaColors, EvaFormat, // EvaLoadingWidget, EvaOperationType, EvaProgressWidget removed
-    EvaStyles, EvaSymbols, // EvaTypingWidget removed. Eva* specific items might be removed later
-    HomeLayoutWidget, LLMCallInfo, LLMCallWidget, LLMStreamInfo, LLMStreamStatus, SystemMetrics,
-    TextEditor, Theme, ThemeManager, LoadingOperationType, ThemedLoadingWidget,
-    ThemedProgressWidget, ThemedTypingIndicatorWidget, // Added new types
+    CornerDecorationWidget,
+    DecoratedBlock,
+    EvaBorders,
+    EvaColors,
+    EvaFormat, // EvaLoadingWidget, EvaOperationType, EvaProgressWidget removed
+    EvaStyles,
+    EvaSymbols, // EvaTypingWidget removed. Eva* specific items might be removed later
+    HomeLayoutWidget,
+    LLMCallInfo,
+    LLMCallWidget,
+    LLMStreamInfo,
+    LLMStreamStatus,
+    LoadingOperationType,
+    SystemMetrics,
+    TextEditor,
+    Theme,
+    ThemeManager,
+    ThemedLoadingWidget,
+    ThemedProgressWidget,
+    ThemedTypingIndicatorWidget, // Added new types
 };
 
 pub mod app;
@@ -184,6 +199,10 @@ impl UI {
         Ok(Self { terminal })
     }
 
+    pub fn theme<'a>(&self, app: &'a App) -> &'a dyn Theme {
+        app.data.theme_manager.current_theme()
+    }
+
     pub fn draw(&mut self, app: &App) -> Result<()> {
         let ui_ref = self as *const Self;
         self.terminal.draw(move |f| {
@@ -264,7 +283,7 @@ impl UI {
             );
             // Assuming ThemedLoadingWidget now implements the Widget trait directly for render
             // If it needs to be rendered as &ThemedLoadingWidget, adjust accordingly.
-            f.render_widget(&loading_widget, main_chunks[0]);
+            f.render_widget(loading_widget, main_chunks[0]);
             main_chunks[1]
         } else {
             area
@@ -330,7 +349,7 @@ impl UI {
                 app.data.theme_manager.current_theme(),
             )
             .with_operation_type(LoadingOperationType::MagiCalculation);
-            f.render_widget(&loading_widget, content_area);
+            f.render_widget(loading_widget, content_area);
         }
     }
 
@@ -525,9 +544,10 @@ impl UI {
             .split(area);
 
         // Progress overview widget (now ThemedProgressWidget)
-        let progress_widget = ThemedProgressWidget::new(stats, app.data.theme_manager.current_theme())
-            .with_cost_analytics(app.data.cost_analytics.as_ref())
-            .with_details(false); // Assuming 'false' shows the main_display
+        let progress_widget =
+            ThemedProgressWidget::new(stats, app.data.theme_manager.current_theme())
+                .with_cost_analytics(app.data.cost_analytics.as_ref())
+                .with_details(false); // Assuming 'false' shows the main_display
         progress_widget.render(f, chunks[0]);
 
         // Network activity widget
@@ -560,7 +580,7 @@ impl UI {
                 let difficulty_symbol = match question.difficulty {
                     crate::models::Difficulty::Easy => self.theme(app).symbols().operational(),
                     crate::models::Difficulty::Medium => self.theme(app).symbols().warning(),
-                    crate::models::Difficulty::Hard => self.theme(app).symbols().critical(),
+                    crate::models::Difficulty::Hard => self.theme(app).symbols().error(),
                 };
 
                 let title_text = format!(
@@ -591,20 +611,35 @@ impl UI {
                 // Question description
                 let description_text = format!(
                     "{} PROBLEM ANALYSIS:\n\n{}",
-                    self.theme(app).symbols().geometric_shapes().get(0).cloned().unwrap_or_default(),
+                    self.theme(app)
+                        .symbols()
+                        .geometric_shapes()
+                        .get(0)
+                        .cloned()
+                        .unwrap_or_default(),
                     question.description
                 );
                 let description = Paragraph::new(description_text)
                     .style(self.theme(app).styles().text_primary())
                     .wrap(Wrap { trim: true })
                     .scroll((app.data.scroll_offset as u16, 0))
-                    .block(self.theme(app).borders().panel().title(self.theme(app).formats().title("TECHNICAL SPECIFICATION")));
+                    .block(
+                        self.theme(app)
+                            .borders()
+                            .default_block()
+                            .title(self.theme(app).formats().title("TECHNICAL SPECIFICATION")),
+                    );
                 f.render_widget(description, left_chunks[0]);
 
                 // Test cases
                 let test_cases_text = format!(
                     "{} TEST SCENARIOS:\n\n{}",
-                    self.theme(app).symbols().geometric_shapes().get(2).cloned().unwrap_or_default(),
+                    self.theme(app)
+                        .symbols()
+                        .geometric_shapes()
+                        .get(2)
+                        .cloned()
+                        .unwrap_or_default(),
                     question
                         .test_cases
                         .iter()
@@ -612,7 +647,7 @@ impl UI {
                         .map(|(i, tc)| {
                             format!(
                                 "{} TEST CASE {}: INPUT: {} | EXPECTED: {}",
-                                "→", 
+                                "→",
                                 i + 1,
                                 tc.input,
                                 tc.expected_output
@@ -626,7 +661,10 @@ impl UI {
                     .style(self.theme(app).styles().text_secondary())
                     .wrap(Wrap { trim: true })
                     .block(
-                        self.theme(app).borders().operational_block().title(self.theme(app).formats().title("VALIDATION PROTOCOLS")),
+                        self.theme(app)
+                            .borders()
+                            .operational_block()
+                            .title(self.theme(app).formats().title("VALIDATION PROTOCOLS")),
                     );
                 f.render_widget(test_cases, left_chunks[1]);
 
@@ -634,19 +672,20 @@ impl UI {
                 let right_chunks = Layout::default()
                     .direction(Direction::Vertical)
                     .constraints([
-                        Constraint::Length(8), 
-                        Constraint::Min(0),    // Code editor
+                        Constraint::Length(8),
+                        Constraint::Min(0), // Code editor
                     ])
                     .split(content_chunks[1]);
 
                 // Typing indicator widget (compact)
-                let typing_indicator = ThemedTypingIndicatorWidget::new(&app.data.typing_speed, self.theme(app));
+                let typing_indicator =
+                    ThemedTypingIndicatorWidget::new(&app.data.typing_speed, self.theme(app));
                 typing_indicator.render(f, right_chunks[0]);
 
                 // Syntax editor widget
                 use widgets::*; // Ensure CodeLanguage is in scope
-                let syntax_editor_widget =
-                    SyntaxEditorWidget::new(&app.data.text_editor).with_language(CodeLanguage::Rust); // Renamed
+                let syntax_editor_widget = SyntaxEditorWidget::new(&app.data.text_editor)
+                    .with_language(CodeLanguage::Rust); // Renamed
                 syntax_editor_widget.render(f, right_chunks[1]);
 
                 // Hints panel (if enabled) for side-by-side mode
@@ -696,7 +735,7 @@ impl UI {
                 let difficulty_symbol = match question.difficulty {
                     crate::models::Difficulty::Easy => self.theme(app).symbols().operational(), // EvaSymbols replaced
                     crate::models::Difficulty::Medium => self.theme(app).symbols().warning(), // EvaSymbols replaced
-                    crate::models::Difficulty::Hard => self.theme(app).symbols().critical(), // EvaSymbols replaced
+                    crate::models::Difficulty::Hard => self.theme(app).symbols().error(), // EvaSymbols replaced
                 };
 
                 let title_text = format!(
@@ -712,20 +751,35 @@ impl UI {
                 // Question description
                 let description_text = format!(
                     "{} PROBLEM ANALYSIS:\n\n{}",
-                    self.theme(app).symbols().geometric_shapes().get(0).cloned().unwrap_or_default(), // EvaSymbols replaced
+                    self.theme(app)
+                        .symbols()
+                        .geometric_shapes()
+                        .get(0)
+                        .cloned()
+                        .unwrap_or_default(), // EvaSymbols replaced
                     question.description
                 );
                 let description = Paragraph::new(description_text)
                     .style(self.theme(app).styles().text_primary()) // EvaStyles replaced
                     .wrap(Wrap { trim: true })
                     .scroll((app.data.scroll_offset as u16, 0))
-                    .block(self.theme(app).borders().panel().title(self.theme(app).formats().title("TECHNICAL SPECIFICATION"))); // EvaBorders and EvaFormat replaced
+                    .block(
+                        self.theme(app)
+                            .borders()
+                            .default_block()
+                            .title(self.theme(app).formats().title("TECHNICAL SPECIFICATION")),
+                    ); // EvaBorders and EvaFormat replaced
                 f.render_widget(description, chunks[1]);
 
                 // Test cases
                 let test_cases_text = format!(
                     "{} TEST SCENARIOS:\n\n{}",
-                    self.theme(app).symbols().geometric_shapes().get(2).cloned().unwrap_or_default(), // EvaSymbols replaced (triangle)
+                    self.theme(app)
+                        .symbols()
+                        .geometric_shapes()
+                        .get(2)
+                        .cloned()
+                        .unwrap_or_default(), // EvaSymbols replaced (triangle)
                     question
                         .test_cases
                         .iter()
@@ -747,7 +801,10 @@ impl UI {
                     .style(self.theme(app).styles().text_secondary()) // EvaStyles replaced (sync_rate to text_secondary)
                     .wrap(Wrap { trim: true })
                     .block(
-                        self.theme(app).borders().operational_block().title(self.theme(app).formats().title("VALIDATION PROTOCOLS")), // EvaBorders and EvaFormat replaced
+                        self.theme(app)
+                            .borders()
+                            .operational_block()
+                            .title(self.theme(app).formats().title("VALIDATION PROTOCOLS")), // EvaBorders and EvaFormat replaced
                     );
                 f.render_widget(test_cases, chunks[2]);
 
@@ -811,7 +868,8 @@ impl UI {
             .split(area);
 
         // Typing indicator widget (full width)
-        let typing_indicator = ThemedTypingIndicatorWidget::new(&app.data.typing_speed, self.theme(app));
+        let typing_indicator =
+            ThemedTypingIndicatorWidget::new(&app.data.typing_speed, self.theme(app));
         typing_indicator.render(f, chunks[0]);
 
         // Enhanced code editor widget
@@ -852,7 +910,7 @@ impl UI {
             app.data.theme_manager.current_theme(),
         )
         .with_operation_type(operation_type);
-        f.render_widget(&themed_loading, chunks[2]);
+        f.render_widget(themed_loading, chunks[2]);
     }
 
     fn render_results(&self, f: &mut Frame, area: Rect, app: &App) {

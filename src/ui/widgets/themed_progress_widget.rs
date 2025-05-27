@@ -1,4 +1,5 @@
-use crate::ui::theme::Theme; // Eva* imports removed
+use super::eva_theme::Theme;
+use super::Widget;
 use crate::models::CostAnalytics;
 use crate::storage::Statistics;
 use ratatui::{
@@ -8,15 +9,18 @@ use ratatui::{
     Frame,
 };
 
-pub struct ThemedProgressWidget<'a> { // Renamed struct
+pub struct ThemedProgressWidget<'a> {
+    // Renamed struct
     pub stats: &'a Statistics,
     pub cost_analytics: Option<&'a CostAnalytics>,
     pub show_detailed: bool,
     pub theme: &'a dyn Theme, // Theme is now mandatory
 }
 
-impl<'a> ThemedProgressWidget<'a> { // Renamed struct
-    pub fn new(stats: &'a Statistics, theme: &'a dyn Theme) -> Self { // Added theme to constructor
+impl<'a> ThemedProgressWidget<'a> {
+    // Renamed struct
+    pub fn new(stats: &'a Statistics, theme: &'a dyn Theme) -> Self {
+        // Added theme to constructor
         Self {
             stats,
             cost_analytics: None,
@@ -48,7 +52,8 @@ impl<'a> ThemedProgressWidget<'a> { // Renamed struct
         (is_ok, is_warning)
     }
 
-    fn get_themed_sync_symbol(&self, rate: f64) -> String { // Return type changed to String
+    fn get_themed_sync_symbol(&self, rate: f64) -> String {
+        // Return type changed to String
         let indicators = self.theme.symbols().status_indicators();
         match rate {
             r if r >= 80.0 => indicators.sync_high.clone(),
@@ -65,13 +70,14 @@ impl<'a> ThemedProgressWidget<'a> { // Renamed struct
         let empty_symbol = progress_symbols.last().unwrap_or(&" ").to_string(); // .to_string()
         let fill_symbol = progress_symbols.first().unwrap_or(&"█").to_string(); // .to_string()
 
-        format!("{}{}",
+        format!(
+            "{}{}",
             fill_symbol.repeat(filled),
             empty_symbol.repeat(width - filled)
         )
         // Fallback removed
     }
-    
+
     // Private helper for hex display, retained as it doesn't rely on theme-specific details.
     fn hex_display(&self, content: &str) -> String {
         // Simplified: In a real scenario, this might involve more complex formatting.
@@ -79,7 +85,6 @@ impl<'a> ThemedProgressWidget<'a> { // Renamed struct
         // This function itself should not apply styles.
         format!("[HEX: {}]", content.to_uppercase())
     }
-
 
     fn render_main_display(&self, f: &mut Frame, area: Rect) {
         let chunks = Layout::default()
@@ -92,7 +97,13 @@ impl<'a> ThemedProgressWidget<'a> { // Renamed struct
             .split(area);
 
         // Header
-        let header_symbol = self.theme.symbols().geometric_shapes().get(0).unwrap_or(&"").to_string();
+        let header_symbol = self
+            .theme
+            .symbols()
+            .geometric_shapes()
+            .get(0)
+            .unwrap_or(&"")
+            .to_string();
         let header_text = format!(
             "{} CENTRAL DOGMA - ALGORITHM LEARNING SYSTEM",
             header_symbol // EvaSymbols replaced
@@ -113,9 +124,11 @@ impl<'a> ThemedProgressWidget<'a> { // Renamed struct
             operational_symbol, sync_rate, sync_symbol, progress_bar
         );
 
-        let sync_style = if sync_rate >= 80.0 { // Assuming 80 as high threshold
+        let sync_style = if sync_rate >= 80.0 {
+            // Assuming 80 as high threshold
             self.theme.styles().text_success()
-        } else if sync_rate >= 60.0 { // Assuming 60 as medium threshold
+        } else if sync_rate >= 60.0 {
+            // Assuming 60 as medium threshold
             self.theme.styles().text_warning()
         } else {
             self.theme.styles().text_error()
@@ -140,37 +153,56 @@ impl<'a> ThemedProgressWidget<'a> { // Renamed struct
             .split(area);
 
         // Left panel - Learning stats
-        let diamond_symbol = self.theme.symbols().geometric_shapes().get(1).unwrap_or(&"").to_string(); // EvaSymbols replaced
-        
+        let diamond_symbol = self
+            .theme
+            .symbols()
+            .geometric_shapes()
+            .get(1)
+            .unwrap_or(&"")
+            .to_string(); // EvaSymbols replaced
+
         let problems_attempted_str = format!(
-            "{} {}: {}", 
+            "{} {}: {}",
             self.theme.symbols().status_indicators().info, // Example, pick a suitable symbol
-            "PROBLEMS ATTEMPTED", 
+            "PROBLEMS ATTEMPTED",
             self.stats.total_questions
         );
         let solutions_accepted_str = format!(
-            "{} {}: {}", 
-            if self.stats.accepted_solutions > 0 { self.theme.symbols().status_indicators().operational } else { self.theme.symbols().status_indicators().error },
-            "SOLUTIONS ACCEPTED", 
+            "{} {}: {}",
+            if self.stats.accepted_solutions > 0 {
+                self.theme.symbols().status_indicators().operational
+            } else {
+                self.theme.symbols().status_indicators().error
+            },
+            "SOLUTIONS ACCEPTED",
             self.stats.accepted_solutions
         );
         let success_rate_str = format!(
-            "{} {}: {:.1}%", 
-            if self.stats.success_rate >= 70.0 { self.theme.symbols().status_indicators().operational } else { self.theme.symbols().status_indicators().warning },
-            "SUCCESS RATE", 
+            "{} {}: {:.1}%",
+            if self.stats.success_rate >= 70.0 {
+                self.theme.symbols().status_indicators().operational
+            } else {
+                self.theme.symbols().status_indicators().warning
+            },
+            "SUCCESS RATE",
             self.stats.success_rate
         );
+        let degraded_symbol = &self.theme.symbols().status_indicators().degraded;
         let current_streak_str = format!(
-            "{} {}: {}", 
-            if self.stats.current_streak > 0 { "🔥" } else { self.theme.symbols().status_indicators().degraded }, // Example: fire emoji or theme symbol
-            "CURRENT STREAK", 
+            "{} {}: {}",
+            if self.stats.current_streak > 0 {
+                "🔥"
+            } else {
+                degraded_symbol
+            }, // Example: fire emoji or theme symbol
+            "CURRENT STREAK",
             self.stats.current_streak
         );
         let avg_exec_time_str = format!(
-            "{} {}: {:.1} {}", 
+            "{} {}: {:.1} {}",
             self.theme.symbols().status_indicators().neutral, // Example
-            "AVG EXECUTION TIME", 
-            self.stats.avg_execution_time, 
+            "AVG EXECUTION TIME",
+            self.stats.avg_execution_time,
             "MS"
         );
 
@@ -183,7 +215,6 @@ impl<'a> ThemedProgressWidget<'a> { // Renamed struct
             current_streak_str,
             avg_exec_time_str
         ); // EvaFormat replaced
-
 
         let (is_ok, is_warning) = self.get_operational_status();
         let learning_border = if !is_ok && !is_warning {
@@ -200,9 +231,21 @@ impl<'a> ThemedProgressWidget<'a> { // Renamed struct
         f.render_widget(learning_widget, chunks[0]);
 
         // Right panel - System status
-        let triangle_symbol = self.theme.symbols().geometric_shapes().get(2).unwrap_or(&"").to_string(); // EvaSymbols replaced
-        let hexagon_symbol = self.theme.symbols().geometric_shapes().get(0).unwrap_or(&"").to_string(); // Re-using hexagon
-        
+        let triangle_symbol = self
+            .theme
+            .symbols()
+            .geometric_shapes()
+            .get(2)
+            .unwrap_or(&"")
+            .to_string(); // EvaSymbols replaced
+        let hexagon_symbol = self
+            .theme
+            .symbols()
+            .geometric_shapes()
+            .get(0)
+            .unwrap_or(&"")
+            .to_string(); // Re-using hexagon
+
         let system_stats = if let Some(cost) = self.cost_analytics {
             let total_cost_str = format!("{}: ${:.4} {}", "TOTAL COST", cost.total_cost_usd, "USD");
             let tokens_used_str = format!("{}: {}", "TOKENS USED", cost.tokens_used);
@@ -219,8 +262,8 @@ impl<'a> ThemedProgressWidget<'a> { // Renamed struct
                 field_status_str
             )
         } else {
-             let resources_str = format!("{}: {}", "RESOURCES", "LOADING");
-             let field_status_str = self.hex_display("FIELD UNKNOWN");
+            let resources_str = format!("{}: {}", "RESOURCES", "LOADING");
+            let field_status_str = self.hex_display("FIELD UNKNOWN");
             format!(
                 "{} SYSTEM RESOURCES\n\n{}\n\n{} AT FIELD STATUS\n{}",
                 triangle_symbol,
@@ -257,7 +300,13 @@ impl<'a> ThemedProgressWidget<'a> { // Renamed struct
             .split(chunks[1]);
 
         // Topic distribution
-        let square_symbol = self.theme.symbols().geometric_shapes().get(3).unwrap_or(&"").to_string(); // EvaSymbols replaced
+        let square_symbol = self
+            .theme
+            .symbols()
+            .geometric_shapes()
+            .get(3)
+            .unwrap_or(&"")
+            .to_string(); // EvaSymbols replaced
         let mut topic_text = format!("{} ALGORITHM CATEGORIES\n\n", square_symbol);
         for (topic, count) in self.stats.topic_distribution.iter().take(5) {
             topic_text.push_str(&format!("{} {}: {}\n", "→", topic, count)); // Using "→" as a simple list item indicator
@@ -265,7 +314,12 @@ impl<'a> ThemedProgressWidget<'a> { // Renamed struct
 
         let topics_widget = Paragraph::new(topic_text)
             .style(self.theme.styles().text_secondary()) // EvaStyles replaced
-            .block(self.theme.borders().default_block().title("ALGORITHM TYPES")); // EvaBorders and EvaFormat replaced
+            .block(
+                self.theme
+                    .borders()
+                    .default_block()
+                    .title("ALGORITHM TYPES"),
+            ); // EvaBorders and EvaFormat replaced
         f.render_widget(topics_widget, detail_chunks[0]);
 
         // Difficulty distribution
@@ -277,12 +331,18 @@ impl<'a> ThemedProgressWidget<'a> { // Renamed struct
 
         let difficulty_widget = Paragraph::new(difficulty_text)
             .style(self.theme.styles().text_secondary()) // EvaStyles replaced
-            .block(self.theme.borders().default_block().title("DIFFICULTY LEVELS")); // EvaBorders and EvaFormat replaced
+            .block(
+                self.theme
+                    .borders()
+                    .default_block()
+                    .title("DIFFICULTY LEVELS"),
+            ); // EvaBorders and EvaFormat replaced
         f.render_widget(difficulty_widget, detail_chunks[1]);
     }
 }
 
-impl<'a> Widget for ThemedProgressWidget<'a> { // Renamed struct
+impl<'a> Widget for ThemedProgressWidget<'a> {
+    // Renamed struct
     fn render(&self, f: &mut Frame, area: Rect) {
         if self.show_detailed {
             self.render_detailed_view(f, area);

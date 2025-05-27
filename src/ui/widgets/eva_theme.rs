@@ -10,6 +10,7 @@ pub trait Theme {
     fn borders(&self) -> &dyn ThemeBorders;
     fn styles(&self) -> &dyn ThemeStyles;
     fn symbols(&self) -> &dyn ThemeSymbols;
+    fn formats(&self) -> &dyn ThemeFormats;
 }
 
 /// Color palette trait
@@ -37,6 +38,7 @@ pub trait ThemeBorders {
     fn warning_block(&self) -> Block<'static>;
     fn error_block(&self) -> Block<'static>;
     fn success_block(&self) -> Block<'static>;
+    fn operational_block(&self) -> Block<'static>;
 }
 
 /// Text styles trait
@@ -64,28 +66,50 @@ pub trait ThemeSymbols {
     fn loading_messages(&self) -> LoadingMessages;
 }
 
+/// Format utilities trait
+pub trait ThemeFormats {
+    fn title(&self, text: &str) -> String;
+    fn status(&self, label: &str, value: &str, is_ok: bool) -> String;
+    fn readout(&self, label: &str, value: &str, unit: &str) -> String;
+    fn hex_display(&self, content: &str) -> String;
+    fn progress_bar(&self, progress: f64, width: usize) -> String;
+}
+
 /// Status indicator symbols for different themes
 #[derive(Debug, Clone)]
 pub struct StatusIndicators {
-    pub sync_high: &'static str,
-    pub sync_medium: &'static str,
-    pub sync_low: &'static str,
-    pub sync_critical: &'static str,
-    pub connection_active: &'static str,
-    pub connection_weak: &'static str,
-    pub connection_lost: &'static str,
+    pub sync_high: String,
+    pub sync_medium: String,
+    pub sync_low: String,
+    pub sync_critical: String,
+    pub connection_active: String,
+    pub connection_weak: String,
+    pub connection_lost: String,
+    pub operational: String,
+    pub warning: String,
+    pub error: String,
+    pub info: String,
+    pub neutral: String,
+    pub degraded: String,
 }
 
 /// Loading messages for different themes
 #[derive(Debug, Clone)]
 pub struct LoadingMessages {
-    pub system_boot: &'static str,
-    pub angel_detection: &'static str,
-    pub eva_activation: &'static str,
-    pub sync_test: &'static str,
-    pub data_analysis: &'static str,
-    pub magi_calculation: &'static str,
-    pub at_field_generation: &'static str,
+    pub system_boot: String,
+    pub angel_detection: String,
+    pub eva_activation: String,
+    pub sync_test: String,
+    pub data_analysis: String,
+    pub magi_calculation: String,
+    pub at_field_generation: String,
+    pub device_discovery: String,
+    pub data_backup: String,
+    pub software_update: String,
+    pub security_scan: String,
+    pub network_check: String,
+    pub log_upload: String,
+    pub config_apply: String,
 }
 
 // ============================================================================
@@ -109,6 +133,9 @@ impl Theme for EvangelionTheme {
     }
     fn symbols(&self) -> &dyn ThemeSymbols {
         &EvangelionSymbols
+    }
+    fn formats(&self) -> &dyn ThemeFormats {
+        &EvangelionFormats
     }
 }
 
@@ -218,6 +245,13 @@ impl ThemeBorders for EvangelionBorders {
             .border_type(BorderType::Rounded)
             .border_style(Style::default().fg(EvangelionColors.success()))
     }
+
+    fn operational_block(&self) -> Block<'static> {
+        Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Rounded)
+            .border_style(Style::default().fg(EvangelionColors.primary()))
+    }
 }
 
 struct EvangelionStyles;
@@ -286,25 +320,68 @@ impl ThemeSymbols for EvangelionSymbols {
     }
     fn status_indicators(&self) -> StatusIndicators {
         StatusIndicators {
-            sync_high: "████",
-            sync_medium: "███░",
-            sync_low: "██░░",
-            sync_critical: "█░░░",
-            connection_active: "◉◉◉",
-            connection_weak: "◉◉◯",
-            connection_lost: "◯◯◯",
+            sync_high: "████".to_string(),
+            sync_medium: "███░".to_string(),
+            sync_low: "██░░".to_string(),
+            sync_critical: "█░░░".to_string(),
+            connection_active: "◉◉◉".to_string(),
+            connection_weak: "◉◉◯".to_string(),
+            connection_lost: "◯◯◯".to_string(),
+            operational: "◉".to_string(),
+            warning: "⚠".to_string(),
+            error: "⚡".to_string(),
+            info: "ℹ".to_string(),
+            neutral: "●".to_string(),
+            degraded: "◯".to_string(),
         }
     }
     fn loading_messages(&self) -> LoadingMessages {
         LoadingMessages {
-            system_boot: "NERV SYSTEM INITIALIZATION",
-            angel_detection: "PATTERN BLUE DETECTED",
-            eva_activation: "EVA UNIT ACTIVATION SEQUENCE",
-            sync_test: "PILOT SYNCHRONIZATION TEST",
-            data_analysis: "MAGI SYSTEM ANALYSIS",
-            magi_calculation: "MAGI SUPERCOMPUTER CALCULATION",
-            at_field_generation: "AT FIELD GENERATION",
+            system_boot: "NERV SYSTEM INITIALIZATION".to_string(),
+            angel_detection: "PATTERN BLUE DETECTED".to_string(),
+            eva_activation: "EVA UNIT ACTIVATION SEQUENCE".to_string(),
+            sync_test: "PILOT SYNCHRONIZATION TEST".to_string(),
+            data_analysis: "MAGI SYSTEM ANALYSIS".to_string(),
+            magi_calculation: "MAGI SUPERCOMPUTER CALCULATION".to_string(),
+            at_field_generation: "AT FIELD GENERATION".to_string(),
+            device_discovery: "DEVICE DISCOVERY PROTOCOL".to_string(),
+            data_backup: "DATA BACKUP SEQUENCE".to_string(),
+            software_update: "SOFTWARE UPDATE PROTOCOL".to_string(),
+            security_scan: "SECURITY SCAN INITIATED".to_string(),
+            network_check: "NETWORK DIAGNOSTICS".to_string(),
+            log_upload: "LOG UPLOAD SEQUENCE".to_string(),
+            config_apply: "CONFIGURATION APPLY".to_string(),
         }
+    }
+}
+
+struct EvangelionFormats;
+
+impl ThemeFormats for EvangelionFormats {
+    fn title(&self, text: &str) -> String {
+        format!("[ {} ]", text.to_uppercase())
+    }
+
+    fn status(&self, label: &str, value: &str, is_ok: bool) -> String {
+        let symbol = if is_ok { "◉" } else { "⚠" };
+        format!("{} {}: {}", symbol, label, value)
+    }
+
+    fn readout(&self, label: &str, value: &str, unit: &str) -> String {
+        format!("{}: {} {}", label.to_uppercase(), value, unit)
+    }
+
+    fn hex_display(&self, content: &str) -> String {
+        content
+            .chars()
+            .map(|c| format!("{:02X}", c as u8))
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
+    fn progress_bar(&self, progress: f64, width: usize) -> String {
+        let filled = (progress * width as f64) as usize;
+        "█".repeat(filled) + &"░".repeat(width - filled)
     }
 }
 
@@ -329,6 +406,9 @@ impl Theme for Gundam00Theme {
     }
     fn symbols(&self) -> &dyn ThemeSymbols {
         &Gundam00Symbols
+    }
+    fn formats(&self) -> &dyn ThemeFormats {
+        &Gundam00Formats
     }
 }
 
@@ -438,6 +518,13 @@ impl ThemeBorders for Gundam00Borders {
             .border_type(BorderType::Plain)
             .border_style(Style::default().fg(Gundam00Colors.success()))
     }
+
+    fn operational_block(&self) -> Block<'static> {
+        Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Plain)
+            .border_style(Style::default().fg(Gundam00Colors.primary()))
+    }
 }
 
 struct Gundam00Styles;
@@ -506,25 +593,68 @@ impl ThemeSymbols for Gundam00Symbols {
     }
     fn status_indicators(&self) -> StatusIndicators {
         StatusIndicators {
-            sync_high: "▰▰▰▰",
-            sync_medium: "▰▰▰▱",
-            sync_low: "▰▰▱▱",
-            sync_critical: "▰▱▱▱",
-            connection_active: "●●●",
-            connection_weak: "●●○",
-            connection_lost: "○○○",
+            sync_high: "▰▰▰▰".to_string(),
+            sync_medium: "▰▰▰▱".to_string(),
+            sync_low: "▰▰▱▱".to_string(),
+            sync_critical: "▰▱▱▱".to_string(),
+            connection_active: "●●●".to_string(),
+            connection_weak: "●●○".to_string(),
+            connection_lost: "○○○".to_string(),
+            operational: "●".to_string(),
+            warning: "▲".to_string(),
+            error: "✕".to_string(),
+            info: "ℹ".to_string(),
+            neutral: "○".to_string(),
+            degraded: "◯".to_string(),
         }
     }
     fn loading_messages(&self) -> LoadingMessages {
         LoadingMessages {
-            system_boot: "CELESTIAL BEING SYSTEM ONLINE",
-            angel_detection: "TARGET ACQUISITION IN PROGRESS",
-            eva_activation: "GUNDAM ACTIVATION SEQUENCE",
-            sync_test: "QUANTUM BRAINWAVE SYNC",
-            data_analysis: "VEDA SYSTEM ANALYSIS",
-            magi_calculation: "QUANTUM COMPUTATION",
-            at_field_generation: "GN FIELD DEPLOYMENT",
+            system_boot: "CELESTIAL BEING SYSTEM ONLINE".to_string(),
+            angel_detection: "TARGET ACQUISITION IN PROGRESS".to_string(),
+            eva_activation: "GUNDAM ACTIVATION SEQUENCE".to_string(),
+            sync_test: "QUANTUM BRAINWAVE SYNC".to_string(),
+            data_analysis: "VEDA SYSTEM ANALYSIS".to_string(),
+            magi_calculation: "QUANTUM COMPUTATION".to_string(),
+            at_field_generation: "GN FIELD DEPLOYMENT".to_string(),
+            device_discovery: "DEVICE SCAN PROTOCOL".to_string(),
+            data_backup: "DATA ARCHIVE SEQUENCE".to_string(),
+            software_update: "SYSTEM UPDATE PROTOCOL".to_string(),
+            security_scan: "SECURITY ANALYSIS".to_string(),
+            network_check: "NETWORK DIAGNOSTICS".to_string(),
+            log_upload: "LOG TRANSMISSION".to_string(),
+            config_apply: "CONFIGURATION UPDATE".to_string(),
         }
+    }
+}
+
+struct Gundam00Formats;
+
+impl ThemeFormats for Gundam00Formats {
+    fn title(&self, text: &str) -> String {
+        format!("◤ {} ◥", text.to_uppercase())
+    }
+
+    fn status(&self, label: &str, value: &str, is_ok: bool) -> String {
+        let symbol = if is_ok { "●" } else { "▲" };
+        format!("{} {}: {}", symbol, label, value)
+    }
+
+    fn readout(&self, label: &str, value: &str, unit: &str) -> String {
+        format!("{}: {} {}", label.to_uppercase(), value, unit)
+    }
+
+    fn hex_display(&self, content: &str) -> String {
+        content
+            .chars()
+            .map(|c| format!("{:02X}", c as u8))
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
+    fn progress_bar(&self, progress: f64, width: usize) -> String {
+        let filled = (progress * width as f64) as usize;
+        "▰".repeat(filled) + &"▱".repeat(width - filled)
     }
 }
 
@@ -549,6 +679,9 @@ impl Theme for CleanTerminalTheme {
     }
     fn symbols(&self) -> &dyn ThemeSymbols {
         &CleanTerminalSymbols
+    }
+    fn formats(&self) -> &dyn ThemeFormats {
+        &CleanTerminalFormats
     }
 }
 
@@ -650,6 +783,13 @@ impl ThemeBorders for CleanTerminalBorders {
             .border_type(BorderType::Plain)
             .border_style(Style::default().fg(CleanTerminalColors.success()))
     }
+
+    fn operational_block(&self) -> Block<'static> {
+        Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Plain)
+            .border_style(Style::default().fg(CleanTerminalColors.primary()))
+    }
 }
 
 struct CleanTerminalStyles;
@@ -711,25 +851,68 @@ impl ThemeSymbols for CleanTerminalSymbols {
     }
     fn status_indicators(&self) -> StatusIndicators {
         StatusIndicators {
-            sync_high: "====",
-            sync_medium: "===-",
-            sync_low: "==--",
-            sync_critical: "=---",
-            connection_active: "●●●",
-            connection_weak: "●●○",
-            connection_lost: "○○○",
+            sync_high: "====".to_string(),
+            sync_medium: "===-".to_string(),
+            sync_low: "==--".to_string(),
+            sync_critical: "=---".to_string(),
+            connection_active: "●●●".to_string(),
+            connection_weak: "●●○".to_string(),
+            connection_lost: "○○○".to_string(),
+            operational: "●".to_string(),
+            warning: "!".to_string(),
+            error: "✗".to_string(),
+            info: "i".to_string(),
+            neutral: "○".to_string(),
+            degraded: "·".to_string(),
         }
     }
     fn loading_messages(&self) -> LoadingMessages {
         LoadingMessages {
-            system_boot: "System Initialization",
-            angel_detection: "Pattern Recognition",
-            eva_activation: "Application Startup",
-            sync_test: "Connection Test",
-            data_analysis: "Data Processing",
-            magi_calculation: "Computing",
-            at_field_generation: "Loading Resources",
+            system_boot: "System Initialization".to_string(),
+            angel_detection: "Pattern Recognition".to_string(),
+            eva_activation: "Application Startup".to_string(),
+            sync_test: "Connection Test".to_string(),
+            data_analysis: "Data Processing".to_string(),
+            magi_calculation: "Computing".to_string(),
+            at_field_generation: "Loading Resources".to_string(),
+            device_discovery: "Device Discovery".to_string(),
+            data_backup: "Data Backup".to_string(),
+            software_update: "Software Update".to_string(),
+            security_scan: "Security Scan".to_string(),
+            network_check: "Network Check".to_string(),
+            log_upload: "Log Upload".to_string(),
+            config_apply: "Config Apply".to_string(),
         }
+    }
+}
+
+struct CleanTerminalFormats;
+
+impl ThemeFormats for CleanTerminalFormats {
+    fn title(&self, text: &str) -> String {
+        format!(" {} ", text)
+    }
+
+    fn status(&self, label: &str, value: &str, is_ok: bool) -> String {
+        let symbol = if is_ok { "●" } else { "!" };
+        format!("{} {}: {}", symbol, label, value)
+    }
+
+    fn readout(&self, label: &str, value: &str, unit: &str) -> String {
+        format!("{}: {} {}", label, value, unit)
+    }
+
+    fn hex_display(&self, content: &str) -> String {
+        content
+            .chars()
+            .map(|c| format!("{:02X}", c as u8))
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
+    fn progress_bar(&self, progress: f64, width: usize) -> String {
+        let filled = (progress * width as f64) as usize;
+        "=".repeat(filled) + &"-".repeat(width - filled)
     }
 }
 

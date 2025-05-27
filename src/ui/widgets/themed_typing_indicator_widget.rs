@@ -1,19 +1,23 @@
-use crate::ui::theme::Theme; // Eva* imports removed
+use super::eva_theme::Theme;
+use super::Widget;
 use crate::ui::TypingMetrics;
 use ratatui::{
     layout::Rect,
     style::Style,
     widgets::{Block, Paragraph}, // Added Block for get_border_style return type
-    Frame
+    Frame,
 };
 
-pub struct ThemedTypingIndicatorWidget<'a> { // Renamed struct
+pub struct ThemedTypingIndicatorWidget<'a> {
+    // Renamed struct
     pub metrics: &'a TypingMetrics,
     pub theme: &'a dyn Theme, // Theme is now mandatory
 }
 
-impl<'a> ThemedTypingIndicatorWidget<'a> { // Renamed struct
-    pub fn new(metrics: &'a TypingMetrics, theme: &'a dyn Theme) -> Self { // Added theme to constructor
+impl<'a> ThemedTypingIndicatorWidget<'a> {
+    // Renamed struct
+    pub fn new(metrics: &'a TypingMetrics, theme: &'a dyn Theme) -> Self {
+        // Added theme to constructor
         Self {
             metrics,
             theme, // Theme initialized
@@ -29,7 +33,7 @@ impl<'a> ThemedTypingIndicatorWidget<'a> { // Renamed struct
             21..=40 => ("JUNIOR DEVELOPER", styles.text_warning()),
             41..=60 => ("SOFTWARE ENGINEER", styles.text_success()),
             61..=80 => ("SENIOR DEVELOPER", styles.text_highlight()), // Assuming sync_rate maps to text_highlight
-            _ => ("ALGORITHM ARCHITECT", styles.text_info()),      // Assuming at_field maps to text_info
+            _ => ("ALGORITHM ARCHITECT", styles.text_highlight()), // Using text_highlight instead
         }
         // EvaStyles removed
     }
@@ -49,7 +53,7 @@ impl<'a> ThemedTypingIndicatorWidget<'a> { // Renamed struct
             _ => "PEAK PERFORMANCE",
         }
     }
-    
+
     // Helper for readout formatting, using theme styles
     fn format_readout(&self, label: &str, value: &str, unit: &str) -> String {
         // This is a simplified version of EvaFormat::readout
@@ -57,15 +61,26 @@ impl<'a> ThemedTypingIndicatorWidget<'a> { // Renamed struct
         format!("{}: {} {}", label, value, unit)
     }
 
-
     fn format_display(&self) -> String {
         let (coder_level, _) = self.get_coder_performance_level();
         let coding_efficiency = self.get_coding_efficiency();
         let interface_status = self.get_interface_status();
         let efficiency_symbol = self.get_themed_efficiency_symbol(coding_efficiency);
 
-        let hexagon_symbol = self.theme.symbols().geometric_shapes().get(0).cloned().unwrap_or_default();
-        let diamond_symbol = self.theme.symbols().geometric_shapes().get(1).cloned().unwrap_or_default();
+        let hexagon_symbol = self
+            .theme
+            .symbols()
+            .geometric_shapes()
+            .get(0)
+            .cloned()
+            .unwrap_or_default();
+        let diamond_symbol = self
+            .theme
+            .symbols()
+            .geometric_shapes()
+            .get(1)
+            .cloned()
+            .unwrap_or_default();
         // EvaSymbols removed
 
         format!(
@@ -83,7 +98,8 @@ impl<'a> ThemedTypingIndicatorWidget<'a> { // Renamed struct
         // EvaFormat removed
     }
 
-    fn get_themed_efficiency_symbol(&self, efficiency: f64) -> String { // Return type String
+    fn get_themed_efficiency_symbol(&self, efficiency: f64) -> String {
+        // Return type String
         let indicators = self.theme.symbols().status_indicators();
         match efficiency {
             e if e >= 80.0 => indicators.sync_high.clone(),
@@ -94,7 +110,8 @@ impl<'a> ThemedTypingIndicatorWidget<'a> { // Renamed struct
         // EvaSymbols removed
     }
 
-    fn get_border_style(&self) -> Block<'static> { // Return type changed to Block
+    fn get_border_style(&self) -> Block<'static> {
+        // Return type changed to Block
         let efficiency = self.get_coding_efficiency();
         if efficiency >= 70.0 {
             self.theme.borders().operational_block() // Assuming operational_block for success
@@ -107,7 +124,8 @@ impl<'a> ThemedTypingIndicatorWidget<'a> { // Renamed struct
     }
 }
 
-impl<'a> Widget for ThemedTypingIndicatorWidget<'a> { // Renamed struct
+impl<'a> Widget for ThemedTypingIndicatorWidget<'a> {
+    // Renamed struct
     fn render(&self, f: &mut Frame, area: Rect) {
         let content = self.format_display();
         let (_, coder_style) = self.get_coder_performance_level();

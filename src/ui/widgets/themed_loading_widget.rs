@@ -1,4 +1,4 @@
-use crate::ui::theme::Theme; // Adjusted import
+use super::eva_theme::Theme;
 use ratatui::{
     layout::Rect,
     style::Style,
@@ -140,7 +140,8 @@ impl<'a> ThemedLoadingWidget<'a> {
         format!("{}\n\n{}{}{}", animation, self.message, progress, status)
     }
 
-    fn get_border_style(&self) -> Block<'static> { // Return type changed to Block
+    fn get_border_style(&self) -> Block<'static> {
+        // Return type changed to Block
         if self.is_loading {
             self.theme.borders().warning_block()
         } else {
@@ -161,16 +162,17 @@ impl<'a> ThemedLoadingWidget<'a> {
 impl<'a> crate::ui::widgets::Widget for ThemedLoadingWidget<'a> {
     fn render(&self, f: &mut Frame, area: Rect) {
         let content = self.format_display();
-        let paragraph = Paragraph::new(content)
-            .style(self.get_text_style())
-            .block(self.get_border_style().title(self.title().unwrap_or("Operations"))); // Added title to block
+        let paragraph = Paragraph::new(content).style(self.get_text_style()).block(
+            self.get_border_style()
+                .title(self.title().unwrap_or("Operations")),
+        ); // Added title to block
 
         f.render_widget(paragraph, area);
     }
 
     fn title(&self) -> Option<&str> {
         // Title can be dynamic based on operation or state if needed
-        Some("System Operations") 
+        Some("System Operations")
     }
 
     fn border_style(&self) -> Style {
@@ -179,5 +181,17 @@ impl<'a> crate::ui::widgets::Widget for ThemedLoadingWidget<'a> {
         } else {
             Style::default().fg(self.theme.colors().success())
         }
+    }
+}
+
+// Implementing ratatui::widgets::Widget trait
+impl<'a> ratatui::widgets::Widget for ThemedLoadingWidget<'a> {
+    fn render(self, area: Rect, buf: &mut ratatui::buffer::Buffer) {
+        let content = self.format_display();
+        let paragraph = Paragraph::new(content)
+            .style(self.get_text_style())
+            .block(self.get_border_style().title("System Operations"));
+
+        paragraph.render(area, buf);
     }
 }
