@@ -131,6 +131,28 @@ impl<'a> SystemMonitorWidget<'a> {
             [min_x, max_x.max(min_x + 1.0)]
         };
 
+        // Dynamic Y-axis bounds for better visualization
+        let y_bounds = if cpu_data.is_empty() {
+            [0.0, 100.0]
+        } else {
+            let min_y = cpu_data
+                .iter()
+                .map(|(_, y)| *y)
+                .fold(f64::INFINITY, f64::min);
+            let max_y = cpu_data
+                .iter()
+                .map(|(_, y)| *y)
+                .fold(f64::NEG_INFINITY, f64::max);
+
+            // Add padding around the data for better visualization
+            let range = (max_y - min_y).max(15.0); // Minimum 15% range for CPU
+            let padding = range * 0.3; // 30% padding for CPU (more dynamic)
+            let lower_bound = (min_y - padding).max(0.0);
+            let upper_bound = (max_y + padding).min(100.0);
+
+            [lower_bound, upper_bound]
+        };
+
         let chart = Chart::new(datasets)
             .block(
                 EvaBorders::operational()
@@ -146,7 +168,7 @@ impl<'a> SystemMonitorWidget<'a> {
                 Axis::default()
                     .title("Usage %")
                     .style(Style::default().fg(Color::Gray))
-                    .bounds([0.0, 100.0]),
+                    .bounds(y_bounds),
             );
 
         f.render_widget(chart, area);
@@ -189,6 +211,28 @@ impl<'a> SystemMonitorWidget<'a> {
             [min_x, max_x.max(min_x + 1.0)]
         };
 
+        // Dynamic Y-axis bounds for better visualization
+        let y_bounds = if ram_data.is_empty() {
+            [0.0, 100.0]
+        } else {
+            let min_y = ram_data
+                .iter()
+                .map(|(_, y)| *y)
+                .fold(f64::INFINITY, f64::min);
+            let max_y = ram_data
+                .iter()
+                .map(|(_, y)| *y)
+                .fold(f64::NEG_INFINITY, f64::max);
+
+            // Add padding around the data for better visualization
+            let range = (max_y - min_y).max(10.0); // Minimum 10% range
+            let padding = range * 0.2; // 20% padding
+            let lower_bound = (min_y - padding).max(0.0);
+            let upper_bound = (max_y + padding).min(100.0);
+
+            [lower_bound, upper_bound]
+        };
+
         let chart = Chart::new(datasets)
             .block(
                 EvaBorders::operational()
@@ -204,7 +248,7 @@ impl<'a> SystemMonitorWidget<'a> {
                 Axis::default()
                     .title("Usage %")
                     .style(Style::default().fg(Color::Gray))
-                    .bounds([0.0, 100.0]),
+                    .bounds(y_bounds),
             );
 
         f.render_widget(chart, area);
