@@ -168,9 +168,11 @@ impl App {
         call_info.set_in_progress(0.1); // Start with 10% progress
         self.data.current_llm_call = Some(call_info);
 
-        // Save current state and switch to LLM call view
+        // Save current state but don't switch to LLM call view immediately
+        // Let the user see the loading in the current context
         self.data.previous_state = Some(self.state.clone());
-        self.state = AppState::LLMCallView;
+        // Don't switch state immediately - let loading show in current context
+        // self.state = AppState::LLMCallView;
     }
 
     fn update_llm_call_progress(&mut self, progress: f64) {
@@ -184,13 +186,18 @@ impl App {
             call_info.set_success(usage);
         }
 
-        // For now, return immediately to previous state
-        // In a real implementation, you might want to show success for 1-2 seconds
-        if let Some(previous_state) = self.data.previous_state.take() {
-            self.state = previous_state;
+        // Only return to previous state if we're in LLM call view
+        if self.state == AppState::LLMCallView {
+            if let Some(previous_state) = self.data.previous_state.take() {
+                self.state = previous_state;
+            }
+        } else {
+            // Clear previous state since we didn't switch
+            self.data.previous_state = None;
         }
 
-        // Clear the LLM call after returning to previous state
+        // Clear the LLM call after a short delay to show success
+        // For now, clear immediately
         self.data.current_llm_call = None;
     }
 
@@ -199,12 +206,17 @@ impl App {
             call_info.set_error(error_message);
         }
 
-        // Return to previous state on error
-        if let Some(previous_state) = self.data.previous_state.take() {
-            self.state = previous_state;
+        // Only return to previous state if we're in LLM call view
+        if self.state == AppState::LLMCallView {
+            if let Some(previous_state) = self.data.previous_state.take() {
+                self.state = previous_state;
+            }
+        } else {
+            // Clear previous state since we didn't switch
+            self.data.previous_state = None;
         }
 
-        // Clear the LLM call after returning to previous state
+        // Clear the LLM call after showing error
         self.data.current_llm_call = None;
     }
 
@@ -415,6 +427,8 @@ impl App {
                     );
                     self.data.is_loading = true; // Set loading state immediately
                     self.data.status_message = "Preparing to generate question...".to_string();
+                    // Note: We'll need to handle this differently to avoid blocking the UI
+                    // For now, keep the await but we should spawn this as a background task
                     self.generate_new_question().await?;
                 }
                 1 => self.state = AppState::AllQuestions,
@@ -430,6 +444,8 @@ impl App {
                 self.log_api_call("user_input", ApiCallStatus::Pending, "Pressed 'g' key");
                 self.data.is_loading = true; // Set loading state immediately
                 self.data.status_message = "Preparing to generate question...".to_string();
+                // Note: We'll need to handle this differently to avoid blocking the UI
+                // For now, keep the await but we should spawn this as a background task
                 self.generate_new_question().await?;
             }
             KeyCode::Char('r') => self.state = AppState::AllQuestions,
@@ -801,6 +817,8 @@ impl App {
             self.data.status_message =
                 "Error: Gemini API key not set. Please set GEMINI_API_KEY environment variable."
                     .to_string();
+            self.data.is_loading = false;
+            self.data.is_llm_loading = false;
             return Ok(());
         }
 
@@ -808,7 +826,11 @@ impl App {
         self.start_llm_call("Question Generation".to_string());
         self.data.is_loading = true;
         self.data.is_llm_loading = true;
-        self.data.status_message = "Generating new question...".to_string();
+        self.data.status_message =
+            "🧠 NEURAL NETWORK PROCESSING - Generating new algorithm challenge...".to_string();
+
+        // Give the UI a chance to redraw with the loading state
+        tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
         let progress = self.storage.get_progress()?;
 

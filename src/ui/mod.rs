@@ -737,15 +737,18 @@ impl UI {
             ])
             .split(area);
 
-        let content_area = if app.data.is_loading {
+        let content_area = if app.data.is_loading || app.data.is_llm_loading {
             // Show loading indicator at the top
             let loading_widget = ThemedLoadingWidget::new(
                 app.data.status_message.clone(),
-                app.data.is_loading,
+                app.data.is_loading || app.data.is_llm_loading,
                 app.data.theme_manager.current_theme(),
-            );
-            // Assuming ThemedLoadingWidget now implements the Widget trait directly for render
-            // If it needs to be rendered as &ThemedLoadingWidget, adjust accordingly.
+            )
+            .with_operation_type(if app.data.is_llm_loading {
+                LoadingOperationType::MagiCalculation
+            } else {
+                LoadingOperationType::EvaActivation
+            });
             f.render_widget(loading_widget, main_chunks[0]);
             main_chunks[1]
         } else {
