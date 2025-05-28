@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, PartialEq)]
+use crate::configs::llm::clients::LLMClients;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LLMInvokers {
     AssignmentGenerator,
 }
@@ -11,7 +13,14 @@ impl LLMInvokers {
             LLMInvokers::AssignmentGenerator => "Assignment Generator",
         }
     }
+
     pub fn get_all_invokers() -> &'static [LLMInvokers] {
         ALL_INVOKERS
+    }
+
+    pub fn default_client(&self) -> LLMClients {
+        match self {
+            LLMInvokers::AssignmentGenerator => LLMClients::Local,
+        }
     }
 }

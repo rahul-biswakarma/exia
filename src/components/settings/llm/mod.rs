@@ -14,10 +14,11 @@ pub fn LLMSetting() -> Element {
                     LLMInvokers::get_all_invokers()
                         .iter()
                         .map(|invoker| {
+                            let invoker_clone = invoker.clone();
                             rsx! {
                                 div {
                                     {invoker.label()}
-                                    ClientSelector {}
+                                    ClientSelector { invoker: invoker_clone }
                                 }
                             }
                         })

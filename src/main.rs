@@ -1,7 +1,9 @@
+use crate::contexts::settings::use_settings;
 use dioxus::prelude::*;
 
 mod components;
 mod configs;
+mod contexts;
 mod utils;
 use components::settings::Settings;
 
@@ -23,6 +25,8 @@ fn main() {
 
 #[component]
 fn App() -> Element {
+    use_settings();
+
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: MAIN_CSS }
