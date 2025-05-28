@@ -1,40 +1,28 @@
 [package]
 name = "exia"
 version = "0.1.0"
+authors = ["Rahul Biswakarma <rahul.id39@gmail.com>"]
 edition = "2021"
 
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
 [dependencies]
-# Terminal UI
-ratatui = "0.24"
-crossterm = "0.27"
+dioxus = { version = "0.6.0", features = ["router", "fullstack"] }
 
-# HTTP client for Gemini API
-reqwest = { version = "0.11", features = ["json"] }
-tokio = { version = "1.0", features = ["full"] }
+[features]
+default = ["desktop"]
+web = ["dioxus/web"]
+desktop = ["dioxus/desktop"]
+mobile = ["dioxus/mobile"]
 
-# JSON handling
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+[profile]
 
-# File I/O and utilities
-chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1.0", features = ["v4", "serde"] }
-dirs = "5.0"
+[profile.wasm-dev]
+inherits = "dev"
+opt-level = 1
 
-# Error handling
-anyhow = "1.0"
-thiserror = "1.0"
+[profile.server-dev]
+inherits = "dev"
 
-# Process execution
-tempfile = "3.8"
-
-# Configuration
-config = "0.13"
-toml = "0.8"
-
-# Logging
-tracing = "0.1"
-tracing-subscriber = "0.3"
-
-# Terminal input handling
-tui-input = "0.8"
+[profile.android-dev]
+inherits = "dev"

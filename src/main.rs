@@ -1,105 +1,133 @@
-mod compiler;
-mod llm;
-mod models;
-mod storage;
-mod ui;
+use dioxus::prelude::*;
 
-use anyhow::Result;
-use std::env;
-use tracing::{error, info};
-use tracing_subscriber;
+#[derive(Debug, Clone, Routable, PartialEq)]
+#[rustfmt::skip]
+enum Route {
+    #[layout(Navbar)]
+    #[route("/")]
+    Home {},
+    #[route("/blog/:id")]
+    Blog { id: i32 },
+}
 
-use ui::{App, UI};
+const FAVICON: Asset = asset!("/assets/favicon.ico");
+const MAIN_CSS: Asset = asset!("/assets/main.css");
+const HEADER_SVG: Asset = asset!("/assets/header.svg");
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    // Initialize logging
-    tracing_subscriber::fmt::init();
+fn main() {
+    dioxus::launch(App);
+}
 
-    // Check for API key and provide helpful message
-    if env::var("GEMINI_API_KEY").is_err() {
-        eprintln!("⚠️  Warning: GEMINI_API_KEY environment variable not set.");
-        eprintln!("   The application will work in offline mode with limited functionality.");
-        eprintln!("   To enable AI features, set your Gemini API key:");
-        eprintln!("   export GEMINI_API_KEY=your_api_key_here");
-        eprintln!();
+#[component]
+fn App() -> Element {
+    rsx! {
+        document::Link { rel: "icon", href: FAVICON }
+        document::Link { rel: "stylesheet", href: MAIN_CSS }
+        Router::<Route> {}
     }
+}
 
-    info!("Starting DSA Learning Assistant");
-
-    // Initialize the application
-    let mut app = match App::new() {
-        Ok(app) => app,
-        Err(e) => {
-            error!("Failed to initialize application: {}", e);
-            eprintln!("❌ Error: Failed to initialize application: {}", e);
-            std::process::exit(1);
+#[component]
+pub fn Hero() -> Element {
+    rsx! {
+        div {
+            id: "hero",
+            img { src: HEADER_SVG, id: "header" }
+            div { id: "links",
+                a { href: "https://dioxuslabs.com/learn/0.6/", "📚 Learn Dioxus" }
+                a { href: "https://dioxuslabs.com/awesome", "🚀 Awesome Dioxus" }
+                a { href: "https://github.com/dioxus-community/", "📡 Community Libraries" }
+                a { href: "https://github.com/DioxusLabs/sdk", "⚙️ Dioxus Development Kit" }
+                a { href: "https://marketplace.visualstudio.com/items?itemName=DioxusLabs.dioxus", "💫 VSCode Extension" }
+                a { href: "https://discord.gg/XgGxMSkvUM", "👋 Community Discord" }
+            }
         }
-    };
+    }
+}
 
-    // Initialize the UI
-    let mut ui = match UI::new() {
-        Ok(ui) => ui,
-        Err(e) => {
-            error!("Failed to initialize UI: {}", e);
-            eprintln!("❌ Error: Failed to initialize terminal UI: {}", e);
-            std::process::exit(1);
+/// Home page
+#[component]
+fn Home() -> Element {
+    rsx! {
+        Hero {}
+        Echo {}
+    }
+}
+
+/// Blog page
+#[component]
+pub fn Blog(id: i32) -> Element {
+    rsx! {
+        div {
+            id: "blog",
+
+            // Content
+            h1 { "This is blog #{id}!" }
+            p { "In blog #{id}, we show how the Dioxus router works and how URL parameters can be passed as props to our route components." }
+
+            // Navigation links
+            Link {
+                to: Route::Blog { id: id - 1 },
+                "Previous"
+            }
+            span { " <---> " }
+            Link {
+                to: Route::Blog { id: id + 1 },
+                "Next"
+            }
         }
-    };
+    }
+}
 
-    // Show welcome message
-    println!("🎯 Welcome to DSA Learning Assistant!");
-    println!("   Your personalized Rust DSA practice companion");
-    println!();
-
-    // Main application loop
-    loop {
-        // Draw the UI
-        if let Err(e) = ui.draw(&mut app) {
-            error!("Failed to draw UI: {}", e);
-            break;
-        }
-
-        // Handle events
-        if let Ok(Some(event)) = ui.handle_events() {
-            if let Err(e) = app.handle_event(event).await {
-                error!("Error handling event: {}", e);
-                // Don't break on event handling errors, just log them
+/// Shared navbar component.
+#[component]
+fn Navbar() -> Element {
+    rsx! {
+        div {
+            id: "navbar",
+            Link {
+                to: Route::Home {},
+                "Home"
+            }
+            Link {
+                to: Route::Blog { id: 1 },
+                "Blog"
             }
         }
 
-        // Check if we should quit
-        if app.should_quit {
-            break;
-        }
-
-        // Small delay to prevent excessive CPU usage
-        tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+        Outlet::<Route> {}
     }
-
-    info!("DSA Learning Assistant shutting down");
-    println!("👋 Thanks for using DSA Learning Assistant!");
-    println!("   Keep practicing and happy coding! 🦀");
-
-    Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+/// Echo component that demonstrates fullstack server functions.
+#[component]
+fn Echo() -> Element {
+    let mut response = use_signal(|| String::new());
 
-    #[tokio::test]
-    async fn test_app_initialization() {
-        // Test that the app can be initialized without panicking
-        let result = App::new();
-        assert!(result.is_ok(), "App should initialize successfully");
-    }
+    rsx! {
+        div {
+            id: "echo",
+            h4 { "ServerFn Echo" }
+            input {
+                placeholder: "Type here to echo...",
+                oninput:  move |event| async move {
+                    let data = echo_server(event.value()).await.unwrap();
+                    response.set(data);
+                },
+            }
 
-    #[test]
-    fn test_environment_setup() {
-        // Test that the application handles missing environment variables gracefully
-        std::env::remove_var("GEMINI_API_KEY");
-        let result = App::new();
-        assert!(result.is_ok(), "App should work without API key");
+            if !response().is_empty() {
+                p {
+                    "Server echoed: "
+                    i { "{response}" }
+                }
+            }
+        }
     }
+}
+
+/// Echo the user input on the server.
+#[server(EchoServer)]
+async fn echo_server(input: String) -> Result<String, ServerFnError> {
+    Ok(input)
 }
