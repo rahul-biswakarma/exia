@@ -1,0 +1,149 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Generative UI Schema",
+  "description": "A schema for defining user interfaces composed of atoms and layouts.",
+  "type": "object",
+  "properties": {
+    "ui_elements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/UiComponent"
+      }
+    }
+  },
+  "required": [
+    "ui_elements"
+  ],
+  "definitions": {
+    "UiComponent": {
+      "title": "UI Component",
+      "description": "A component that can be either an Atom or a Layout.",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/Atom"
+        },
+        {
+          "$ref": "#/definitions/Layout"
+        }
+      ]
+    },
+    "Atom": {
+      "title": "Atom",
+      "description": "A basic UI element.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "accordion",
+            "avatar",
+            "calendar",
+            "checkbox",
+            "collapsible",
+            "context_menu",
+            "dialog",
+            "dropdown_menu",
+            "hover_card",
+            "label",
+            "menubar",
+            "portal",
+            "progress",
+            "radio_group",
+            "scroll_area",
+            "select",
+            "separator",
+            "slider",
+            "switch",
+            "tabs",
+            "toast",
+            "toggle",
+            "toggle_group",
+            "toolbar",
+            "tooltip"
+          ]
+        },
+        "properties": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "type",
+        "properties"
+      ]
+    },
+    "Layout": {
+      "title": "Layout",
+      "description": "A container that arranges UI elements, e.g., a grid.",
+      "type": "object",
+      "properties": {
+        "layout_type": {
+          "type": "string",
+          "enum": [
+            "grid"
+          ]
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cols": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "elements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LayoutElement"
+          }
+        },
+        "gap": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "padding": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "layout_type",
+        "rows",
+        "cols",
+        "elements"
+      ]
+    },
+    "LayoutElement": {
+      "title": "Layout Element",
+      "description": "An atom positioned within a layout.",
+      "type": "object",
+      "properties": {
+        "atom": {
+          "$ref": "#/definitions/Atom"
+        },
+        "row": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "col": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "row_span": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        },
+        "col_span": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "required": [
+        "atom",
+        "row",
+        "col"
+      ]
+    }
+  }
+}
