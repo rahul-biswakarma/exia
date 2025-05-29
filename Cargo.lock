@@ -1515,6 +1515,8 @@ dependencies = [
  "dioxus",
  "dioxus-time",
  "genai",
+ "serde",
+ "serde_json",
  "tracing",
 ]
 

@@ -16,7 +16,7 @@ pub struct RootSchema {
 // Layout has "layoutType", "rows", "cols", "elements".
 // Serde will try to deserialize into Atom first, and if it fails (e.g., missing "type" field
 // or finding "layoutType" instead), it will try Layout.
-#[serde(untagged)] 
+#[serde(untagged)]
 pub enum UiElement {
     Atom(Atom),
     Layout(Layout),
@@ -26,7 +26,7 @@ pub enum UiElement {
 #[serde(rename_all = "camelCase")]
 pub struct Atom {
     #[serde(rename = "type")] // Map the schema's "type" to "type_name" in Rust
-    pub type_name: String, 
+    pub type_name: String,
     #[serde(default)] // If properties is missing, default to an empty HashMap
     pub properties: HashMap<String, serde_json::Value>,
 }
@@ -78,14 +78,21 @@ mod tests {
         }
         "#;
         let parsed: Result<RootSchema, _> = serde_json::from_str(json_data);
-        assert!(parsed.is_ok(), "Failed to parse simple atom: {:?}", parsed.err());
+        assert!(
+            parsed.is_ok(),
+            "Failed to parse simple atom: {:?}",
+            parsed.err()
+        );
         let root_schema = parsed.unwrap();
         assert_eq!(root_schema.ui_elements.len(), 1);
         // Check if the first element is an Atom and matches expectations
         match &root_schema.ui_elements[0] {
             UiElement::Atom(atom) => {
                 assert_eq!(atom.type_name, "label");
-                assert_eq!(atom.properties.get("text").unwrap().as_str().unwrap(), "Hello");
+                assert_eq!(
+                    atom.properties.get("text").unwrap().as_str().unwrap(),
+                    "Hello"
+                );
             }
             _ => panic!("Expected an Atom"),
         }
@@ -115,7 +122,11 @@ mod tests {
         }
         "#;
         let parsed: Result<RootSchema, _> = serde_json::from_str(json_data);
-        assert!(parsed.is_ok(), "Failed to parse simple layout: {:?}", parsed.err());
+        assert!(
+            parsed.is_ok(),
+            "Failed to parse simple layout: {:?}",
+            parsed.err()
+        );
         let root_schema = parsed.unwrap();
         assert_eq!(root_schema.ui_elements.len(), 1);
         // Check if the first element is a Layout and matches expectations
@@ -130,7 +141,7 @@ mod tests {
             _ => panic!("Expected a Layout"),
         }
     }
-    
+
     #[test]
     fn test_deserialize_untagged_choice() {
         // Test if UiElement can correctly deserialize both Atom and Layout
@@ -151,7 +162,7 @@ mod tests {
                             "atom": { "type": "label", "properties": {"text": "Atom in Grid"} },
                             "row": 1,
                             "col": 1,
-                            "rowSpan": 2 
+                            "rowSpan": 2
                         }
                     ]
                 }
@@ -159,7 +170,11 @@ mod tests {
         }
         "#;
         let parsed: Result<RootSchema, _> = serde_json::from_str(json_data);
-        assert!(parsed.is_ok(), "Failed to parse untagged choice: {:?}", parsed.err());
+        assert!(
+            parsed.is_ok(),
+            "Failed to parse untagged choice: {:?}",
+            parsed.err()
+        );
         let root_schema = parsed.unwrap();
         assert_eq!(root_schema.ui_elements.len(), 2);
 
@@ -189,13 +204,20 @@ mod tests {
         }
         "#;
         let parsed: Result<RootSchema, _> = serde_json::from_str(json_data);
-        assert!(parsed.is_ok(), "Failed to parse atom with missing properties: {:?}", parsed.err());
+        assert!(
+            parsed.is_ok(),
+            "Failed to parse atom with missing properties: {:?}",
+            parsed.err()
+        );
         let root_schema = parsed.unwrap();
         assert_eq!(root_schema.ui_elements.len(), 1);
         match &root_schema.ui_elements[0] {
             UiElement::Atom(atom) => {
                 assert_eq!(atom.type_name, "avatar");
-                assert!(atom.properties.is_empty(), "Properties should be an empty HashMap");
+                assert!(
+                    atom.properties.is_empty(),
+                    "Properties should be an empty HashMap"
+                );
             }
             _ => panic!("Expected an Atom"),
         }
@@ -216,7 +238,11 @@ mod tests {
         }
         "#;
         let parsed: Result<RootSchema, _> = serde_json::from_str(json_data);
-        assert!(parsed.is_ok(), "Failed to parse layout with missing optional fields: {:?}", parsed.err());
+        assert!(
+            parsed.is_ok(),
+            "Failed to parse layout with missing optional fields: {:?}",
+            parsed.err()
+        );
         let root_schema = parsed.unwrap();
         assert_eq!(root_schema.ui_elements.len(), 1);
         match &root_schema.ui_elements[0] {
@@ -232,4 +258,3 @@ mod tests {
         }
     }
 }
-```
