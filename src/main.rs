@@ -1,10 +1,11 @@
-use crate::contexts::settings::use_settings;
+use crate::contexts::settings::{AppSettings, SettingsContext};
 use dioxus::prelude::*;
 
 mod components;
 mod configs;
 mod contexts;
 mod utils;
+use components::pages::synapse::Synapse;
 use components::settings::Settings;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
@@ -13,6 +14,9 @@ enum Route {
 
     #[route("/")]
     Settings {},
+
+    #[route("/synapse")]
+    Synapse {},
 
 }
 
@@ -25,7 +29,12 @@ fn main() {
 
 #[component]
 fn App() -> Element {
-    use_settings();
+    // Provide the settings context
+    let settings_context = SettingsContext {
+        settings: use_signal(AppSettings::default),
+    };
+
+    use_context_provider(|| settings_context);
 
     rsx! {
         document::Link { rel: "icon", href: FAVICON }

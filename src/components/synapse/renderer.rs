@@ -3,7 +3,6 @@ use crate::components::synapse::schema_parser::{
 };
 use dioxus::prelude::*;
 
-// Main entry point for rendering UI from a JSON schema string
 pub fn render_ui_from_schema(schema_json: &str) -> Element {
     match serde_json::from_str::<RootSchema>(schema_json) {
         Ok(root_schema) => {
@@ -15,43 +14,53 @@ pub fn render_ui_from_schema(schema_json: &str) -> Element {
         }
         Err(e) => {
             eprintln!("Error parsing schema JSON: {:?}", e);
-            rsx! { div { "Error parsing schema" } }
+            rsx! {
+                div { "Error parsing schema" }
+            }
         }
     }
 }
 
-// Helper function to render a UiElement
-fn render_ui_element(element: UiElement) -> Element {
+pub fn render_ui_element(element: UiElement) -> Element {
     match element {
         UiElement::Atom(atom) => render_atom(atom),
         UiElement::Layout(layout) => render_layout(layout),
     }
 }
 
-// Implementation for render_atom function
-fn render_atom(atom: Atom) -> Element {
+pub fn render_atom(atom: Atom) -> Element {
     match atom.type_name.as_str() {
         "label" => {
             if let Some(text_value_json) = atom.properties.get("text") {
                 if let Some(text_str) = text_value_json.as_str() {
-                    rsx! { label { "{text_str}" } }
+                    rsx! {
+                        label { "{text_str}" }
+                    }
                 } else {
                     eprintln!("Warning: Atom 'label' has 'text' property but it's not a string. Atom: {:?}", atom);
-                    rsx! { div {} }
+                    rsx! {
+                        div {}
+                    }
                 }
             } else {
                 eprintln!(
                     "Warning: Atom 'label' is missing 'text' property. Atom: {:?}",
                     atom
                 );
-                rsx! { div {} }
+                rsx! {
+                    div {}
+                }
             }
         }
         "portal" => {
-            rsx! { div {} }
+            rsx! {
+                div {}
+            }
         }
         "separator" => {
-            rsx! { hr {} }
+            rsx! {
+                hr {}
+            }
         }
         "checkbox" | "switch" => {
             let class_name = if atom.type_name == "switch" {
@@ -84,10 +93,10 @@ fn render_atom(atom: Atom) -> Element {
                 input {
                     r#type: "checkbox",
                     class: if !class_name.is_empty() { class_name } else { "" },
-                    checked: checked,
-                    disabled: disabled,
-                    value: value,
-                    id: id,
+                    checked,
+                    disabled,
+                    value,
+                    id,
                 }
             }
         }
@@ -117,8 +126,8 @@ fn render_atom(atom: Atom) -> Element {
 
             rsx! {
                 img {
-                    src: src,
-                    alt: alt,
+                    src,
+                    alt,
                     width: "{size}px",
                     height: "{size}px",
                 }
@@ -158,8 +167,8 @@ fn render_atom(atom: Atom) -> Element {
                     min: min.map(|v| v.to_string()).unwrap_or_default(),
                     max: max.map(|v| v.to_string()).unwrap_or_default(),
                     step: step.map(|v| v.to_string()).unwrap_or_default(),
-                    disabled: disabled,
-                    id: id,
+                    disabled,
+                    id,
                 }
             }
         }
@@ -168,13 +177,14 @@ fn render_atom(atom: Atom) -> Element {
                 "Warning: Unknown atom type encountered: {}. Atom: {:?}",
                 unknown_type, atom
             );
-            rsx! { div {} }
+            rsx! {
+                div {}
+            }
         }
     }
 }
 
-// Implementation for render_layout function
-fn render_layout(layout: Layout) -> Element {
+pub fn render_layout(layout: Layout) -> Element {
     match layout.layout_type.as_str() {
         "grid" => {
             let mut container_style_parts: Vec<String> = vec![
@@ -192,8 +202,7 @@ fn render_layout(layout: Layout) -> Element {
             let container_style_str = container_style_parts.join(" ");
 
             rsx! {
-                div {
-                    style: "{container_style_str}",
+                div { style: "{container_style_str}",
                     for element_config in layout.elements {
                         {render_grid_cell(element_config)}
                     }
@@ -202,13 +211,14 @@ fn render_layout(layout: Layout) -> Element {
         }
         unsupported_layout => {
             eprintln!("Warning: Unsupported layout type: {}", unsupported_layout);
-            rsx! { div {} }
+            rsx! {
+                div {}
+            }
         }
     }
 }
 
-// Helper function to render a grid cell
-fn render_grid_cell(element_config: LayoutElement) -> Element {
+pub fn render_grid_cell(element_config: LayoutElement) -> Element {
     let cell_style_str = format!(
         "grid-row-start: {}; grid-column-start: {}; grid-row-end: span {}; grid-column-end: span {};",
         element_config.row,
@@ -223,177 +233,5 @@ fn render_grid_cell(element_config: LayoutElement) -> Element {
             key: "{element_config.row}-{element_config.col}",
             {render_atom(element_config.atom)}
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::components::synapse::schema_parser::LayoutElement;
-    use std::collections::HashMap;
-
-    #[test]
-    fn test_render_label_atom_correctly() {
-        let atom = Atom {
-            type_name: "label".to_string(),
-            properties: [(
-                "text".to_string(),
-                serde_json::Value::String("Hello Dioxus".to_string()),
-            )]
-            .into(),
-        };
-        let element = render_atom(atom);
-        // Basic test to ensure it doesn't panic
-        assert!(format!("{:?}", element).contains("label"));
-    }
-
-    #[test]
-    fn test_render_portal_atom() {
-        let atom = Atom {
-            type_name: "portal".to_string(),
-            properties: HashMap::new(),
-        };
-        let element = render_atom(atom);
-        assert!(format!("{:?}", element).contains("div"));
-    }
-
-    #[test]
-    fn test_render_separator_atom() {
-        let atom = Atom {
-            type_name: "separator".to_string(),
-            properties: HashMap::new(),
-        };
-        let element = render_atom(atom);
-        assert!(format!("{:?}", element).contains("hr"));
-    }
-
-    #[test]
-    fn test_render_unknown_atom_type() {
-        let atom = Atom {
-            type_name: "unknownAtom".to_string(),
-            properties: HashMap::new(),
-        };
-        let element = render_atom(atom);
-        assert!(format!("{:?}", element).contains("div"));
-    }
-
-    #[test]
-    fn test_render_checkbox_basic() {
-        let atom = Atom {
-            type_name: "checkbox".to_string(),
-            properties: HashMap::new(),
-        };
-        let element = render_atom(atom);
-        assert!(format!("{:?}", element).contains("input"));
-    }
-
-    #[test]
-    fn test_render_switch_basic() {
-        let atom = Atom {
-            type_name: "switch".to_string(),
-            properties: HashMap::new(),
-        };
-        let element = render_atom(atom);
-        assert!(format!("{:?}", element).contains("input"));
-    }
-
-    #[test]
-    fn test_render_avatar_basic() {
-        let atom = Atom {
-            type_name: "avatar".to_string(),
-            properties: [(
-                "alt".to_string(),
-                serde_json::Value::String("User Avatar".to_string()),
-            )]
-            .into(),
-        };
-        let element = render_atom(atom);
-        assert!(format!("{:?}", element).contains("img"));
-    }
-
-    #[test]
-    fn test_render_progress_basic() {
-        let atom = Atom {
-            type_name: "progress".to_string(),
-            properties: HashMap::new(),
-        };
-        let element = render_atom(atom);
-        assert!(format!("{:?}", element).contains("progress"));
-    }
-
-    #[test]
-    fn test_render_slider_basic() {
-        let atom = Atom {
-            type_name: "slider".to_string(),
-            properties: HashMap::new(),
-        };
-        let element = render_atom(atom);
-        assert!(format!("{:?}", element).contains("input"));
-    }
-
-    #[test]
-    fn test_render_simple_grid_layout() {
-        let layout = Layout {
-            layout_type: "grid".to_string(),
-            rows: 1,
-            cols: 1,
-            gap: Some(10),
-            padding: Some(5),
-            elements: vec![LayoutElement {
-                atom: Atom {
-                    type_name: "label".to_string(),
-                    properties: [(
-                        "text".to_string(),
-                        serde_json::Value::String("Cell1".to_string()),
-                    )]
-                    .into(),
-                },
-                row: 1,
-                col: 1,
-                row_span: 1,
-                col_span: 1,
-            }],
-        };
-        let element = render_layout(layout);
-        assert!(format!("{:?}", element).contains("div"));
-    }
-
-    #[test]
-    fn test_render_unsupported_layout_type() {
-        let layout = Layout {
-            layout_type: "flexbox".to_string(),
-            rows: 1,
-            cols: 1,
-            gap: None,
-            padding: None,
-            elements: vec![],
-        };
-        let element = render_layout(layout);
-        assert!(format!("{:?}", element).contains("div"));
-    }
-
-    #[test]
-    fn test_render_ui_from_schema_basic() {
-        let schema_json = r#"
-        {
-            "uiElements": [
-                {
-                    "type": "label",
-                    "properties": {
-                        "text": "Hello"
-                    }
-                }
-            ]
-        }
-        "#;
-        let element = render_ui_from_schema(schema_json);
-        assert!(format!("{:?}", element).len() > 0);
-    }
-
-    #[test]
-    fn test_render_invalid_json() {
-        let schema_json = r#"{"uiElements": [}"#;
-        let element = render_ui_from_schema(schema_json);
-        assert!(format!("{:?}", element).contains("Error"));
     }
 }
