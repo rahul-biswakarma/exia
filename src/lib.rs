@@ -2,6 +2,7 @@
 
 pub mod action_executor;
 pub mod components;
+pub mod supabase;
 pub mod utils;
 
 #[cfg(test)]
