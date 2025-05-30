@@ -5,6 +5,7 @@ mod types;
 mod utils;
 
 pub use action_registry::ActionRegistry;
+#[allow(unused_imports)]
 pub use handlers::{DataCollection, SubmitHandler, ValidationHandler};
 pub use http_client::submit_to_endpoint;
 pub use types::*;
@@ -21,7 +22,7 @@ pub struct ActionExecutor {
 
 impl ActionExecutor {
     pub fn new() -> Self {
-        Self {
+        let mut executor = Self {
             ui_state: UIState {
                 components: use_signal(HashMap::new),
                 global_state: use_signal(|| serde_json::Value::Null),
@@ -29,7 +30,9 @@ impl ActionExecutor {
                 form_data: use_signal(HashMap::new),
                 errors: use_signal(HashMap::new),
             },
-        }
+        };
+        executor.register_all_actions();
+        executor
     }
 
     pub fn execute_action(

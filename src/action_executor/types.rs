@@ -31,17 +31,8 @@ pub struct ComponentState {
 
 #[derive(Debug, Clone)]
 pub struct AnimationState {
-    pub name: String,
-    pub duration: u32,
     pub active: bool,
 }
 
-#[derive(Debug, Clone)]
-pub struct ActionContext {
-    pub component_id: String,
-    pub event_type: String,
-    pub user_data: Option<serde_json::Value>,
-}
-
 pub type ActionFn =
-    Rc<dyn Fn(&super::ActionExecutor, &ActionEventHandler, &ActionContext) -> Result<(), String>>;
+    Rc<dyn Fn(&mut super::ActionExecutor, &ActionEventHandler) -> Result<(), String>>;

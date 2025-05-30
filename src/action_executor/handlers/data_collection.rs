@@ -1,9 +1,5 @@
-use crate::action_executor::utils::Utils;
-use crate::action_executor::{ActionContext, ActionExecutor, ComponentState};
-use dioxus::prelude::*;
+use crate::action_executor::{ActionExecutor, ComponentState};
 use dioxus::signals::{Readable, Writable};
-use serde_json::Value;
-use std::cell::RefCell;
 use std::collections::HashMap;
 
 pub trait DataCollection {
@@ -17,18 +13,11 @@ pub trait DataCollection {
         payload: &serde_json::Value,
         collected_data: &mut serde_json::Map<String, serde_json::Value>,
     ) -> Result<(), String>;
-    fn collect_context_data(
-        &self,
-        payload: &serde_json::Value,
-        context: &ActionContext,
-        collected_data: &mut serde_json::Map<String, serde_json::Value>,
-    );
     fn collect_global_state_data(
         &self,
         payload: &serde_json::Value,
         collected_data: &mut serde_json::Map<String, serde_json::Value>,
     );
-    fn get_submission_id(&self, payload: &serde_json::Value, context: &ActionContext) -> String;
     fn store_collected_data(
         &self,
         submission_id: &str,
@@ -79,28 +68,6 @@ impl DataCollection for ActionExecutor {
         Ok(())
     }
 
-    fn collect_context_data(
-        &self,
-        payload: &serde_json::Value,
-        context: &ActionContext,
-        collected_data: &mut serde_json::Map<String, serde_json::Value>,
-    ) {
-        if payload
-            .get("includeContext")
-            .and_then(|c| c.as_bool())
-            .unwrap_or(false)
-        {
-            collected_data.insert(
-                "componentId".to_string(),
-                context.component_id.clone().into(),
-            );
-            collected_data.insert("eventType".to_string(), context.event_type.clone().into());
-            if let Some(user_data) = &context.user_data {
-                collected_data.insert("userData".to_string(), user_data.clone());
-            }
-        }
-    }
-
     fn collect_global_state_data(
         &self,
         payload: &serde_json::Value,
@@ -116,14 +83,6 @@ impl DataCollection for ActionExecutor {
                 self.ui_state.global_state.read().clone(),
             );
         }
-    }
-
-    fn get_submission_id(&self, payload: &serde_json::Value, context: &ActionContext) -> String {
-        payload
-            .get("submissionId")
-            .and_then(|s| s.as_str())
-            .unwrap_or(&context.component_id)
-            .to_string()
     }
 
     fn store_collected_data(

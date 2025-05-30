@@ -1,22 +1,10 @@
 use crate::action_executor::handlers::data_collection::DataCollection;
-use crate::action_executor::utils::Utils;
-use crate::action_executor::{ActionContext, ActionEventHandler, ActionExecutor};
-use dioxus::prelude::*;
-use dioxus::signals::{Readable, Writable};
-use serde_json::Value;
-use std::collections::HashMap;
+use crate::action_executor::{ActionEventHandler, ActionExecutor};
+use dioxus::signals::Writable;
 
 pub trait ValidationHandler {
-    fn handle_validate(
-        &mut self,
-        handler: &ActionEventHandler,
-        context: &ActionContext,
-    ) -> Result<(), String>;
-    fn handle_collect(
-        &self,
-        handler: &ActionEventHandler,
-        context: &ActionContext,
-    ) -> Result<(), String>;
+    fn handle_validate(&mut self, handler: &ActionEventHandler) -> Result<(), String>;
+    fn handle_collect(&mut self, handler: &ActionEventHandler) -> Result<(), String>;
     fn validate_all_fields(
         &self,
         payload: &serde_json::Value,
@@ -57,8 +45,7 @@ pub trait ValidationHandler {
     ) -> Result<bool, String>;
     fn store_validation_results(
         &self,
-        payload: &serde_json::Value,
-        context: &ActionContext,
+        validation_id: &str,
         is_valid: bool,
         validation_results: serde_json::Map<String, serde_json::Value>,
         errors: Vec<String>,
@@ -66,36 +53,32 @@ pub trait ValidationHandler {
     fn execute_validation_actions(
         &mut self,
         payload: &serde_json::Value,
-        context: &ActionContext,
         is_valid: bool,
     ) -> Result<(), String>;
 }
 
 impl ValidationHandler for ActionExecutor {
-    fn handle_validate(
-        &mut self,
-        handler: &ActionEventHandler,
-        context: &ActionContext,
-    ) -> Result<(), String> {
+    fn handle_validate(&mut self, handler: &ActionEventHandler) -> Result<(), String> {
         let payload = handler.payload.as_ref().ok_or("no payload provided")?;
         let (is_valid, validation_results, errors) = self.validate_all_fields(payload)?;
 
-        self.store_validation_results(payload, context, is_valid, validation_results, errors);
-        self.execute_validation_actions(payload, context, is_valid)?;
+        let validation_id = payload
+            .get("validationId")
+            .and_then(|v| v.as_str())
+            .unwrap_or(&handler.target.as_deref().unwrap_or("default"));
+
+        self.store_validation_results(validation_id, is_valid, validation_results, errors);
+        self.execute_validation_actions(payload, is_valid)?;
 
         Ok(())
     }
 
-    fn handle_collect(
-        &self,
-        handler: &ActionEventHandler,
-        context: &ActionContext,
-    ) -> Result<(), String> {
+    fn handle_collect(&mut self, handler: &ActionEventHandler) -> Result<(), String> {
         let payload = handler.payload.as_ref().ok_or("no payload provided")?;
         let collection_id = payload
             .get("collectionId")
             .and_then(|c| c.as_str())
-            .unwrap_or(&context.component_id);
+            .unwrap_or(&handler.target.as_deref().unwrap_or("default"));
 
         let mut collected_data = serde_json::Map::new();
         self.collect_field_data(payload, &mut collected_data)?;
@@ -265,17 +248,11 @@ impl ValidationHandler for ActionExecutor {
 
     fn store_validation_results(
         &self,
-        payload: &serde_json::Value,
-        context: &ActionContext,
+        validation_id: &str,
         is_valid: bool,
         validation_results: serde_json::Map<String, serde_json::Value>,
         errors: Vec<String>,
     ) {
-        let validation_id = payload
-            .get("validationId")
-            .and_then(|v| v.as_str())
-            .unwrap_or(&context.component_id);
-
         let mut form_data_signal = self.ui_state.form_data;
         let mut form_data_map = form_data_signal.write();
         form_data_map.insert(
@@ -291,7 +268,6 @@ impl ValidationHandler for ActionExecutor {
     fn execute_validation_actions(
         &mut self,
         payload: &serde_json::Value,
-        context: &ActionContext,
         is_valid: bool,
     ) -> Result<(), String> {
         if is_valid {
