@@ -1,0 +1,1418 @@
+[
+  {
+    "id": "Accordion",
+    "name": "Accordion",
+    "parent": "",
+    "description": "A vertically stacked set of interactive headings that each reveal a section of content",
+    "category": "disclosure",
+    "usage": "Used for FAQ sections, navigation menus, or any collapsible content organization",
+    "examples": [
+      "FAQ section",
+      "Settings panels",
+      "Navigation drawer"
+    ],
+    "props": [
+      {
+        "name": "default_open",
+        "type": "bool",
+        "required": false,
+        "default": "false",
+        "description": "Whether the accordion should be open by default"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Child elements containing accordion items"
+    },
+    "embeddingText": "Component: Accordion\nCategory: disclosure\nDescription: A vertically stacked set of interactive headings that each reveal a section of content\nUsage: Used for FAQ sections, navigation menus, or any collapsible content organization\nExamples: FAQ section, Settings panels, Navigation drawer\nProperties:\n- default_open (bool): Whether the accordion should be open by default [default: false]\nChildren: Child elements containing accordion items"
+  },
+  {
+    "id": "Accordion_AccordionItem",
+    "name": "AccordionItem",
+    "parent": "Accordion",
+    "description": "A vertically stacked set of interactive headings that each reveal a section of content",
+    "category": "disclosure",
+    "usage": "Used for FAQ sections, navigation menus, or any collapsible content organization",
+    "examples": [
+      "FAQ section",
+      "Settings panels",
+      "Navigation drawer"
+    ],
+    "props": [
+      {
+        "name": "index",
+        "type": "usize",
+        "required": true,
+        "description": "Unique index for the accordion item"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Content of the accordion item"
+    },
+    "embeddingText": "Component: AccordionItem (part of Accordion)\nCategory: disclosure\nDescription: A vertically stacked set of interactive headings that each reveal a section of content\nUsage: Used for FAQ sections, navigation menus, or any collapsible content organization\nExamples: FAQ section, Settings panels, Navigation drawer\nProperties:\n- index (usize): Unique index for the accordion item [required]\nChildren: Content of the accordion item"
+  },
+  {
+    "id": "Accordion_AccordionTrigger",
+    "name": "AccordionTrigger",
+    "parent": "Accordion",
+    "description": "A vertically stacked set of interactive headings that each reveal a section of content",
+    "category": "disclosure",
+    "usage": "Used for FAQ sections, navigation menus, or any collapsible content organization",
+    "examples": [
+      "FAQ section",
+      "Settings panels",
+      "Navigation drawer"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Trigger content (usually text or icon)"
+    },
+    "embeddingText": "Component: AccordionTrigger (part of Accordion)\nCategory: disclosure\nDescription: A vertically stacked set of interactive headings that each reveal a section of content\nUsage: Used for FAQ sections, navigation menus, or any collapsible content organization\nExamples: FAQ section, Settings panels, Navigation drawer\nChildren: Trigger content (usually text or icon)"
+  },
+  {
+    "id": "Accordion_AccordionContent",
+    "name": "AccordionContent",
+    "parent": "Accordion",
+    "description": "A vertically stacked set of interactive headings that each reveal a section of content",
+    "category": "disclosure",
+    "usage": "Used for FAQ sections, navigation menus, or any collapsible content organization",
+    "examples": [
+      "FAQ section",
+      "Settings panels",
+      "Navigation drawer"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Content to be revealed when expanded"
+    },
+    "embeddingText": "Component: AccordionContent (part of Accordion)\nCategory: disclosure\nDescription: A vertically stacked set of interactive headings that each reveal a section of content\nUsage: Used for FAQ sections, navigation menus, or any collapsible content organization\nExamples: FAQ section, Settings panels, Navigation drawer\nChildren: Content to be revealed when expanded"
+  },
+  {
+    "id": "Avatar",
+    "name": "Avatar",
+    "parent": "",
+    "description": "An image element with a fallback for representing the user",
+    "category": "media",
+    "usage": "Used to display user profile pictures or entity representations",
+    "examples": [
+      "User profile picture",
+      "Team member avatar",
+      "Account selector"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Avatar image and fallback content"
+    },
+    "embeddingText": "Component: Avatar\nCategory: media\nDescription: An image element with a fallback for representing the user\nUsage: Used to display user profile pictures or entity representations\nExamples: User profile picture, Team member avatar, Account selector\nChildren: Avatar image and fallback content"
+  },
+  {
+    "id": "Avatar_AvatarImage",
+    "name": "AvatarImage",
+    "parent": "Avatar",
+    "description": "An image element with a fallback for representing the user",
+    "category": "media",
+    "usage": "Used to display user profile pictures or entity representations",
+    "examples": [
+      "User profile picture",
+      "Team member avatar",
+      "Account selector"
+    ],
+    "props": [
+      {
+        "name": "src",
+        "type": "String",
+        "required": true,
+        "description": "Source URL of the avatar image"
+      },
+      {
+        "name": "alt",
+        "type": "String",
+        "required": false,
+        "description": "Alternative text for the image"
+      }
+    ],
+    "children": null,
+    "embeddingText": "Component: AvatarImage (part of Avatar)\nCategory: media\nDescription: An image element with a fallback for representing the user\nUsage: Used to display user profile pictures or entity representations\nExamples: User profile picture, Team member avatar, Account selector\nProperties:\n- src (String): Source URL of the avatar image [required]\n- alt (String): Alternative text for the image"
+  },
+  {
+    "id": "Avatar_AvatarFallback",
+    "name": "AvatarFallback",
+    "parent": "Avatar",
+    "description": "An image element with a fallback for representing the user",
+    "category": "media",
+    "usage": "Used to display user profile pictures or entity representations",
+    "examples": [
+      "User profile picture",
+      "Team member avatar",
+      "Account selector"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Fallback content when image fails to load"
+    },
+    "embeddingText": "Component: AvatarFallback (part of Avatar)\nCategory: media\nDescription: An image element with a fallback for representing the user\nUsage: Used to display user profile pictures or entity representations\nExamples: User profile picture, Team member avatar, Account selector\nChildren: Fallback content when image fails to load"
+  },
+  {
+    "id": "Calendar",
+    "name": "Calendar",
+    "parent": "",
+    "description": "A date picker component with interactive calendar interface",
+    "category": "input",
+    "usage": "Used for date selection in forms, booking systems, or scheduling interfaces",
+    "examples": [
+      "Booking system",
+      "Event scheduler",
+      "Date range picker"
+    ],
+    "props": [
+      {
+        "name": "view_date",
+        "type": "CalendarDate",
+        "required": true,
+        "description": "Currently visible month/year"
+      },
+      {
+        "name": "mode",
+        "type": "CalendarMode",
+        "required": false,
+        "default": "single",
+        "description": "Selection mode: single, multiple, or range"
+      },
+      {
+        "name": "first_day_of_week",
+        "type": "u32",
+        "required": false,
+        "default": "0",
+        "description": "First day of week (0 = Sunday, 1 = Monday)"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Calendar grid and navigation elements"
+    },
+    "embeddingText": "Component: Calendar\nCategory: input\nDescription: A date picker component with interactive calendar interface\nUsage: Used for date selection in forms, booking systems, or scheduling interfaces\nExamples: Booking system, Event scheduler, Date range picker\nProperties:\n- view_date (CalendarDate): Currently visible month/year [required]\n- mode (CalendarMode): Selection mode: single, multiple, or range [default: single]\n- first_day_of_week (u32): First day of week (0 = Sunday, 1 = Monday) [default: 0]\nChildren: Calendar grid and navigation elements"
+  },
+  {
+    "id": "Checkbox",
+    "name": "Checkbox",
+    "parent": "",
+    "description": "A control that allows the user to toggle between checked and not checked",
+    "category": "input",
+    "usage": "Used for boolean selections, multi-select lists, or agreement confirmations",
+    "examples": [
+      "Terms agreement",
+      "Feature toggles",
+      "Multi-select filters"
+    ],
+    "props": [
+      {
+        "name": "default_checked",
+        "type": "CheckboxState",
+        "required": false,
+        "default": "false",
+        "description": "Default checked state (true, false, or indeterminate)"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Checkbox visual indicator"
+    },
+    "embeddingText": "Component: Checkbox\nCategory: input\nDescription: A control that allows the user to toggle between checked and not checked\nUsage: Used for boolean selections, multi-select lists, or agreement confirmations\nExamples: Terms agreement, Feature toggles, Multi-select filters\nProperties:\n- default_checked (CheckboxState): Default checked state (true, false, or indeterminate) [default: false]\nChildren: Checkbox visual indicator"
+  },
+  {
+    "id": "Collapsible",
+    "name": "Collapsible",
+    "parent": "",
+    "description": "An interactive component which can be expanded/collapsed to show or hide content",
+    "category": "disclosure",
+    "usage": "Used for progressive disclosure, advanced options, or space-saving layouts",
+    "examples": [
+      "Advanced filters",
+      "More options",
+      "Code snippets"
+    ],
+    "props": [
+      {
+        "name": "default_open",
+        "type": "bool",
+        "required": false,
+        "default": "false",
+        "description": "Whether the collapsible should be open by default"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Trigger and content elements"
+    },
+    "embeddingText": "Component: Collapsible\nCategory: disclosure\nDescription: An interactive component which can be expanded/collapsed to show or hide content\nUsage: Used for progressive disclosure, advanced options, or space-saving layouts\nExamples: Advanced filters, More options, Code snippets\nProperties:\n- default_open (bool): Whether the collapsible should be open by default [default: false]\nChildren: Trigger and content elements"
+  },
+  {
+    "id": "Collapsible_CollapsibleTrigger",
+    "name": "CollapsibleTrigger",
+    "parent": "Collapsible",
+    "description": "An interactive component which can be expanded/collapsed to show or hide content",
+    "category": "disclosure",
+    "usage": "Used for progressive disclosure, advanced options, or space-saving layouts",
+    "examples": [
+      "Advanced filters",
+      "More options",
+      "Code snippets"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Clickable trigger element"
+    },
+    "embeddingText": "Component: CollapsibleTrigger (part of Collapsible)\nCategory: disclosure\nDescription: An interactive component which can be expanded/collapsed to show or hide content\nUsage: Used for progressive disclosure, advanced options, or space-saving layouts\nExamples: Advanced filters, More options, Code snippets\nChildren: Clickable trigger element"
+  },
+  {
+    "id": "Collapsible_CollapsibleContent",
+    "name": "CollapsibleContent",
+    "parent": "Collapsible",
+    "description": "An interactive component which can be expanded/collapsed to show or hide content",
+    "category": "disclosure",
+    "usage": "Used for progressive disclosure, advanced options, or space-saving layouts",
+    "examples": [
+      "Advanced filters",
+      "More options",
+      "Code snippets"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Content to be shown/hidden"
+    },
+    "embeddingText": "Component: CollapsibleContent (part of Collapsible)\nCategory: disclosure\nDescription: An interactive component which can be expanded/collapsed to show or hide content\nUsage: Used for progressive disclosure, advanced options, or space-saving layouts\nExamples: Advanced filters, More options, Code snippets\nChildren: Content to be shown/hidden"
+  },
+  {
+    "id": "ContextMenu",
+    "name": "ContextMenu",
+    "parent": "",
+    "description": "A menu triggered by right-click or long press, providing contextual actions",
+    "category": "overlay",
+    "usage": "Used for context-specific actions on elements like copy, edit, delete",
+    "examples": [
+      "File actions",
+      "Text selection menu",
+      "Image operations"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Trigger area and menu content"
+    },
+    "embeddingText": "Component: ContextMenu\nCategory: overlay\nDescription: A menu triggered by right-click or long press, providing contextual actions\nUsage: Used for context-specific actions on elements like copy, edit, delete\nExamples: File actions, Text selection menu, Image operations\nChildren: Trigger area and menu content"
+  },
+  {
+    "id": "ContextMenu_ContextMenuTrigger",
+    "name": "ContextMenuTrigger",
+    "parent": "ContextMenu",
+    "description": "A menu triggered by right-click or long press, providing contextual actions",
+    "category": "overlay",
+    "usage": "Used for context-specific actions on elements like copy, edit, delete",
+    "examples": [
+      "File actions",
+      "Text selection menu",
+      "Image operations"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Element that triggers the context menu"
+    },
+    "embeddingText": "Component: ContextMenuTrigger (part of ContextMenu)\nCategory: overlay\nDescription: A menu triggered by right-click or long press, providing contextual actions\nUsage: Used for context-specific actions on elements like copy, edit, delete\nExamples: File actions, Text selection menu, Image operations\nChildren: Element that triggers the context menu"
+  },
+  {
+    "id": "ContextMenu_ContextMenuContent",
+    "name": "ContextMenuContent",
+    "parent": "ContextMenu",
+    "description": "A menu triggered by right-click or long press, providing contextual actions",
+    "category": "overlay",
+    "usage": "Used for context-specific actions on elements like copy, edit, delete",
+    "examples": [
+      "File actions",
+      "Text selection menu",
+      "Image operations"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Menu items and content"
+    },
+    "embeddingText": "Component: ContextMenuContent (part of ContextMenu)\nCategory: overlay\nDescription: A menu triggered by right-click or long press, providing contextual actions\nUsage: Used for context-specific actions on elements like copy, edit, delete\nExamples: File actions, Text selection menu, Image operations\nChildren: Menu items and content"
+  },
+  {
+    "id": "Dialog",
+    "name": "Dialog",
+    "parent": "",
+    "description": "A window overlaid on either the primary window or another dialog window",
+    "category": "overlay",
+    "usage": "Used for confirmations, forms, detailed views, or modal interactions",
+    "examples": [
+      "Confirmation modal",
+      "Settings dialog",
+      "Image lightbox"
+    ],
+    "props": [
+      {
+        "name": "default_open",
+        "type": "bool",
+        "required": false,
+        "default": "false",
+        "description": "Whether the dialog should be open by default"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Dialog trigger and content"
+    },
+    "embeddingText": "Component: Dialog\nCategory: overlay\nDescription: A window overlaid on either the primary window or another dialog window\nUsage: Used for confirmations, forms, detailed views, or modal interactions\nExamples: Confirmation modal, Settings dialog, Image lightbox\nProperties:\n- default_open (bool): Whether the dialog should be open by default [default: false]\nChildren: Dialog trigger and content"
+  },
+  {
+    "id": "Dialog_DialogTrigger",
+    "name": "DialogTrigger",
+    "parent": "Dialog",
+    "description": "A window overlaid on either the primary window or another dialog window",
+    "category": "overlay",
+    "usage": "Used for confirmations, forms, detailed views, or modal interactions",
+    "examples": [
+      "Confirmation modal",
+      "Settings dialog",
+      "Image lightbox"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Element that opens the dialog"
+    },
+    "embeddingText": "Component: DialogTrigger (part of Dialog)\nCategory: overlay\nDescription: A window overlaid on either the primary window or another dialog window\nUsage: Used for confirmations, forms, detailed views, or modal interactions\nExamples: Confirmation modal, Settings dialog, Image lightbox\nChildren: Element that opens the dialog"
+  },
+  {
+    "id": "Dialog_DialogContent",
+    "name": "DialogContent",
+    "parent": "Dialog",
+    "description": "A window overlaid on either the primary window or another dialog window",
+    "category": "overlay",
+    "usage": "Used for confirmations, forms, detailed views, or modal interactions",
+    "examples": [
+      "Confirmation modal",
+      "Settings dialog",
+      "Image lightbox"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Dialog content and controls"
+    },
+    "embeddingText": "Component: DialogContent (part of Dialog)\nCategory: overlay\nDescription: A window overlaid on either the primary window or another dialog window\nUsage: Used for confirmations, forms, detailed views, or modal interactions\nExamples: Confirmation modal, Settings dialog, Image lightbox\nChildren: Dialog content and controls"
+  },
+  {
+    "id": "DropdownMenu",
+    "name": "DropdownMenu",
+    "parent": "",
+    "description": "A menu that appears when triggered, providing a list of actions or options",
+    "category": "overlay",
+    "usage": "Used for navigation menus, action lists, or option selection",
+    "examples": [
+      "User menu",
+      "Action buttons",
+      "Filter options"
+    ],
+    "props": [
+      {
+        "name": "default_open",
+        "type": "bool",
+        "required": false,
+        "default": "false",
+        "description": "Whether the menu should be open by default"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Menu trigger and content"
+    },
+    "embeddingText": "Component: DropdownMenu\nCategory: overlay\nDescription: A menu that appears when triggered, providing a list of actions or options\nUsage: Used for navigation menus, action lists, or option selection\nExamples: User menu, Action buttons, Filter options\nProperties:\n- default_open (bool): Whether the menu should be open by default [default: false]\nChildren: Menu trigger and content"
+  },
+  {
+    "id": "DropdownMenu_DropdownMenuTrigger",
+    "name": "DropdownMenuTrigger",
+    "parent": "DropdownMenu",
+    "description": "A menu that appears when triggered, providing a list of actions or options",
+    "category": "overlay",
+    "usage": "Used for navigation menus, action lists, or option selection",
+    "examples": [
+      "User menu",
+      "Action buttons",
+      "Filter options"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Button or element that opens the menu"
+    },
+    "embeddingText": "Component: DropdownMenuTrigger (part of DropdownMenu)\nCategory: overlay\nDescription: A menu that appears when triggered, providing a list of actions or options\nUsage: Used for navigation menus, action lists, or option selection\nExamples: User menu, Action buttons, Filter options\nChildren: Button or element that opens the menu"
+  },
+  {
+    "id": "DropdownMenu_DropdownMenuContent",
+    "name": "DropdownMenuContent",
+    "parent": "DropdownMenu",
+    "description": "A menu that appears when triggered, providing a list of actions or options",
+    "category": "overlay",
+    "usage": "Used for navigation menus, action lists, or option selection",
+    "examples": [
+      "User menu",
+      "Action buttons",
+      "Filter options"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Menu items and separators"
+    },
+    "embeddingText": "Component: DropdownMenuContent (part of DropdownMenu)\nCategory: overlay\nDescription: A menu that appears when triggered, providing a list of actions or options\nUsage: Used for navigation menus, action lists, or option selection\nExamples: User menu, Action buttons, Filter options\nChildren: Menu items and separators"
+  },
+  {
+    "id": "Flex",
+    "name": "Flex",
+    "parent": "",
+    "description": "A flexible box layout container for arranging child elements",
+    "category": "layout",
+    "usage": "Used for responsive layouts, component arrangement, and flexible spacing",
+    "examples": [
+      "Header layout",
+      "Button groups",
+      "Card arrangements"
+    ],
+    "props": [
+      {
+        "name": "direction",
+        "type": "FlexDirection",
+        "required": false,
+        "default": "row",
+        "description": "Direction of flex items (row, column, row-reverse, column-reverse)"
+      },
+      {
+        "name": "justify_content",
+        "type": "FlexJustifyContent",
+        "required": false,
+        "default": "flex-start",
+        "description": "How to distribute space between and around items"
+      },
+      {
+        "name": "align_items",
+        "type": "FlexAlignItems",
+        "required": false,
+        "default": "stretch",
+        "description": "How to align items on the cross axis"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Child elements to be arranged"
+    },
+    "embeddingText": "Component: Flex\nCategory: layout\nDescription: A flexible box layout container for arranging child elements\nUsage: Used for responsive layouts, component arrangement, and flexible spacing\nExamples: Header layout, Button groups, Card arrangements\nProperties:\n- direction (FlexDirection): Direction of flex items (row, column, row-reverse, column-reverse) [default: row]\n- justify_content (FlexJustifyContent): How to distribute space between and around items [default: flex-start]\n- align_items (FlexAlignItems): How to align items on the cross axis [default: stretch]\nChildren: Child elements to be arranged"
+  },
+  {
+    "id": "Grid",
+    "name": "Grid",
+    "parent": "",
+    "description": "A CSS grid layout container for creating complex, responsive layouts",
+    "category": "layout",
+    "usage": "Used for complex layouts, image galleries, or structured content arrangement",
+    "examples": [
+      "Image gallery",
+      "Dashboard layout",
+      "Product grid"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Grid items to be arranged"
+    },
+    "embeddingText": "Component: Grid\nCategory: layout\nDescription: A CSS grid layout container for creating complex, responsive layouts\nUsage: Used for complex layouts, image galleries, or structured content arrangement\nExamples: Image gallery, Dashboard layout, Product grid\nChildren: Grid items to be arranged"
+  },
+  {
+    "id": "HoverCard",
+    "name": "HoverCard",
+    "parent": "",
+    "description": "A card that appears when hovering over a trigger element",
+    "category": "overlay",
+    "usage": "Used for previews, additional information, or contextual details",
+    "examples": [
+      "User profile preview",
+      "Link preview",
+      "Image details"
+    ],
+    "props": [
+      {
+        "name": "default_open",
+        "type": "bool",
+        "required": false,
+        "default": "false",
+        "description": "Whether the hover card should be open by default"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Trigger and card content"
+    },
+    "embeddingText": "Component: HoverCard\nCategory: overlay\nDescription: A card that appears when hovering over a trigger element\nUsage: Used for previews, additional information, or contextual details\nExamples: User profile preview, Link preview, Image details\nProperties:\n- default_open (bool): Whether the hover card should be open by default [default: false]\nChildren: Trigger and card content"
+  },
+  {
+    "id": "HoverCard_HoverCardTrigger",
+    "name": "HoverCardTrigger",
+    "parent": "HoverCard",
+    "description": "A card that appears when hovering over a trigger element",
+    "category": "overlay",
+    "usage": "Used for previews, additional information, or contextual details",
+    "examples": [
+      "User profile preview",
+      "Link preview",
+      "Image details"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Element that triggers the hover card"
+    },
+    "embeddingText": "Component: HoverCardTrigger (part of HoverCard)\nCategory: overlay\nDescription: A card that appears when hovering over a trigger element\nUsage: Used for previews, additional information, or contextual details\nExamples: User profile preview, Link preview, Image details\nChildren: Element that triggers the hover card"
+  },
+  {
+    "id": "HoverCard_HoverCardContent",
+    "name": "HoverCardContent",
+    "parent": "HoverCard",
+    "description": "A card that appears when hovering over a trigger element",
+    "category": "overlay",
+    "usage": "Used for previews, additional information, or contextual details",
+    "examples": [
+      "User profile preview",
+      "Link preview",
+      "Image details"
+    ],
+    "props": [
+      {
+        "name": "side",
+        "type": "HoverCardSide",
+        "required": false,
+        "description": "Which side of trigger to show card"
+      },
+      {
+        "name": "align",
+        "type": "HoverCardAlign",
+        "required": false,
+        "description": "How to align the card relative to trigger"
+      },
+      {
+        "name": "force_mount",
+        "type": "bool",
+        "required": false,
+        "default": "false",
+        "description": "Force mount the card in DOM"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Card content"
+    },
+    "embeddingText": "Component: HoverCardContent (part of HoverCard)\nCategory: overlay\nDescription: A card that appears when hovering over a trigger element\nUsage: Used for previews, additional information, or contextual details\nExamples: User profile preview, Link preview, Image details\nProperties:\n- side (HoverCardSide): Which side of trigger to show card\n- align (HoverCardAlign): How to align the card relative to trigger\n- force_mount (bool): Force mount the card in DOM [default: false]\nChildren: Card content"
+  },
+  {
+    "id": "Label",
+    "name": "Label",
+    "parent": "",
+    "description": "A text label associated with a form control",
+    "category": "typography",
+    "usage": "Used to label form inputs, checkboxes, radio buttons, and other controls",
+    "examples": [
+      "Input field label",
+      "Checkbox label",
+      "Form section header"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Label text content"
+    },
+    "embeddingText": "Component: Label\nCategory: typography\nDescription: A text label associated with a form control\nUsage: Used to label form inputs, checkboxes, radio buttons, and other controls\nExamples: Input field label, Checkbox label, Form section header\nChildren: Label text content"
+  },
+  {
+    "id": "Menubar",
+    "name": "Menubar",
+    "parent": "",
+    "description": "A horizontal menu bar containing multiple menu items",
+    "category": "navigation",
+    "usage": "Used for application menus, navigation bars, or command interfaces",
+    "examples": [
+      "App menu bar",
+      "Editor toolbar",
+      "Navigation header"
+    ],
+    "props": [
+      {
+        "name": "default_value",
+        "type": "String",
+        "required": false,
+        "description": "Default active menu item"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Menu items"
+    },
+    "embeddingText": "Component: Menubar\nCategory: navigation\nDescription: A horizontal menu bar containing multiple menu items\nUsage: Used for application menus, navigation bars, or command interfaces\nExamples: App menu bar, Editor toolbar, Navigation header\nProperties:\n- default_value (String): Default active menu item\nChildren: Menu items"
+  },
+  {
+    "id": "Menubar_MenubarMenu",
+    "name": "MenubarMenu",
+    "parent": "Menubar",
+    "description": "A horizontal menu bar containing multiple menu items",
+    "category": "navigation",
+    "usage": "Used for application menus, navigation bars, or command interfaces",
+    "examples": [
+      "App menu bar",
+      "Editor toolbar",
+      "Navigation header"
+    ],
+    "props": [
+      {
+        "name": "value",
+        "type": "String",
+        "required": true,
+        "description": "Unique identifier for the menu"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Menu trigger and content"
+    },
+    "embeddingText": "Component: MenubarMenu (part of Menubar)\nCategory: navigation\nDescription: A horizontal menu bar containing multiple menu items\nUsage: Used for application menus, navigation bars, or command interfaces\nExamples: App menu bar, Editor toolbar, Navigation header\nProperties:\n- value (String): Unique identifier for the menu [required]\nChildren: Menu trigger and content"
+  },
+  {
+    "id": "Menubar_MenubarTrigger",
+    "name": "MenubarTrigger",
+    "parent": "Menubar",
+    "description": "A horizontal menu bar containing multiple menu items",
+    "category": "navigation",
+    "usage": "Used for application menus, navigation bars, or command interfaces",
+    "examples": [
+      "App menu bar",
+      "Editor toolbar",
+      "Navigation header"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Menu trigger button"
+    },
+    "embeddingText": "Component: MenubarTrigger (part of Menubar)\nCategory: navigation\nDescription: A horizontal menu bar containing multiple menu items\nUsage: Used for application menus, navigation bars, or command interfaces\nExamples: App menu bar, Editor toolbar, Navigation header\nChildren: Menu trigger button"
+  },
+  {
+    "id": "Portal",
+    "name": "Portal",
+    "parent": "",
+    "description": "A utility component that renders children into a different part of the DOM",
+    "category": "utility",
+    "usage": "Used for modals, tooltips, or any content that needs to escape its container",
+    "examples": [
+      "Modal backdrop",
+      "Tooltip positioning",
+      "Dropdown overflow"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Content to be portaled"
+    },
+    "embeddingText": "Component: Portal\nCategory: utility\nDescription: A utility component that renders children into a different part of the DOM\nUsage: Used for modals, tooltips, or any content that needs to escape its container\nExamples: Modal backdrop, Tooltip positioning, Dropdown overflow\nChildren: Content to be portaled"
+  },
+  {
+    "id": "Progress",
+    "name": "Progress",
+    "parent": "",
+    "description": "A progress indicator showing completion of a task",
+    "category": "feedback",
+    "usage": "Used to show loading states, form completion, or task progress",
+    "examples": [
+      "File upload",
+      "Form completion",
+      "Loading indicator"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Progress bar visual elements"
+    },
+    "embeddingText": "Component: Progress\nCategory: feedback\nDescription: A progress indicator showing completion of a task\nUsage: Used to show loading states, form completion, or task progress\nExamples: File upload, Form completion, Loading indicator\nChildren: Progress bar visual elements"
+  },
+  {
+    "id": "RadioGroup",
+    "name": "RadioGroup",
+    "parent": "",
+    "description": "A set of checkable buttons where only one can be checked at a time",
+    "category": "input",
+    "usage": "Used for mutually exclusive selections like settings or preferences",
+    "examples": [
+      "Payment method",
+      "Shipping options",
+      "Theme selection"
+    ],
+    "props": [
+      {
+        "name": "default_value",
+        "type": "String",
+        "required": false,
+        "description": "Default selected radio option"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Radio button items"
+    },
+    "embeddingText": "Component: RadioGroup\nCategory: input\nDescription: A set of checkable buttons where only one can be checked at a time\nUsage: Used for mutually exclusive selections like settings or preferences\nExamples: Payment method, Shipping options, Theme selection\nProperties:\n- default_value (String): Default selected radio option\nChildren: Radio button items"
+  },
+  {
+    "id": "RadioGroup_RadioGroupItem",
+    "name": "RadioGroupItem",
+    "parent": "RadioGroup",
+    "description": "A set of checkable buttons where only one can be checked at a time",
+    "category": "input",
+    "usage": "Used for mutually exclusive selections like settings or preferences",
+    "examples": [
+      "Payment method",
+      "Shipping options",
+      "Theme selection"
+    ],
+    "props": [
+      {
+        "name": "value",
+        "type": "String",
+        "required": true,
+        "description": "Value for this radio option"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Radio button indicator"
+    },
+    "embeddingText": "Component: RadioGroupItem (part of RadioGroup)\nCategory: input\nDescription: A set of checkable buttons where only one can be checked at a time\nUsage: Used for mutually exclusive selections like settings or preferences\nExamples: Payment method, Shipping options, Theme selection\nProperties:\n- value (String): Value for this radio option [required]\nChildren: Radio button indicator"
+  },
+  {
+    "id": "ScrollArea",
+    "name": "ScrollArea",
+    "parent": "",
+    "description": "A custom scrollable area with styled scrollbars",
+    "category": "utility",
+    "usage": "Used to create custom scrollable areas with consistent styling",
+    "examples": [
+      "Chat messages",
+      "Code editor",
+      "Long content lists"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Scrollable content"
+    },
+    "embeddingText": "Component: ScrollArea\nCategory: utility\nDescription: A custom scrollable area with styled scrollbars\nUsage: Used to create custom scrollable areas with consistent styling\nExamples: Chat messages, Code editor, Long content lists\nChildren: Scrollable content"
+  },
+  {
+    "id": "ScrollArea_ScrollBar",
+    "name": "ScrollBar",
+    "parent": "ScrollArea",
+    "description": "A custom scrollable area with styled scrollbars",
+    "category": "utility",
+    "usage": "Used to create custom scrollable areas with consistent styling",
+    "examples": [
+      "Chat messages",
+      "Code editor",
+      "Long content lists"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Scrollbar thumb and track"
+    },
+    "embeddingText": "Component: ScrollBar (part of ScrollArea)\nCategory: utility\nDescription: A custom scrollable area with styled scrollbars\nUsage: Used to create custom scrollable areas with consistent styling\nExamples: Chat messages, Code editor, Long content lists\nChildren: Scrollbar thumb and track"
+  },
+  {
+    "id": "Select",
+    "name": "Select",
+    "parent": "",
+    "description": "A dropdown selection component for choosing from a list of options",
+    "category": "input",
+    "usage": "Used for single-choice selections from a predefined list",
+    "examples": [
+      "Country selector",
+      "Sort options",
+      "Category filter"
+    ],
+    "props": [
+      {
+        "name": "placeholder",
+        "type": "String",
+        "required": false,
+        "description": "Placeholder text when no option is selected"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Select trigger and options"
+    },
+    "embeddingText": "Component: Select\nCategory: input\nDescription: A dropdown selection component for choosing from a list of options\nUsage: Used for single-choice selections from a predefined list\nExamples: Country selector, Sort options, Category filter\nProperties:\n- placeholder (String): Placeholder text when no option is selected\nChildren: Select trigger and options"
+  },
+  {
+    "id": "Select_SelectTrigger",
+    "name": "SelectTrigger",
+    "parent": "Select",
+    "description": "A dropdown selection component for choosing from a list of options",
+    "category": "input",
+    "usage": "Used for single-choice selections from a predefined list",
+    "examples": [
+      "Country selector",
+      "Sort options",
+      "Category filter"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Trigger button content"
+    },
+    "embeddingText": "Component: SelectTrigger (part of Select)\nCategory: input\nDescription: A dropdown selection component for choosing from a list of options\nUsage: Used for single-choice selections from a predefined list\nExamples: Country selector, Sort options, Category filter\nChildren: Trigger button content"
+  },
+  {
+    "id": "Select_SelectContent",
+    "name": "SelectContent",
+    "parent": "Select",
+    "description": "A dropdown selection component for choosing from a list of options",
+    "category": "input",
+    "usage": "Used for single-choice selections from a predefined list",
+    "examples": [
+      "Country selector",
+      "Sort options",
+      "Category filter"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Dropdown options"
+    },
+    "embeddingText": "Component: SelectContent (part of Select)\nCategory: input\nDescription: A dropdown selection component for choosing from a list of options\nUsage: Used for single-choice selections from a predefined list\nExamples: Country selector, Sort options, Category filter\nChildren: Dropdown options"
+  },
+  {
+    "id": "Select_SelectItem",
+    "name": "SelectItem",
+    "parent": "Select",
+    "description": "A dropdown selection component for choosing from a list of options",
+    "category": "input",
+    "usage": "Used for single-choice selections from a predefined list",
+    "examples": [
+      "Country selector",
+      "Sort options",
+      "Category filter"
+    ],
+    "props": [
+      {
+        "name": "value",
+        "type": "String",
+        "required": true,
+        "description": "Option value"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Option display content"
+    },
+    "embeddingText": "Component: SelectItem (part of Select)\nCategory: input\nDescription: A dropdown selection component for choosing from a list of options\nUsage: Used for single-choice selections from a predefined list\nExamples: Country selector, Sort options, Category filter\nProperties:\n- value (String): Option value [required]\nChildren: Option display content"
+  },
+  {
+    "id": "Separator",
+    "name": "Separator",
+    "parent": "",
+    "description": "A visual divider between content sections",
+    "category": "layout",
+    "usage": "Used to create visual separation between content sections",
+    "examples": [
+      "Menu item divider",
+      "Section separator",
+      "Content break"
+    ],
+    "props": [
+      {
+        "name": "horizontal",
+        "type": "bool",
+        "required": false,
+        "default": "true",
+        "description": "Whether the separator is horizontal or vertical"
+      },
+      {
+        "name": "decorative",
+        "type": "bool",
+        "required": false,
+        "default": "false",
+        "description": "Whether the separator is purely decorative"
+      }
+    ],
+    "children": null,
+    "embeddingText": "Component: Separator\nCategory: layout\nDescription: A visual divider between content sections\nUsage: Used to create visual separation between content sections\nExamples: Menu item divider, Section separator, Content break\nProperties:\n- horizontal (bool): Whether the separator is horizontal or vertical [default: true]\n- decorative (bool): Whether the separator is purely decorative [default: false]"
+  },
+  {
+    "id": "Slider",
+    "name": "Slider",
+    "parent": "",
+    "description": "A control for selecting a value from a range",
+    "category": "input",
+    "usage": "Used for numeric input, volume controls, or range selection",
+    "examples": [
+      "Volume control",
+      "Price range",
+      "Opacity setting"
+    ],
+    "props": [
+      {
+        "name": "default_value",
+        "type": "SliderValue",
+        "required": false,
+        "description": "Default slider value"
+      },
+      {
+        "name": "min",
+        "type": "f64",
+        "required": false,
+        "default": "0.0",
+        "description": "Minimum value"
+      },
+      {
+        "name": "max",
+        "type": "f64",
+        "required": false,
+        "default": "100.0",
+        "description": "Maximum value"
+      },
+      {
+        "name": "step",
+        "type": "f64",
+        "required": false,
+        "default": "1.0",
+        "description": "Step increment"
+      },
+      {
+        "name": "horizontal",
+        "type": "bool",
+        "required": false,
+        "default": "true",
+        "description": "Whether the slider is horizontal"
+      },
+      {
+        "name": "inverted",
+        "type": "bool",
+        "required": false,
+        "default": "false",
+        "description": "Whether the slider direction is inverted"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Slider track and thumb elements"
+    },
+    "embeddingText": "Component: Slider\nCategory: input\nDescription: A control for selecting a value from a range\nUsage: Used for numeric input, volume controls, or range selection\nExamples: Volume control, Price range, Opacity setting\nProperties:\n- default_value (SliderValue): Default slider value\n- min (f64): Minimum value [default: 0.0]\n- max (f64): Maximum value [default: 100.0]\n- step (f64): Step increment [default: 1.0]\n- horizontal (bool): Whether the slider is horizontal [default: true]\n- inverted (bool): Whether the slider direction is inverted [default: false]\nChildren: Slider track and thumb elements"
+  },
+  {
+    "id": "Switch",
+    "name": "Switch",
+    "parent": "",
+    "description": "A toggle control for binary states",
+    "category": "input",
+    "usage": "Used for settings toggles, feature flags, or binary preferences",
+    "examples": [
+      "Dark mode toggle",
+      "Notification settings",
+      "Feature enable/disable"
+    ],
+    "props": [
+      {
+        "name": "default_checked",
+        "type": "bool",
+        "required": false,
+        "default": "false",
+        "description": "Default checked state"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Switch visual indicator"
+    },
+    "embeddingText": "Component: Switch\nCategory: input\nDescription: A toggle control for binary states\nUsage: Used for settings toggles, feature flags, or binary preferences\nExamples: Dark mode toggle, Notification settings, Feature enable/disable\nProperties:\n- default_checked (bool): Default checked state [default: false]\nChildren: Switch visual indicator"
+  },
+  {
+    "id": "Tabs",
+    "name": "Tabs",
+    "parent": "",
+    "description": "A tabbed interface for organizing content into separate views",
+    "category": "navigation",
+    "usage": "Used for organizing related content into separate, switchable views",
+    "examples": [
+      "Settings panels",
+      "Data views",
+      "Content categories"
+    ],
+    "props": [
+      {
+        "name": "default_value",
+        "type": "String",
+        "required": false,
+        "description": "Default active tab"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Tab list and content panels"
+    },
+    "embeddingText": "Component: Tabs\nCategory: navigation\nDescription: A tabbed interface for organizing content into separate views\nUsage: Used for organizing related content into separate, switchable views\nExamples: Settings panels, Data views, Content categories\nProperties:\n- default_value (String): Default active tab\nChildren: Tab list and content panels"
+  },
+  {
+    "id": "Tabs_TabsList",
+    "name": "TabsList",
+    "parent": "Tabs",
+    "description": "A tabbed interface for organizing content into separate views",
+    "category": "navigation",
+    "usage": "Used for organizing related content into separate, switchable views",
+    "examples": [
+      "Settings panels",
+      "Data views",
+      "Content categories"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Tab trigger buttons"
+    },
+    "embeddingText": "Component: TabsList (part of Tabs)\nCategory: navigation\nDescription: A tabbed interface for organizing content into separate views\nUsage: Used for organizing related content into separate, switchable views\nExamples: Settings panels, Data views, Content categories\nChildren: Tab trigger buttons"
+  },
+  {
+    "id": "Tabs_TabsTrigger",
+    "name": "TabsTrigger",
+    "parent": "Tabs",
+    "description": "A tabbed interface for organizing content into separate views",
+    "category": "navigation",
+    "usage": "Used for organizing related content into separate, switchable views",
+    "examples": [
+      "Settings panels",
+      "Data views",
+      "Content categories"
+    ],
+    "props": [
+      {
+        "name": "value",
+        "type": "String",
+        "required": true,
+        "description": "Tab identifier"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Tab label content"
+    },
+    "embeddingText": "Component: TabsTrigger (part of Tabs)\nCategory: navigation\nDescription: A tabbed interface for organizing content into separate views\nUsage: Used for organizing related content into separate, switchable views\nExamples: Settings panels, Data views, Content categories\nProperties:\n- value (String): Tab identifier [required]\nChildren: Tab label content"
+  },
+  {
+    "id": "Tabs_TabsContent",
+    "name": "TabsContent",
+    "parent": "Tabs",
+    "description": "A tabbed interface for organizing content into separate views",
+    "category": "navigation",
+    "usage": "Used for organizing related content into separate, switchable views",
+    "examples": [
+      "Settings panels",
+      "Data views",
+      "Content categories"
+    ],
+    "props": [
+      {
+        "name": "value",
+        "type": "String",
+        "required": true,
+        "description": "Associated tab identifier"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Tab panel content"
+    },
+    "embeddingText": "Component: TabsContent (part of Tabs)\nCategory: navigation\nDescription: A tabbed interface for organizing content into separate views\nUsage: Used for organizing related content into separate, switchable views\nExamples: Settings panels, Data views, Content categories\nProperties:\n- value (String): Associated tab identifier [required]\nChildren: Tab panel content"
+  },
+  {
+    "id": "Toast",
+    "name": "Toast",
+    "parent": "",
+    "description": "A temporary notification that appears briefly to provide feedback",
+    "category": "feedback",
+    "usage": "Used for success messages, error notifications, or temporary feedback",
+    "examples": [
+      "Save confirmation",
+      "Error alerts",
+      "Info notifications"
+    ],
+    "props": [
+      {
+        "name": "id",
+        "type": "usize",
+        "required": true,
+        "description": "Unique identifier for the toast"
+      },
+      {
+        "name": "title",
+        "type": "String",
+        "required": true,
+        "description": "Toast title text"
+      },
+      {
+        "name": "toast_type",
+        "type": "ToastType",
+        "required": false,
+        "default": "info",
+        "description": "Type of toast (success, error, warning, info)"
+      },
+      {
+        "name": "permanent",
+        "type": "bool",
+        "required": false,
+        "default": "false",
+        "description": "Whether the toast persists until manually closed"
+      },
+      {
+        "name": "add_toast",
+        "type": "AddToastFn",
+        "required": true,
+        "description": "Function to add new toasts"
+      }
+    ],
+    "children": null,
+    "embeddingText": "Component: Toast\nCategory: feedback\nDescription: A temporary notification that appears briefly to provide feedback\nUsage: Used for success messages, error notifications, or temporary feedback\nExamples: Save confirmation, Error alerts, Info notifications\nProperties:\n- id (usize): Unique identifier for the toast [required]\n- title (String): Toast title text [required]\n- toast_type (ToastType): Type of toast (success, error, warning, info) [default: info]\n- permanent (bool): Whether the toast persists until manually closed [default: false]\n- add_toast (AddToastFn): Function to add new toasts [required]"
+  },
+  {
+    "id": "Toggle",
+    "name": "Toggle",
+    "parent": "",
+    "description": "A toggle button that can be pressed or unpressed",
+    "category": "input",
+    "usage": "Used for toolbar buttons, formatting options, or state toggles",
+    "examples": [
+      "Bold text toggle",
+      "Favorite button",
+      "View mode toggle"
+    ],
+    "props": [
+      {
+        "name": "default_pressed",
+        "type": "bool",
+        "required": false,
+        "default": "false",
+        "description": "Default pressed state"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Toggle button content"
+    },
+    "embeddingText": "Component: Toggle\nCategory: input\nDescription: A toggle button that can be pressed or unpressed\nUsage: Used for toolbar buttons, formatting options, or state toggles\nExamples: Bold text toggle, Favorite button, View mode toggle\nProperties:\n- default_pressed (bool): Default pressed state [default: false]\nChildren: Toggle button content"
+  },
+  {
+    "id": "ToggleGroup",
+    "name": "ToggleGroup",
+    "parent": "",
+    "description": "A group of toggle buttons where multiple can be active",
+    "category": "input",
+    "usage": "Used for multiple selection toggles or formatting toolbars",
+    "examples": [
+      "Text formatting",
+      "Filter toggles",
+      "Multi-select options"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Toggle group items"
+    },
+    "embeddingText": "Component: ToggleGroup\nCategory: input\nDescription: A group of toggle buttons where multiple can be active\nUsage: Used for multiple selection toggles or formatting toolbars\nExamples: Text formatting, Filter toggles, Multi-select options\nChildren: Toggle group items"
+  },
+  {
+    "id": "ToggleGroup_ToggleGroupItem",
+    "name": "ToggleGroupItem",
+    "parent": "ToggleGroup",
+    "description": "A group of toggle buttons where multiple can be active",
+    "category": "input",
+    "usage": "Used for multiple selection toggles or formatting toolbars",
+    "examples": [
+      "Text formatting",
+      "Filter toggles",
+      "Multi-select options"
+    ],
+    "props": [
+      {
+        "name": "value",
+        "type": "String",
+        "required": true,
+        "description": "Toggle item value"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Toggle item content"
+    },
+    "embeddingText": "Component: ToggleGroupItem (part of ToggleGroup)\nCategory: input\nDescription: A group of toggle buttons where multiple can be active\nUsage: Used for multiple selection toggles or formatting toolbars\nExamples: Text formatting, Filter toggles, Multi-select options\nProperties:\n- value (String): Toggle item value [required]\nChildren: Toggle item content"
+  },
+  {
+    "id": "Toolbar",
+    "name": "Toolbar",
+    "parent": "",
+    "description": "A container for grouping related action controls",
+    "category": "navigation",
+    "usage": "Used for action bars, editor toolbars, or grouped controls",
+    "examples": [
+      "Text editor toolbar",
+      "Image editor controls",
+      "Action bar"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Toolbar buttons and controls"
+    },
+    "embeddingText": "Component: Toolbar\nCategory: navigation\nDescription: A container for grouping related action controls\nUsage: Used for action bars, editor toolbars, or grouped controls\nExamples: Text editor toolbar, Image editor controls, Action bar\nChildren: Toolbar buttons and controls"
+  },
+  {
+    "id": "Tooltip",
+    "name": "Tooltip",
+    "parent": "",
+    "description": "A brief, informative message that appears when hovering over an element",
+    "category": "overlay",
+    "usage": "Used to provide additional information or help text for UI elements",
+    "examples": [
+      "Icon explanations",
+      "Help text",
+      "Keyboard shortcuts"
+    ],
+    "props": [],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Trigger and tooltip content"
+    },
+    "embeddingText": "Component: Tooltip\nCategory: overlay\nDescription: A brief, informative message that appears when hovering over an element\nUsage: Used to provide additional information or help text for UI elements\nExamples: Icon explanations, Help text, Keyboard shortcuts\nChildren: Trigger and tooltip content"
+  },
+  {
+    "id": "Tooltip_TooltipTrigger",
+    "name": "TooltipTrigger",
+    "parent": "Tooltip",
+    "description": "A brief, informative message that appears when hovering over an element",
+    "category": "overlay",
+    "usage": "Used to provide additional information or help text for UI elements",
+    "examples": [
+      "Icon explanations",
+      "Help text",
+      "Keyboard shortcuts"
+    ],
+    "props": [
+      {
+        "name": "use_aria",
+        "type": "bool",
+        "required": false,
+        "default": "true",
+        "description": "Whether to use ARIA attributes"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Element that triggers the tooltip"
+    },
+    "embeddingText": "Component: TooltipTrigger (part of Tooltip)\nCategory: overlay\nDescription: A brief, informative message that appears when hovering over an element\nUsage: Used to provide additional information or help text for UI elements\nExamples: Icon explanations, Help text, Keyboard shortcuts\nProperties:\n- use_aria (bool): Whether to use ARIA attributes [default: true]\nChildren: Element that triggers the tooltip"
+  },
+  {
+    "id": "Tooltip_TooltipContent",
+    "name": "TooltipContent",
+    "parent": "Tooltip",
+    "description": "A brief, informative message that appears when hovering over an element",
+    "category": "overlay",
+    "usage": "Used to provide additional information or help text for UI elements",
+    "examples": [
+      "Icon explanations",
+      "Help text",
+      "Keyboard shortcuts"
+    ],
+    "props": [
+      {
+        "name": "side",
+        "type": "TooltipSide",
+        "required": false,
+        "description": "Which side of trigger to show tooltip"
+      },
+      {
+        "name": "align",
+        "type": "TooltipAlign",
+        "required": false,
+        "description": "How to align the tooltip"
+      }
+    ],
+    "children": {
+      "type": "Element",
+      "required": true,
+      "description": "Tooltip text or content"
+    },
+    "embeddingText": "Component: TooltipContent (part of Tooltip)\nCategory: overlay\nDescription: A brief, informative message that appears when hovering over an element\nUsage: Used to provide additional information or help text for UI elements\nExamples: Icon explanations, Help text, Keyboard shortcuts\nProperties:\n- side (TooltipSide): Which side of trigger to show tooltip\n- align (TooltipAlign): How to align the tooltip\nChildren: Tooltip text or content"
+  }
+]

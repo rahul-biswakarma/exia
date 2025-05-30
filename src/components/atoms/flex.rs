@@ -60,8 +60,11 @@ pub struct FlexProps {
     #[props(default)]
     children: Element,
 
-    #[props(extends = GlobalAttributes)]
-    attributes: Vec<Attribute>,
+    #[props(default)]
+    style: Option<String>,
+
+    #[props(default)]
+    class: Option<String>,
 
     #[props(default = FlexDirection::Row)]
     direction: FlexDirection,
@@ -81,19 +84,13 @@ pub fn Flex(props: FlexProps) -> Element {
         format!("align-items: {}", props.align_items),
     ];
 
-    if let Some(style_attr) = props.attributes.iter().find(|attr| attr.name == "style") {
-        style_parts.push(style_attr.value.to_string());
+    if let Some(style) = props.style {
+        style_parts.push(style);
     }
 
     let style = style_parts.join("; ") + ";";
 
-    let filtered_attributes: Vec<Attribute> = props
-        .attributes
-        .into_iter()
-        .filter(|attr| attr.name != "style")
-        .collect();
-
     rsx!(
-        div { style: "{style}", ..filtered_attributes, {props.children} }
+        div { style: "{style}", class: "{props.class}", {props.children} }
     )
 }
