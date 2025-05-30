@@ -14,9 +14,6 @@ enum Route {
     #[route("/")]
     Settings {},
 
-    #[route("/synapse")]
-    Synapse {},
-
 }
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");

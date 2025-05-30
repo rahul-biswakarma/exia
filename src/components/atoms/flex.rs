@@ -71,16 +71,21 @@ pub struct FlexProps {
 
     #[props(default = FlexAlignItems::Start)]
     align_items: FlexAlignItems,
-
-    #[props(default = "".to_string())]
-    style: String,
 }
 
 pub fn Flex(props: FlexProps) -> Element {
-    let flex_style = format!(
-        "display: flex; flex-direction: {}; justify-content: {}; align-items: {}; {}",
-        props.direction, props.justify_content, props.align_items, props.style
-    );
+    let mut style_parts = vec![
+        "display: flex".to_string(),
+        format!("flex-direction: {}", props.direction),
+        format!("justify-content: {}", props.justify_content),
+        format!("align-items: {}", props.align_items),
+    ];
+
+    if let Some(style_attr) = props.attributes.iter().find(|attr| attr.name == "style") {
+        style_parts.push(style_attr.value.to_string());
+    }
+
+    let style = style_parts.join("; ") + ";";
 
     let filtered_attributes: Vec<Attribute> = props
         .attributes
@@ -89,6 +94,6 @@ pub fn Flex(props: FlexProps) -> Element {
         .collect();
 
     rsx!(
-        div { style: "{flex_style}", ..filtered_attributes, {props.children} }
+        div { style: "{style}", ..filtered_attributes, {props.children} }
     )
 }
