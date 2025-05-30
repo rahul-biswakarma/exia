@@ -6,7 +6,10 @@ All vector database related files are organized in the `vector_db/` folder.
 
 ## Files in this folder
 
-- `upload.sh` - Main upload script with command-line options
+- `components.json` - UI components definitions with embedding text
+- `actions_definitions.json` - Action definitions for the UI system
+- `upload.sh` - Upload script for components (legacy compatibility)
+- `upload_all.sh` - Comprehensive upload script for all vector data
 - `upload_to_vector_db.rs` - Rust binary for uploading components
 - `query_components.rs` - Rust binary for querying components
 - `README.md` - This documentation
@@ -18,6 +21,7 @@ The system uses **incremental embedding and upload** to handle large datasets ef
 - Generates embeddings and uploads each batch immediately
 - Provides fault tolerance - if interrupted, only lose current batch progress
 - Includes automatic retry with exponential backoff for API rate limits
+- Supports both UI components and action definitions
 
 ## Prerequisites
 
@@ -56,15 +60,34 @@ QDRANT_API_KEY=your_qdrant_api_key_here
 
 ## Usage
 
-### Upload Components
+### Upload Components and Actions
 
-From the project root or vector_db folder:
+**New Comprehensive Upload Script (Recommended):**
 
 ```bash
-# Upload all components with default settings (batch size: 5)
+# Upload both components and actions definitions
+./vector_db/upload_all.sh
+
+# Upload only components
+./vector_db/upload_all.sh --components-only
+
+# Upload only actions (when implementation is ready)
+./vector_db/upload_all.sh --actions-only
+
+# Custom settings
+./vector_db/upload_all.sh --batch-size 3 --delay 200
+
+# See all options
+./vector_db/upload_all.sh --help
+```
+
+**Legacy Components Upload:**
+
+```bash
+# Upload components with default settings (batch size: 5)
 ./vector_db/upload.sh
 
-# Or from within this folder:
+# Or from within vector_db folder:
 cd vector_db
 ./upload.sh
 
@@ -114,7 +137,7 @@ cargo run --bin query_components -- --help
 
 ### Incremental Upload Process
 
-1. **Load Components**: Reads all components from `components.json`
+1. **Load Components**: Reads components from `vector_db/components.json`
 2. **Create Collection**: Sets up Qdrant collection with proper vector dimensions (3072 for gemini-embedding-exp-03-07)
 3. **Batch Processing**:
    - Process components in batches (default: 5)
@@ -134,13 +157,13 @@ cargo run --bin query_components -- --help
 
 ```
 🚀 Starting UI components vector upload...
-📁 Using components file: components.json
+📁 Using components file: vector_db/components.json
 🎯 Collection: components
 ⏱️  Delay: 100ms
 🔄 Max retries: 3
 📦 Batch size: 5
 
-Loading components from components.json...
+Loading components from vector_db/components.json...
 Loaded 55 components
 Connecting to Qdrant at https://your-cluster.qdrant.io:6333...
 ✅ Created collection 'components'

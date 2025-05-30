@@ -16,7 +16,7 @@ use uuid::Uuid;
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Path to components JSON file
-    #[arg(short, long, default_value = "components.json")]
+    #[arg(short, long, default_value = "vector_db/components.json")]
     components_file: String,
 
     /// Qdrant collection name

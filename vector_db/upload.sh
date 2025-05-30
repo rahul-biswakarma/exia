@@ -16,16 +16,19 @@ BATCH_SIZE=5
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Check if we're in the vector_db folder or project root
-if [ -f "./components.json" ]; then
-    # Running from project root
+# Check for components.json - prioritize vector_db folder location
+if [ -f "$SCRIPT_DIR/components.json" ]; then
+    # In vector_db folder (new location)
+    COMPONENTS_FILE="$SCRIPT_DIR/components.json"
+elif [ -f "./components.json" ]; then
+    # Running from project root (legacy location)
     COMPONENTS_FILE="./components.json"
 elif [ -f "../components.json" ]; then
-    # Running from vector_db folder
+    # Running from vector_db folder but file is in parent (legacy)
     COMPONENTS_FILE="../components.json"
 else
-    # Default fallback
-    COMPONENTS_FILE="components.json"
+    # Default fallback to vector_db location
+    COMPONENTS_FILE="$SCRIPT_DIR/components.json"
 fi
 
 # Parse command line arguments
@@ -74,10 +77,11 @@ done
 if [ ! -f "$COMPONENTS_FILE" ]; then
     echo "❌ Error: Components file '$COMPONENTS_FILE' not found"
     echo "💡 Tried looking in:"
-    echo "   - ./components.json (from project root)"
-    echo "   - ../components.json (from vector_db folder)"
+    echo "   - $SCRIPT_DIR/components.json (vector_db folder - preferred)"
+    echo "   - ./components.json (from project root - legacy)"
+    echo "   - ../components.json (from vector_db folder to parent - legacy)"
     echo ""
-    echo "Please run this script from either:"
+    echo "Please ensure components.json is in the vector_db folder or run this script from either:"
     echo "   - Project root: ./vector_db/upload.sh"
     echo "   - Vector_db folder: cd vector_db && ./upload.sh"
     exit 1
