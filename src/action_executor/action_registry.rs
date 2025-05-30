@@ -28,7 +28,7 @@ impl ActionRegistry for ActionExecutor {
         self.register_data_actions();
     }
 
-    fn register_action(&mut self, name: &str, action_fn: ActionFn) {
+    fn register_action(&mut self, name: &str, _action_fn: ActionFn) {
         // TODO: Implement proper action registry storage
         // For now, this is a stub to fix compilation
         // The action_fn parameter will be used when we implement actual action storage

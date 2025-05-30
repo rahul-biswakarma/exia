@@ -20,6 +20,7 @@ pub struct ActionExecutor {
     pub ui_state: UIState,
 }
 
+#[allow(dead_code)]
 impl ActionExecutor {
     pub fn new() -> Self {
         let mut executor = Self {
