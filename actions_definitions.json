@@ -116,28 +116,50 @@
     {
       "name": "create",
       "category": "lifecycle",
-      "description": "Creates a new component dynamically",
-      "usage": "Used to add new items to lists, create dynamic content, or spawn new UI elements",
+      "description": "Creates a new component dynamically. The payload defines the new component. An optional 'clearAfter' field (array of component IDs) can be included in the payload to clear specified input fields after creation.",
+      "usage": "Used to add new items to lists, create dynamic content, or spawn new UI elements. Can also clear input fields post-creation via 'clearAfter' in payload.",
       "required_fields": ["payload"],
       "optional_fields": ["target"],
       "target_required": false,
       "payload_required": true,
+      "payload_schema": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string", "description": "Unique ID for the new component. Can use {timestamp}."},
+          "type": {"type": "string", "description": "Type of the new component (e.g., 'div', 'button', 'custom-type')."},
+          "content": {"type": "string", "description": "Text content for the component. Can use template variables like {input-id.value}."},
+          "properties": {"type": "object", "description": "Map of component-specific properties (e.g., className, styles)."},
+          "local_state": {"type": "object", "description": "Initial local state for the new component."},
+          "children": {"type": "array", "items": {"type": "object"}, "description": "Array of child component definitions."},
+          "clearAfter": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Optional. Array of component IDs (e.g., input fields) to clear (set value to empty string) after this component is successfully created."
+          }
+        },
+        "required": ["id", "type"]
+      },
       "examples": [
         {
-          "description": "Create a new todo item",
+          "description": "Create a new todo item and clear the input field",
           "code": {
             "action": "create",
             "target": "todo-list",
             "payload": {
-              "type": "todo-item",
-              "text": "New task",
               "id": "todo-item-{timestamp}",
-              "completed": false
+              "type": "div",
+              "properties": {"className": "todo-item"},
+              "content": "{new-todo-input.value}",
+              "children": [
+                {"id": "todo-text-{timestamp}", "type": "label", "content": "{new-todo-input.value}"},
+                {"id": "delete-btn-{timestamp}", "type": "button", "content": "Delete", "events": {"onClick": {"action": "destroy", "target": "todo-item-{timestamp}"}}}
+              ],
+              "clearAfter": ["new-todo-input"]
             }
           }
         },
         {
-          "description": "Add notification",
+          "description": "Add a notification (without clearing anything)",
           "code": {
             "action": "create",
             "payload": {
@@ -379,6 +401,94 @@
           }
         }
       ]
+    }
+  ],
+  "component_types": [
+    {
+      "name": "div",
+      "description": "A generic container element. Can contain text content or other child elements. Useful for layout and grouping.",
+      "properties": {
+        "className": {"type": "string", "description": "CSS classes for styling."}
+      }
+    },
+    {
+      "name": "card",
+      "description": "A container styled as a card, typically with a border, padding, and shadow. Good for grouping related information.",
+      "properties": {
+        "className": {"type": "string", "description": "Additional CSS classes for styling."}
+      }
+    },
+    {
+      "name": "button",
+      "description": "An interactive button element. Can have different visual variants.",
+      "properties": {
+        "className": {"type": "string", "description": "Additional CSS classes."},
+        "variant": {"type": "string", "enum": ["primary", "secondary", "danger", "outline"], "description": "Button style variant."}
+      },
+      "events": ["onClick"]
+    },
+    {
+      "name": "input",
+      "description": "An input field for user data entry.",
+      "properties": {
+        "className": {"type": "string", "description": "CSS classes."},
+        "type": {"type": "string", "enum": ["text", "password", "email", "number", "date"], "description": "Input type."},
+        "placeholder": {"type": "string", "description": "Placeholder text."}
+      },
+      "state_values": ["value"]
+    },
+    {
+      "name": "label",
+      "description": "A text label, often used for form fields or titles.",
+      "properties": {
+        "className": {"type": "string", "description": "CSS classes."}
+      }
+    },
+    {
+      "name": "form",
+      "description": "A container for input fields that can be submitted.",
+      "properties": {
+        "className": {"type": "string", "description": "CSS classes."}
+      },
+      "events": ["onSubmit"]
+    },
+    {
+      "name": "nav",
+      "description": "A navigation container, often for lists of links.",
+      "properties": {
+        "className": {"type": "string", "description": "CSS classes."}
+      }
+    },
+    {
+      "name": "header",
+      "description": "A header section element.",
+      "properties": {
+        "className": {"type": "string", "description": "CSS classes."}
+      }
+    },
+    {
+      "name": "main",
+      "description": "A main content section element.",
+      "properties": {
+        "className": {"type": "string", "description": "CSS classes."}
+      }
+    },
+    {
+      "name": "footer",
+      "description": "A footer section element.",
+      "properties": {
+        "className": {"type": "string", "description": "CSS classes."}
+      }
+    },
+    {
+      "name": "code-editor",
+      "description": "A code editor component with syntax highlighting and line numbers. The 'content' field is used for initial code. The current code value is stored in local_state.value.",
+      "properties": {
+        "className": {"type": "string", "description": "Additional CSS classes for the container."},
+        "language": {"type": "string", "default": "rust", "description": "The programming language for syntax highlighting (e.g., 'rust', 'javascript', 'python', 'html')."}
+      },
+      "state_values": ["value"],
+      "default_content_is_value": true
     }
   ],
   "action_patterns": {
