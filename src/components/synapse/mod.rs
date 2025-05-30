@@ -1,15 +1,19 @@
-mod event_handler;
-mod executor_integration;
-mod gemini_api;
-mod synapse_component;
-mod synapse_with_auth;
-mod ui_generator;
-mod ui_renderer;
-mod vector_search;
+// Core functionality
+pub mod core;
 
-pub use event_handler::handle_element_click;
-pub use executor_integration::{apply_element_to_executor, apply_ui_schema_to_executor};
+// UI components
+pub mod ui;
+
+// Modal components
+pub mod modals;
+
+// Main components
+pub mod synapse_component;
+pub mod synapse_with_auth;
+
+// Re-exports for easy access
+pub use core::*;
+pub use modals::*;
 pub use synapse_component::Synapse;
 pub use synapse_with_auth::SynapseWithAuth;
-pub use ui_generator::generate_ui_with_llm;
-pub use ui_renderer::{UIElement, UIRenderer};
+pub use ui::*;

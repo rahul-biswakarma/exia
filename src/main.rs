@@ -72,6 +72,7 @@ fn AuthGuard() -> Element {
     use_effect({
         let auth_actions = auth_actions.clone();
         move || {
+            let auth_actions = auth_actions.clone();
             spawn(async move {
                 if let Err(e) = auth_actions.initialize().await {
                     tracing::error!("Failed to initialize auth: {}", e);

@@ -1,0 +1,23 @@
+pub mod auth_header;
+pub mod event_handler;
+pub mod generate_ui_section;
+pub mod header;
+pub mod main_header;
+pub mod prompt_input;
+pub mod sample_prompts;
+pub mod saved_schemas;
+pub mod saved_schemas_section;
+pub mod ui_preview;
+pub mod ui_preview_section;
+
+pub use auth_header::AuthHeader;
+pub use event_handler::handle_element_click;
+pub use generate_ui_section::GenerateUISection;
+pub use header::SynapseHeader;
+pub use main_header::MainHeader;
+pub use prompt_input::PromptInput;
+pub use sample_prompts::SamplePrompts;
+pub use saved_schemas::SavedSchemas;
+pub use saved_schemas_section::SavedSchemasSection;
+pub use ui_preview::UIPreview;
+pub use ui_preview_section::UIPreviewSection;
