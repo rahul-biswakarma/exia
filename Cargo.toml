@@ -11,11 +11,18 @@ tracing = "0.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
+# Vector DB upload dependencies
+reqwest = { version = "0.11", features = ["json"] }
+tokio = { version = "1.0", features = ["rt", "rt-multi-thread", "macros"] }
+dotenv = "0.15"
+anyhow = "1.0"
+clap = { version = "4.0", features = ["derive"] }
+uuid = { version = "1.0", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+qdrant-client = "1.7"
+
 # Non-WASM dependencies (desktop/server)
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-reqwest = { version = "0.11", features = ["json"] }
-tokio = { version = "1.0", features = ["rt", "rt-multi-thread"] }
-dotenv = "0.15"
 
 # WASM-specific dependencies
 [target.'cfg(target_arch = "wasm32")'.dependencies]
@@ -31,6 +38,14 @@ web-sys = { version = "0.3", features = [
   "Headers",
 ] }
 js-sys = "0.3"
+
+[[bin]]
+name = "upload_to_vector_db"
+path = "vector_db/upload_to_vector_db.rs"
+
+[[bin]]
+name = "query_components"
+path = "vector_db/query_components.rs"
 
 [features]
 default = ["desktop"]
