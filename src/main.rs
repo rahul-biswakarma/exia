@@ -1,3 +1,5 @@
+#![recursion_limit = "256"]
+
 // use crate::contexts::settings::{AppSettings, SettingsContext}; // Commented out - settings disabled
 use dioxus::prelude::*;
 

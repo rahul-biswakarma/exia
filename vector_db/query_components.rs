@@ -301,16 +301,60 @@ async fn main() -> Result<()> {
     println!("Connecting to Qdrant at {}...", qdrant_url);
     let qdrant_client = create_qdrant_client(&qdrant_url, qdrant_api_key.as_deref()).await?;
 
-    println!("Searching collection '{}'...", args.collection);
-    let results = search_components(
-        &qdrant_client,
-        &args.collection,
-        query_embedding,
-        args.top_k,
-    )
-    .await?;
+    let mut all_results = Vec::new();
 
-    print_results(&args.query, results);
+    // Search in the specified collection or both if it's 'components'
+    if args.collection == "components" {
+        // Search both components and actions collections for better coverage
+        let collections = vec!["components", "actions"];
+
+        for collection in collections {
+            println!("Searching collection '{}'...", collection);
+
+            match search_components(
+                &qdrant_client,
+                collection,
+                query_embedding.clone(),
+                args.top_k / 2, // Split the limit between collections
+            )
+            .await
+            {
+                Ok(results) => {
+                    all_results.extend(results);
+                }
+                Err(e) => {
+                    if collection == "actions" {
+                        // Actions collection might not exist, continue
+                        println!(
+                            "Note: Actions collection not found, continuing with components only"
+                        );
+                    } else {
+                        return Err(e);
+                    }
+                }
+            }
+        }
+
+        // Sort all results by score and take the top N
+        all_results.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+        all_results.truncate(args.top_k);
+    } else {
+        // Search only the specific collection
+        println!("Searching collection '{}'...", args.collection);
+        all_results = search_components(
+            &qdrant_client,
+            &args.collection,
+            query_embedding,
+            args.top_k,
+        )
+        .await?;
+    }
+
+    print_results(&args.query, all_results);
 
     Ok(())
 }

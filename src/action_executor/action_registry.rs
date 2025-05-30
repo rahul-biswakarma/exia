@@ -1,5 +1,3 @@
-use crate::action_executor::handlers::{SubmitHandler, ValidationHandler};
-use crate::action_executor::utils::Utils;
 use crate::action_executor::{ActionEventHandler, ActionExecutor, ActionFn};
 use dioxus::signals::Writable;
 use serde_json::Value;
@@ -151,7 +149,7 @@ impl ActionRegistry for ActionExecutor {
             "navigate",
             Rc::new(|executor, handler| {
                 let payload = handler.payload.as_ref().ok_or("no payload provided")?;
-                executor.navigate(payload)
+                executor.navigate(payload.clone())
             }),
         );
     }
