@@ -5,7 +5,7 @@ mod components;
 mod configs;
 mod contexts;
 mod utils;
-use components::settings::Settings;
+use components::{settings::Settings, synapse::Synapse};
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
@@ -13,6 +13,9 @@ enum Route {
 
     #[route("/")]
     Settings {},
+
+    #[route("/synapse")]
+    Synapse {},
 
 }
 

@@ -1,49 +1,54 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Generative UI Schema",
-  "description": "A schema for defining user interfaces composed of atoms and layouts.",
+  "description": "A schema for defining interactive user interfaces with atoms, layout, content, and behavior.",
   "type": "object",
   "properties": {
     "ui_elements": {
       "type": "array",
       "items": {
-        "$ref": "#/definitions/UiComponent"
+        "$ref": "#/definitions/Component"
       }
+    },
+    "state": {
+      "type": "object",
+      "description": "Global state variables for the UI"
+    },
+    "animations": {
+      "type": "object",
+      "description": "Animation definitions that can be referenced by components"
     }
   },
   "required": [
     "ui_elements"
   ],
   "definitions": {
-    "UiComponent": {
+    "Component": {
       "title": "UI Component",
-      "description": "A component that can be either an Atom or a Layout.",
-      "oneOf": [
-        {
-          "$ref": "#/definitions/Atom"
-        },
-        {
-          "$ref": "#/definitions/Layout"
-        }
-      ]
-    },
-    "Atom": {
-      "title": "Atom",
-      "description": "A basic UI element.",
+      "description": "A UI component with properties, content, styling, and behavior.",
       "type": "object",
       "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the component"
+        },
         "type": {
           "type": "string",
           "enum": [
             "accordion",
             "avatar",
+            "button",
+            "card",
             "calendar",
             "checkbox",
             "collapsible",
             "context_menu",
             "dialog",
             "dropdown_menu",
+            "flex",
+            "grid",
             "hover_card",
+            "input",
             "label",
             "menubar",
             "portal",
@@ -55,6 +60,7 @@
             "slider",
             "switch",
             "tabs",
+            "text",
             "toast",
             "toggle",
             "toggle_group",
@@ -63,86 +69,178 @@
           ]
         },
         "properties": {
-          "type": "object"
-        }
-      },
-      "required": [
-        "type",
-        "properties"
-      ]
-    },
-    "Layout": {
-      "title": "Layout",
-      "description": "A container that arranges UI elements, e.g., a grid.",
-      "type": "object",
-      "properties": {
-        "layout_type": {
-          "type": "string",
-          "enum": [
-            "grid"
+          "type": "object",
+          "description": "Component-specific properties (size, variant, etc.)"
+        },
+        "content": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Text content for the component"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "html": {
+                  "type": "string"
+                },
+                "markdown": {
+                  "type": "string"
+                }
+              }
+            }
           ]
         },
-        "rows": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "cols": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "elements": {
+        "children": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/LayoutElement"
+            "$ref": "#/definitions/Component"
+          },
+          "description": "Child components nested inside this component"
+        },
+        "styling": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            },
+            "style": {
+              "type": "object"
+            },
+            "variant": {
+              "type": "string"
+            },
+            "size": {
+              "type": "string"
+            }
           }
         },
-        "gap": {
-          "type": "integer",
-          "minimum": 0
+        "layout": {
+          "type": "object",
+          "properties": {
+            "position": {
+              "type": "object",
+              "properties": {
+                "x": { "type": "number" },
+                "y": { "type": "number" }
+              }
+            },
+            "size": {
+              "type": "object",
+              "properties": {
+                "width": { "type": ["number", "string"] },
+                "height": { "type": ["number", "string"] }
+              }
+            },
+            "margin": {
+              "type": ["number", "string", "object"]
+            },
+            "padding": {
+              "type": ["number", "string", "object"]
+            }
+          }
         },
-        "padding": {
-          "type": "integer",
-          "minimum": 0
+        "events": {
+          "type": "object",
+          "properties": {
+            "onClick": {
+              "$ref": "#/definitions/EventHandler"
+            },
+            "onHover": {
+              "$ref": "#/definitions/EventHandler"
+            },
+            "onChange": {
+              "$ref": "#/definitions/EventHandler"
+            },
+            "onSubmit": {
+              "$ref": "#/definitions/EventHandler"
+            }
+          }
+        },
+        "state": {
+          "type": "object",
+          "description": "Local state for this component"
+        },
+        "conditions": {
+          "type": "object",
+          "properties": {
+            "visible": {
+              "type": "boolean"
+            },
+            "disabled": {
+              "type": "boolean"
+            },
+            "showIf": {
+              "type": "string",
+              "description": "Condition expression for when to show this component"
+            }
+          }
+        },
+        "animations": {
+          "type": "object",
+          "properties": {
+            "enter": {
+              "type": "string",
+              "description": "Animation when component enters"
+            },
+            "exit": {
+              "type": "string",
+              "description": "Animation when component exits"
+            },
+            "hover": {
+              "type": "string",
+              "description": "Animation on hover"
+            },
+            "click": {
+              "type": "string",
+              "description": "Animation on click"
+            }
+          }
         }
       },
       "required": [
-        "layout_type",
-        "rows",
-        "cols",
-        "elements"
+        "type"
       ]
     },
-    "LayoutElement": {
-      "title": "Layout Element",
-      "description": "An atom positioned within a layout.",
+    "EventHandler": {
+      "title": "Event Handler",
+      "description": "Defines what happens when an event occurs",
       "type": "object",
       "properties": {
-        "atom": {
-          "$ref": "#/definitions/Atom"
+        "action": {
+          "type": "string",
+          "enum": [
+            "setState",
+            "navigate",
+            "toggleVisibility",
+            "triggerAnimation",
+            "removeComponent",
+            "addComponent",
+            "updateContent",
+            "submitForm",
+            "openDialog",
+            "closeDialog",
+            "custom"
+          ]
         },
-        "row": {
-          "type": "integer",
-          "minimum": 1
+        "target": {
+          "type": "string",
+          "description": "ID of the component to target with this action"
         },
-        "col": {
-          "type": "integer",
-          "minimum": 1
+        "payload": {
+          "type": "object",
+          "description": "Data to pass with the action"
         },
-        "row_span": {
-          "type": "integer",
-          "minimum": 1,
-          "default": 1
-        },
-        "col_span": {
-          "type": "integer",
-          "minimum": 1,
-          "default": 1
+        "condition": {
+          "type": "string",
+          "description": "Condition that must be met for this event to trigger"
         }
       },
       "required": [
-        "atom",
-        "row",
-        "col"
+        "action"
       ]
     }
   }
