@@ -7,7 +7,6 @@ pub mod storage;
 
 pub use client::SupabaseClient;
 
-// Configuration struct for Supabase
 #[derive(Debug, Clone, PartialEq)]
 pub struct SupabaseConfig {
     pub url: String,
@@ -31,7 +30,6 @@ impl SupabaseConfig {
     }
 }
 
-// Database models
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UISchema {
     pub id: Option<String>,

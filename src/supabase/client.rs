@@ -39,7 +39,6 @@ impl SupabaseClient {
         self.auth_token.as_ref()
     }
 
-    // Create authenticated request builder
     pub fn authenticated_request(&self, method: reqwest::Method, url: &str) -> RequestBuilder {
         let mut req = self
             .http_client
@@ -54,12 +53,10 @@ impl SupabaseClient {
         req
     }
 
-    // REST API methods
     pub fn from(&self, table: &str) -> TableQuery {
         TableQuery::new(self, table)
     }
 
-    // Auth API methods
     pub async fn sign_up(&self, email: &str, password: &str) -> Result<UserSession, String> {
         let url = format!("{}/auth/v1/signup", self.config.url);
         let body = serde_json::json!({
@@ -167,7 +164,6 @@ impl SupabaseClient {
     }
 }
 
-// Query builder for table operations
 #[derive(Debug)]
 pub struct TableQuery<'a> {
     client: &'a SupabaseClient,
@@ -215,7 +211,6 @@ impl<'a> TableQuery<'a> {
         let base_url = format!("{}/rest/v1/{}", self.client.config.url, self.table);
         let mut url = reqwest::Url::parse(&base_url).map_err(|e| format!("Invalid URL: {}", e))?;
 
-        // Add query parameters
         {
             let mut query_pairs = url.query_pairs_mut();
 
@@ -292,7 +287,6 @@ impl<'a> TableQuery<'a> {
         let base_url = format!("{}/rest/v1/{}", self.client.config.url, self.table);
         let mut url = reqwest::Url::parse(&base_url).map_err(|e| format!("Invalid URL: {}", e))?;
 
-        // Add filters to URL
         {
             let mut query_pairs = url.query_pairs_mut();
             for filter in &self.filters {
@@ -331,7 +325,6 @@ impl<'a> TableQuery<'a> {
         let base_url = format!("{}/rest/v1/{}", self.client.config.url, self.table);
         let mut url = reqwest::Url::parse(&base_url).map_err(|e| format!("Invalid URL: {}", e))?;
 
-        // Add filters to URL
         {
             let mut query_pairs = url.query_pairs_mut();
             for filter in &self.filters {

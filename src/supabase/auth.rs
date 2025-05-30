@@ -156,8 +156,14 @@ impl AuthActions {
 
         let client = auth.read().client.clone();
 
-        match client.sign_up(email, password).await {
-            Ok(session) => {
+        let result = tokio::time::timeout(
+            std::time::Duration::from_secs(15),
+            client.sign_up(email, password),
+        )
+        .await;
+
+        match result {
+            Ok(Ok(session)) => {
                 AuthService::save_session(&session)?;
                 let mut auth_ctx = auth.write();
                 auth_ctx.session = Some(session.clone());
@@ -165,9 +171,13 @@ impl AuthActions {
                 auth_ctx.is_loading = false;
                 Ok(())
             }
-            Err(e) => {
+            Ok(Err(e)) => {
                 auth.write().is_loading = false;
                 Err(e)
+            }
+            Err(_) => {
+                auth.write().is_loading = false;
+                Err("Request timed out - check your network connection".to_string())
             }
         }
     }
@@ -178,8 +188,14 @@ impl AuthActions {
 
         let client = auth.read().client.clone();
 
-        match client.sign_in(email, password).await {
-            Ok(session) => {
+        let result = tokio::time::timeout(
+            std::time::Duration::from_secs(15),
+            client.sign_in(email, password),
+        )
+        .await;
+
+        match result {
+            Ok(Ok(session)) => {
                 AuthService::save_session(&session)?;
                 let mut auth_ctx = auth.write();
                 auth_ctx.session = Some(session.clone());
@@ -187,9 +203,13 @@ impl AuthActions {
                 auth_ctx.is_loading = false;
                 Ok(())
             }
-            Err(e) => {
+            Ok(Err(e)) => {
                 auth.write().is_loading = false;
                 Err(e)
+            }
+            Err(_) => {
+                auth.write().is_loading = false;
+                Err("Request timed out - check your network connection".to_string())
             }
         }
     }
@@ -214,9 +234,14 @@ impl AuthActions {
         if let Some(session) = AuthService::load_session() {
             let client = auth.read().client.clone();
 
-            // Check if token needs refresh
-            match AuthService::refresh_if_needed(&client, &session).await {
-                Ok(Some(new_session)) => {
+            let refresh_result = tokio::time::timeout(
+                std::time::Duration::from_secs(10),
+                AuthService::refresh_if_needed(&client, &session),
+            )
+            .await;
+
+            match refresh_result {
+                Ok(Ok(Some(new_session))) => {
                     let mut auth_ctx = auth.write();
                     auth_ctx.session = Some(new_session.clone());
                     auth_ctx
@@ -224,14 +249,13 @@ impl AuthActions {
                         .set_auth_token(Some(new_session.access_token));
                     auth_ctx.is_loading = false;
                 }
-                Ok(None) => {
+                Ok(Ok(None)) => {
                     let mut auth_ctx = auth.write();
                     auth_ctx.session = Some(session.clone());
                     auth_ctx.client.set_auth_token(Some(session.access_token));
                     auth_ctx.is_loading = false;
                 }
-                Err(_) => {
-                    // If refresh fails, clear the session
+                Ok(Err(_)) | Err(_) => {
                     AuthService::clear_session().ok();
                     let mut auth_ctx = auth.write();
                     auth_ctx.session = None;

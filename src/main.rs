@@ -68,22 +68,18 @@ fn AuthGuard() -> Element {
     let auth_actions = use_auth_actions();
     let mut show_auth_modal = use_signal(|| false);
 
-    // Initialize auth on component mount
     use_effect({
         let auth_actions = auth_actions.clone();
         move || {
             let auth_actions = auth_actions.clone();
             spawn(async move {
-                if let Err(e) = auth_actions.initialize().await {
-                    tracing::error!("Failed to initialize auth: {}", e);
-                }
+                auth_actions.initialize().await.ok();
             });
         }
     });
 
     let auth_read = auth.read();
 
-    // Show loading spinner while auth is initializing
     if auth_read.is_loading {
         return rsx! {
             div { class: "min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50",
@@ -95,7 +91,6 @@ fn AuthGuard() -> Element {
         };
     }
 
-    // Show login screen if not authenticated
     if !auth_read.is_authenticated() {
         drop(auth_read);
         return rsx! {
@@ -105,7 +100,6 @@ fn AuthGuard() -> Element {
 
     drop(auth_read);
 
-    // Show the main app if authenticated
     rsx! {
         Router::<Route> {}
     }
@@ -144,9 +138,7 @@ fn LoginScreen(show_auth_modal: Signal<bool>) -> Element {
             };
 
             match result {
-                Ok(_) => {
-                    // Success - user will be redirected automatically via auth state change
-                }
+                Ok(_) => {}
                 Err(e) => {
                     error_message.set(Some(e));
                 }
@@ -259,9 +251,7 @@ fn Home() -> Element {
                             move |_| {
                                 let auth_actions = auth_actions.clone();
                                 spawn(async move {
-                                    if let Err(e) = auth_actions.sign_out().await {
-                                        tracing::error!("Failed to sign out: {}", e);
-                                    }
+                                    auth_actions.sign_out().await.ok();
                                 });
                             }
                         },
