@@ -6,6 +6,7 @@ mod configs;
 mod contexts;
 mod utils;
 use components::{settings::Settings, synapse::Synapse};
+mod action_executor;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
