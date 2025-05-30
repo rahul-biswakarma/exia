@@ -1,4 +1,4 @@
-use crate::utils::lib::{use_controlled, use_unique_id};
+use crate::utils::lib::use_unique_id;
 use dioxus::prelude::*;
 use std::fmt;
 

@@ -5,7 +5,6 @@ mod components;
 mod configs;
 mod contexts;
 mod utils;
-use components::pages::synapse::Synapse;
 use components::settings::Settings;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
