@@ -23,13 +23,24 @@ pub struct ActionExecutor {
 #[allow(dead_code)]
 impl ActionExecutor {
     pub fn new() -> Self {
+        // This version should not be used in components - use new_with_signals instead
+        panic!("Use ActionExecutor::new_with_signals() in Dioxus components")
+    }
+
+    pub fn new_with_signals(
+        components: Signal<HashMap<String, ComponentState>>,
+        global_state: Signal<serde_json::Value>,
+        animations: Signal<HashMap<String, AnimationState>>,
+        form_data: Signal<HashMap<String, serde_json::Value>>,
+        errors: Signal<HashMap<String, String>>,
+    ) -> Self {
         let mut executor = Self {
             ui_state: UIState {
-                components: use_signal(HashMap::new),
-                global_state: use_signal(|| serde_json::Value::Null),
-                animations: use_signal(HashMap::new),
-                form_data: use_signal(HashMap::new),
-                errors: use_signal(HashMap::new),
+                components,
+                global_state,
+                animations,
+                form_data,
+                errors,
             },
         };
         executor.register_all_actions();
@@ -176,5 +187,13 @@ impl ActionExecutor {
 }
 
 pub fn use_action_executor() -> ActionExecutor {
-    use_hook(|| ActionExecutor::new())
+    use_hook(|| {
+        let components = use_signal(HashMap::new);
+        let global_state = use_signal(|| serde_json::Value::Null);
+        let animations = use_signal(HashMap::new);
+        let form_data = use_signal(HashMap::new);
+        let errors = use_signal(HashMap::new);
+
+        ActionExecutor::new_with_signals(components, global_state, animations, form_data, errors)
+    })
 }

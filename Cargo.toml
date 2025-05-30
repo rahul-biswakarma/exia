@@ -19,7 +19,10 @@ anyhow = "1.0"
 clap = { version = "4.0", features = ["derive"] }
 uuid = { version = "1.0", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
-qdrant-client = "1.7"
+qdrant-client = "1.8"
+
+# For LLM API integration
+serde_derive = "1.0"
 
 # Non-WASM dependencies (desktop/server)
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
@@ -28,6 +31,7 @@ qdrant-client = "1.7"
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
+gloo-timers = { version = "0.3", features = ["futures"] }
 web-sys = { version = "0.3", features = [
   "console",
   "Request",

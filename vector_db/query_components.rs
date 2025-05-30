@@ -124,7 +124,10 @@ async fn create_qdrant_client(url: &str, api_key: Option<&str>) -> Result<Qdrant
         client_builder = client_builder.api_key(key);
     }
 
+    // Add timeout and connection settings to avoid HTTP/2 frame size errors
     let client = client_builder
+        .timeout(std::time::Duration::from_secs(60))
+        .connect_timeout(std::time::Duration::from_secs(30))
         .build()
         .context("Failed to build Qdrant client")?;
     Ok(client)

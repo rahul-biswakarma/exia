@@ -11,3 +11,5 @@
 
 # Keep .env.example for reference
 !.env.example
+
+qdrant_storage

@@ -26,6 +26,10 @@ enum Route {
 const MAIN_CSS: Asset = asset!("/assets/main.css");
 
 fn main() {
+    // Load environment variables from .env file
+    #[cfg(not(target_arch = "wasm32"))]
+    dotenv::dotenv().ok();
+
     dioxus::launch(App);
 }
 
