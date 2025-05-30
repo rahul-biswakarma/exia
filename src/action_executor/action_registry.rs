@@ -98,8 +98,9 @@ impl ActionRegistry for ActionExecutor {
             "create",
             Rc::new(
                 |executor: &mut ActionExecutor, handler: &ActionEventHandler| {
+                    let target = handler.target.as_deref();
                     let payload = handler.payload.as_ref().ok_or("no payload provided")?;
-                    executor.create_component(payload)
+                    executor.create_component(target, payload)
                 },
             ),
         );

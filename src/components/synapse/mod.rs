@@ -260,7 +260,7 @@ fn UIElement(element: serde_json::Value, action_executor: Signal<ActionExecutor>
                     p { class: "text-gray-800", "{content}" }
                 }
                 // Render children (either dynamic from executor or static from JSON)
-                for (i, child) in children_to_render.iter().enumerate() {
+                for (i , child) in children_to_render.iter().enumerate() {
                     UIElement {
                         key: "{i}",
                         element: child.clone(),
@@ -355,7 +355,7 @@ fn UIElement(element: serde_json::Value, action_executor: Signal<ActionExecutor>
                     let element_copy = element.clone();
                     handle_element_click(&element_copy, &mut action_executor.write());
                 },
-                for (i, child) in children_to_render.iter().enumerate() {
+                for (i , child) in children_to_render.iter().enumerate() {
                     UIElement {
                         key: "{i}",
                         element: child.clone(),
@@ -372,7 +372,7 @@ fn UIElement(element: serde_json::Value, action_executor: Signal<ActionExecutor>
                     h3 { class: "font-semibold text-gray-800 mb-2", "{content}" }
                 }
                 ul { class: "space-y-2",
-                    for (i, child) in children_to_render.iter().enumerate() {
+                    for (i , child) in children_to_render.iter().enumerate() {
                         li {
                             UIElement {
                                 key: "{i}",
@@ -396,7 +396,7 @@ fn UIElement(element: serde_json::Value, action_executor: Signal<ActionExecutor>
                 if !content.is_empty() {
                     p { "{content}" }
                 }
-                for (i, child) in children_to_render.iter().enumerate() {
+                for (i , child) in children_to_render.iter().enumerate() {
                     UIElement {
                         key: "{i}",
                         element: child.clone(),
@@ -423,7 +423,7 @@ fn UIElement(element: serde_json::Value, action_executor: Signal<ActionExecutor>
                 if !content.is_empty() {
                     "{content}"
                 }
-                for (i, child) in children_to_render.iter().enumerate() {
+                for (i , child) in children_to_render.iter().enumerate() {
                     UIElement {
                         key: "{i}",
                         element: child.clone(),
@@ -446,13 +446,13 @@ fn handle_element_click(element: &serde_json::Value, executor: &mut ActionExecut
     }
 
     if let Some(events) = element.get("events") {
-        if let Some(on_click) = events.get("onClick") {
-            let action = on_click
+        if let Some(on_click_details) = events.get("onClick") {
+            let action = on_click_details
                 .get("action")
                 .and_then(|a| a.as_str())
                 .unwrap_or("");
-            let target = on_click.get("target").and_then(|t| t.as_str());
-            let payload = on_click.get("payload");
+            let target = on_click_details.get("target").and_then(|t| t.as_str());
+            let payload = on_click_details.get("payload");
 
             println!("🎯 Executing Action: '{}', Target: {:?}", action, target);
 
@@ -496,7 +496,7 @@ fn apply_element_to_executor(
     executor: &mut ActionExecutor,
     element: &serde_json::Value,
 ) -> Result<(), String> {
-    if let Some(id) = element.get("id").and_then(|i| i.as_str()) {
+    if let Some(id_str) = element.get("id").and_then(|i| i.as_str()) {
         let component_state = ComponentState {
             visible: true,
             content: element
@@ -512,7 +512,7 @@ fn apply_element_to_executor(
                     arr.iter()
                         .filter_map(|item| {
                             item.get("id")
-                                .and_then(|id| id.as_str())
+                                .and_then(|id_val| id_val.as_str())
                                 .map(|s| s.to_string())
                         })
                         .collect()
@@ -520,7 +520,7 @@ fn apply_element_to_executor(
                 .unwrap_or_default(),
         };
 
-        executor.add_component(id, component_state);
+        executor.add_component(id_str, component_state);
 
         // Recursively apply child elements
         if let Some(children) = element.get("children").and_then(|c| c.as_array()) {

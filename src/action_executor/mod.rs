@@ -86,7 +86,7 @@ impl ActionExecutor {
             // Lifecycle actions
             "create" => {
                 println!("📍 Executing 'create' action");
-                self.create_component(payload.ok_or("no payload provided")?)
+                self.create_component(target, payload.ok_or("no payload provided")?)
             }
             "destroy" | "delete" => {
                 println!("📍 Executing 'destroy/delete' action");
@@ -210,8 +210,12 @@ impl ActionExecutor {
         }
     }
 
-    fn create_component(&mut self, payload: &serde_json::Value) -> Result<(), String> {
-        println!("🏭 CREATE COMPONENT called");
+    fn create_component(
+        &mut self,
+        target_id_opt: Option<&str>,
+        payload: &serde_json::Value,
+    ) -> Result<(), String> {
+        println!("🏭 CREATE COMPONENT called for target: {:?}", target_id_opt);
         println!(
             "📦 Original payload: {}",
             serde_json::to_string_pretty(payload).unwrap_or_default()
@@ -227,9 +231,10 @@ impl ActionExecutor {
         let component_id = resolved_payload
             .get("id")
             .and_then(|id| id.as_str())
-            .ok_or("no id provided")?;
+            .ok_or("no id provided for new component in create_component")?
+            .to_string(); // Ensure it's a String for HashMap key
 
-        println!("🆔 Component ID: {}", component_id);
+        println!("🆔 New Component ID: {}", component_id);
 
         // Extract component data from resolved payload
         let visible = resolved_payload
@@ -244,102 +249,135 @@ impl ActionExecutor {
         let properties = resolved_payload
             .get("properties")
             .cloned()
-            .unwrap_or_else(|| {
-                // If no properties, use the root level properties
-                let mut props = serde_json::Map::new();
-                if let Some(class_name) = resolved_payload.get("className").and_then(|c| c.as_str())
-                {
-                    props.insert(
-                        "className".to_string(),
-                        serde_json::Value::String(class_name.to_string()),
-                    );
-                }
-                if let Some(component_type) = resolved_payload.get("type").and_then(|t| t.as_str())
-                {
-                    props.insert(
-                        "type".to_string(),
-                        serde_json::Value::String(component_type.to_string()),
-                    );
-                }
-                serde_json::Value::Object(props)
-            });
-        let local_state = resolved_payload.clone();
-        let children = resolved_payload
+            .unwrap_or_else(|| serde_json::Value::Object(serde_json::Map::new()));
+
+        let local_state_from_payload = resolved_payload
+            .get("local_state")
+            .cloned()
+            .unwrap_or_else(|| serde_json::Value::Object(serde_json::Map::new()));
+
+        let children_ids_from_payload: Vec<String> = resolved_payload
             .get("children")
             .and_then(|c| c.as_array())
             .map(|arr| {
                 arr.iter()
-                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                    .filter_map(|child_val| {
+                        // Children in payload could be full objects or just IDs
+                        if child_val.is_string() {
+                            child_val.as_str().map(String::from)
+                        } else if child_val.is_object() {
+                            child_val
+                                .get("id")
+                                .and_then(|id| id.as_str())
+                                .map(String::from)
+                        } else {
+                            None
+                        }
+                    })
                     .collect()
             })
             .unwrap_or_default();
 
-        println!("👁️ Visible: {}", visible);
-        println!("📝 Content: {:?}", content);
-        println!(
-            "⚙️ Properties: {}",
-            serde_json::to_string_pretty(&properties).unwrap_or_default()
-        );
-        println!(
-            "📊 Local state: {}",
-            serde_json::to_string_pretty(&local_state).unwrap_or_default()
-        );
-        println!("👶 Children: {:?}", children);
-
         let component = ComponentState {
             visible,
-            content: content.clone(),
+            content,
             properties,
-            local_state,
-            children,
+            local_state: local_state_from_payload.clone(), // Clone here as we might modify it later
+            children: children_ids_from_payload.clone(),   // Children defined in the payload itself
         };
 
-        // Add the component to the components map
-        let components_count_before = self.ui_state.components.read().len();
-        self.ui_state
-            .components
-            .write()
-            .insert(component_id.to_string(), component);
-        let components_count_after = self.ui_state.components.read().len();
-
-        println!(
-            "📊 Components count: {} -> {}",
-            components_count_before, components_count_after
-        );
-        println!(
-            "✅ Created component: {} with content: {:?}",
-            component_id, content
-        );
-
-        // Also print all current components for debugging
-        println!("📋 All components now:");
-        for (id, comp) in self.ui_state.components.read().iter() {
+        // Add the new component to the global components map
+        let mut components_map = self.ui_state.components.write();
+        if components_map.contains_key(&component_id) {
+            // Optionally, decide if this should be an error or an update
             println!(
-                "  - {}: visible={}, content={:?}",
-                id, comp.visible, comp.content
+                "⚠️ Component with ID '{}' already exists. Overwriting.",
+                component_id
             );
         }
+        components_map.insert(component_id.clone(), component);
+        drop(components_map); // Release the write lock
 
-        // Check if there's a clearAfter instruction in the original payload
+        println!("✅ Created component: {}", component_id);
+
+        // If a target_id is provided, update its children list in local_state
+        if let Some(target_id) = target_id_opt {
+            println!(
+                "🎯 Attempting to add {} as child to {}",
+                component_id, target_id
+            );
+            let mut components_map_for_target = self.ui_state.components.write();
+            if let Some(target_component) = components_map_for_target.get_mut(target_id) {
+                println!("🔍 Found target component: {}", target_id);
+
+                let mut target_local_state = target_component
+                    .local_state
+                    .as_object_mut()
+                    .ok_or_else(|| {
+                        format!(
+                            "Target component '{}' local_state is not an object",
+                            target_id
+                        )
+                    })?;
+
+                let children_array = target_local_state
+                    .entry("children".to_string())
+                    .or_insert_with(|| serde_json::Value::Array(Vec::new()))
+                    .as_array_mut()
+                    .ok_or_else(|| {
+                        format!(
+                            "Target component '{}' local_state.children is not an array",
+                            target_id
+                        )
+                    })?;
+
+                // Create a JSON representation of the new child for the parent's local_state.children
+                // This should ideally be the full child definition as expected by UIRenderer
+                // For now, we'll insert the resolved_payload of the new component.
+                // This means the UIRenderer for the parent will get the full child object.
+                children_array.push(resolved_payload.clone());
+
+                println!(
+                    "➕ Added {} to children of {}. New children: {:?}",
+                    component_id, target_id, children_array
+                );
+            } else {
+                return Err(format!(
+                    "Target component '{}' not found for create action",
+                    target_id
+                ));
+            }
+        } else {
+            println!("ℹ️ No target specified for create action, component '{}' created at root level (in map only).", component_id);
+        }
+
+        // Handle 'clearAfter' for input fields
+        // This part of the logic seems to exist already and uses the original payload.
         if let Some(clear_after) = payload.get("clearAfter") {
             if let Some(clear_targets) = clear_after.as_array() {
-                for target in clear_targets {
-                    if let Some(target_id) = target.as_str() {
-                        println!("🧹 Clearing {} after action completion", target_id);
+                for target_to_clear_val in clear_targets {
+                    if let Some(target_to_clear_id) = target_to_clear_val.as_str() {
+                        println!("🧹 Clearing {} after action completion", target_to_clear_id);
+                        // Need to use a fresh borrow of self here if execute_action borrows mutably.
+                        // This might require restructuring or passing a reference to the executor.
+                        // For simplicity, assuming `execute_action` can be called.
+                        // Consider if `self.set_state` can be called directly if it's simpler.
                         let _ = self.execute_action(
                             "setState",
-                            Some(target_id),
+                            Some(target_to_clear_id),
                             Some(&json!({ "value": "" })),
                         );
                     }
                 }
-            } else if let Some(target_id) = clear_after.as_str() {
-                println!("🧹 Clearing {} after action completion", target_id);
-                let _ =
-                    self.execute_action("setState", Some(target_id), Some(&json!({ "value": "" })));
+            } else if let Some(target_to_clear_id) = clear_after.as_str() {
+                println!("🧹 Clearing {} after action completion", target_to_clear_id);
+                let _ = self.execute_action(
+                    "setState",
+                    Some(target_to_clear_id),
+                    Some(&json!({ "value": "" })),
+                );
             }
         }
-
         Ok(())
     }
 
