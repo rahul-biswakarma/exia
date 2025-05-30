@@ -124,10 +124,11 @@ async fn create_qdrant_client(url: &str, api_key: Option<&str>) -> Result<Qdrant
         client_builder = client_builder.api_key(key);
     }
 
-    // Add timeout and connection settings to avoid HTTP/2 frame size errors
+    // Add improved timeout settings and keep-alive to handle HTTP/2 issues
     let client = client_builder
         .timeout(std::time::Duration::from_secs(60))
         .connect_timeout(std::time::Duration::from_secs(30))
+        .keep_alive_while_idle()
         .build()
         .context("Failed to build Qdrant client")?;
     Ok(client)
@@ -288,7 +289,7 @@ async fn main() -> Result<()> {
     let gemini_api_key =
         env::var("GEMINI_API_KEY").context("GEMINI_API_KEY environment variable is required")?;
 
-    let qdrant_url = env::var("QDRANT_URL").unwrap_or_else(|_| "http://localhost:6333".to_string());
+    let qdrant_url = env::var("QDRANT_URL").unwrap_or_else(|_| "http://localhost:6334".to_string());
     let qdrant_api_key = env::var("QDRANT_API_KEY").ok();
 
     println!("Generating query embedding...");

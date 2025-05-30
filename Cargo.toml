@@ -19,7 +19,7 @@ anyhow = "1.0"
 clap = { version = "4.0", features = ["derive"] }
 uuid = { version = "1.0", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
-qdrant-client = "1.8"
+qdrant-client = "1.12"
 
 # For LLM API integration
 serde_derive = "1.0"

@@ -68,20 +68,21 @@ impl VectorSearchClient {
 
     async fn try_connect_qdrant() -> Result<Qdrant> {
         let qdrant_url =
-            env::var("QDRANT_URL").unwrap_or_else(|_| "http://localhost:6333".to_string());
+            env::var("QDRANT_URL").unwrap_or_else(|_| "http://localhost:6334".to_string());
         let qdrant_api_key = env::var("QDRANT_API_KEY").ok();
 
-        // Configure with more robust settings
+        // Configure with more robust settings for HTTP/2 compatibility
         let mut client_builder = Qdrant::from_url(&qdrant_url);
 
         if let Some(key) = qdrant_api_key {
             client_builder = client_builder.api_key(key);
         }
 
-        // Add timeout and connection settings to avoid HTTP/2 frame size errors
+        // Add improved timeout settings and keep-alive to handle HTTP/2 issues
         client_builder = client_builder
-            .timeout(std::time::Duration::from_secs(30))
-            .connect_timeout(std::time::Duration::from_secs(10));
+            .timeout(std::time::Duration::from_secs(60))
+            .connect_timeout(std::time::Duration::from_secs(30))
+            .keep_alive_while_idle();
 
         client_builder
             .build()
@@ -101,7 +102,7 @@ impl VectorSearchClient {
         // Generate embedding for the query
         let query_embedding = self.generate_embedding(query).await?;
 
-        // Search in Qdrant with better error handling
+        // Search in Qdrant with improved error handling and retries
         let search_points = SearchPoints {
             collection_name: "components".to_string(),
             vector: query_embedding,
@@ -110,63 +111,86 @@ impl VectorSearchClient {
             ..Default::default()
         };
 
-        let search_result = qdrant_client
-            .search_points(search_points)
-            .await
-            .map_err(|e| {
-                let error_msg = format!("Vector search failed: {}", e);
-                // Check if it's a collection not found error
-                if error_msg.contains("not found") || error_msg.contains("Not found") {
-                    format!("Collection 'components' not found. Please run the vector database setup first: ./vector_db/upload.sh")
-                } else {
-                    error_msg
-                }
-            })?;
+        // Retry search up to 3 times to handle HTTP/2 connection issues
+        let mut last_error = None;
+        for attempt in 1..=3 {
+            match qdrant_client.search_points(search_points.clone()).await {
+                Ok(search_result) => {
+                    // Convert results to ComponentMatch
+                    let results: Vec<ComponentMatch> = search_result
+                        .result
+                        .into_iter()
+                        .map(|point: ScoredPoint| {
+                            let metadata = Self::extract_payload_to_hashmap(point.payload);
 
-        // Convert results to ComponentMatch
-        let matches: Vec<ComponentMatch> = search_result
-            .result
-            .into_iter()
-            .map(|point: ScoredPoint| {
-                let payload = Self::extract_payload_to_hashmap(point.payload);
-
-                ComponentMatch {
-                    score: point.score,
-                    name: payload
-                        .get("name")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("Unknown")
-                        .to_string(),
-                    description: payload
-                        .get("description")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string(),
-                    category: payload
-                        .get("category")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string(),
-                    usage: payload
-                        .get("usage")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string(),
-                    examples: payload
-                        .get("examples")
-                        .and_then(|v| v.as_array())
-                        .map(|arr| {
-                            arr.iter()
-                                .filter_map(|item| item.as_str())
-                                .map(|s| s.to_string())
-                                .collect()
+                            ComponentMatch {
+                                score: point.score,
+                                name: metadata
+                                    .get("name")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or("Unknown")
+                                    .to_string(),
+                                description: metadata
+                                    .get("description")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or("No description")
+                                    .to_string(),
+                                category: metadata
+                                    .get("category")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or("Unknown")
+                                    .to_string(),
+                                usage: metadata
+                                    .get("usage")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or("No usage info")
+                                    .to_string(),
+                                examples: metadata
+                                    .get("examples")
+                                    .and_then(|v| v.as_array())
+                                    .map(|arr| {
+                                        arr.iter()
+                                            .filter_map(|v| v.as_str())
+                                            .map(|s| s.to_string())
+                                            .collect()
+                                    })
+                                    .unwrap_or_default(),
+                            }
                         })
-                        .unwrap_or_default(),
-                }
-            })
-            .collect();
+                        .collect();
 
-        Ok(matches)
+                    return Ok(results);
+                }
+                Err(e) => {
+                    let error_msg = format!("Vector search failed (attempt {}): {}", attempt, e);
+                    last_error = Some(error_msg.clone());
+
+                    // Check for specific error types and provide better messaging
+                    let error_str = e.to_string();
+                    if error_str.contains("not found") || error_str.contains("Not found") {
+                        return Err(format!("Collection 'components' not found. Please run the vector database setup first: ./vector_db/upload.sh"));
+                    }
+
+                    if error_str.contains("h2 protocol error")
+                        || error_str.contains("FRAME_SIZE_ERROR")
+                    {
+                        // HTTP/2 error - wait and retry
+                        if attempt < 3 {
+                            tokio::time::sleep(tokio::time::Duration::from_millis(1000 * attempt))
+                                .await;
+                            continue;
+                        }
+                    }
+
+                    if attempt == 3 {
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Return the last error if all retries failed
+        Err(last_error.unwrap_or_else(|| "Unknown vector search error".to_string()))
     }
 
     async fn generate_embedding(&self, text: &str) -> Result<Vec<f32>, String> {
