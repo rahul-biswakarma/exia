@@ -90,7 +90,7 @@ From the project root:
 cargo run --bin query_components -- "button component for forms"
 
 # With custom options
-cargo run --bin query_components -- "navigation menu" --collection ui_components --limit 5
+cargo run --bin query_components -- "navigation menu" --collection components --limit 5
 
 # See all query options
 cargo run --bin query_components -- --help
@@ -99,15 +99,15 @@ cargo run --bin query_components -- --help
 ### Command Line Options
 
 **Upload Script (`./upload.sh`):**
-- `-c, --components-file FILE`: Path to components JSON file (default: `../components.json`)
-- `--collection NAME`: Qdrant collection name (default: `ui_components`)
+- `-c, --components-file FILE`: Path to components JSON file (auto-detected)
+- `--collection NAME`: Qdrant collection name (default: `components`)
 - `-d, --delay MS`: Delay between API calls in milliseconds (default: `100`)
 - `-m, --max-retries N`: Maximum retries for rate-limited requests (default: `3`)
 - `-b, --batch-size N`: Batch size for incremental uploads (default: `5`)
 
 **Query Binary:**
 - `--query, -q`: Search query (required)
-- `--collection, -c`: Qdrant collection name (default: `ui_components`)
+- `--collection NAME`: Qdrant collection name (default: `components`)
 - `--limit, -l`: Number of results to return (default: `5`)
 
 ## How It Works
@@ -115,7 +115,7 @@ cargo run --bin query_components -- --help
 ### Incremental Upload Process
 
 1. **Load Components**: Reads all components from `components.json`
-2. **Create Collection**: Sets up Qdrant collection with proper vector dimensions (768 for Gemini)
+2. **Create Collection**: Sets up Qdrant collection with proper vector dimensions (3072 for gemini-embedding-exp-03-07)
 3. **Batch Processing**:
    - Process components in batches (default: 5)
    - Generate embeddings for each component in the batch
@@ -135,7 +135,7 @@ cargo run --bin query_components -- --help
 ```
 🚀 Starting UI components vector upload...
 📁 Using components file: components.json
-🎯 Collection: ui_components
+🎯 Collection: components
 ⏱️  Delay: 100ms
 🔄 Max retries: 3
 📦 Batch size: 5
@@ -143,7 +143,7 @@ cargo run --bin query_components -- --help
 Loading components from components.json...
 Loaded 55 components
 Connecting to Qdrant at https://your-cluster.qdrant.io:6333...
-✅ Created collection 'ui_components'
+✅ Created collection 'components'
 
 📋 Processing batch 1 (5/55 components)
 Generating embedding 1/55

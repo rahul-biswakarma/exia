@@ -14,8 +14,8 @@ struct Args {
     #[arg(short, long)]
     query: String,
 
-    /// Qdrant collection name
-    #[arg(short, long, default_value = "ui_components")]
+    /// Qdrant collection name to search in
+    #[arg(long, default_value = "components")]
     collection: String,
 
     /// Number of results to return

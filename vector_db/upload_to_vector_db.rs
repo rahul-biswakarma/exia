@@ -20,7 +20,7 @@ struct Args {
     components_file: String,
 
     /// Qdrant collection name
-    #[arg(short, long, default_value = "ui_components")]
+    #[arg(long, default_value = "components")]
     collection: String,
 
     /// Delay between API calls in milliseconds
@@ -213,8 +213,38 @@ async fn create_collection_if_not_exists(
         .any(|c| c.name == collection_name);
 
     if collection_exists {
-        println!("ℹ️  Collection '{}' already exists", collection_name);
-        return Ok(());
+        // Check collection info to verify dimensions
+        let collection_info = client
+            .collection_info(collection_name)
+            .await
+            .context("Failed to get collection info")?;
+
+        if let Some(config) = collection_info.result.and_then(|r| r.config) {
+            if let Some(vectors_config) = config.params.and_then(|p| p.vectors_config) {
+                if let Some(qdrant_client::qdrant::vectors_config::Config::Params(params)) =
+                    vectors_config.config
+                {
+                    if params.size == vector_size {
+                        println!(
+                            "ℹ️  Collection '{}' already exists with correct dimensions ({})",
+                            collection_name, vector_size
+                        );
+                        return Ok(());
+                    } else {
+                        println!("⚠️  Collection '{}' exists but has wrong dimensions ({} vs {}). Deleting and recreating...",
+                               collection_name, params.size, vector_size);
+
+                        // Delete the existing collection
+                        client
+                            .delete_collection(collection_name)
+                            .await
+                            .context("Failed to delete existing collection")?;
+
+                        println!("🗑️  Deleted collection '{}'", collection_name);
+                    }
+                }
+            }
+        }
     }
 
     // Create collection
@@ -235,7 +265,10 @@ async fn create_collection_if_not_exists(
         .await
         .context("Failed to create collection")?;
 
-    println!("✅ Created collection '{}'", collection_name);
+    println!(
+        "✅ Created collection '{}' with {} dimensions",
+        collection_name, vector_size
+    );
     Ok(())
 }
 
@@ -398,8 +431,8 @@ async fn main() -> Result<()> {
     println!("Connecting to Qdrant at {}...", qdrant_url);
     let qdrant_client = create_qdrant_client(&qdrant_url, qdrant_api_key.as_deref()).await?;
 
-    // Create collection (768 is the dimension for Gemini embeddings)
-    create_collection_if_not_exists(&qdrant_client, &args.collection, 768).await?;
+    // Create collection (3072 is the dimension for gemini-embedding-exp-03-07 embeddings)
+    create_collection_if_not_exists(&qdrant_client, &args.collection, 3072).await?;
 
     println!(
         "Starting incremental upload with embeddings (batch size: {})...",
