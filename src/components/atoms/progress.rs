@@ -3,46 +3,49 @@ use dioxus::prelude::*;
 #[derive(Props, Clone, PartialEq)]
 pub struct ProgressProps {
     /// The current progress value, between 0 and max
-    value: Option<ReadOnlySignal<f64>>,
+    #[props(default = 0.0)]
+    value: f64,
 
     /// The maximum value. Defaults to 100
-    #[props(default = ReadOnlySignal::new(Signal::new(100.0)))]
-    max: ReadOnlySignal<f64>,
+    #[props(default = 100.0)]
+    max: f64,
+
+    /// CSS class names to apply
+    #[props(default)]
+    class: Option<String>,
 
     #[props(extends = GlobalAttributes)]
     attributes: Vec<Attribute>,
-
-    children: Element,
 }
 
 #[component]
 pub fn Progress(props: ProgressProps) -> Element {
-    // Calculate percentage for styling and "data-state"
-    let percentage = use_memo(move || {
-        props.value.map(|v| {
-            let max = (props.max)();
-            (v() / max) * 100.0
-        })
-    });
+    let percentage = (props.value / props.max) * 100.0;
 
-    let state = use_memo(move || match percentage() {
-        Some(_) => "loading",
-        None => "indeterminate",
-    });
+    let mut classes = vec!["progress"];
+
+    if let Some(class) = &props.class {
+        classes.push(class);
+    }
+
+    let final_class = classes.join(" ");
 
     rsx! {
         div {
+            class: final_class,
             role: "progressbar",
             "aria-valuemin": 0,
             "aria-valuemax": props.max,
-            "aria-valuenow": props.value.map(|v| v()),
-            "data-state": state,
-            "data-value": props.value.map(|v| v().to_string()),
+            "aria-valuenow": props.value,
+            "data-state": if props.value > 0.0 { "loading" } else { "indeterminate" },
+            "data-value": props.value,
             "data-max": props.max,
-            style: percentage().map(|p| format!("--progress-value: {}%", p)),
             ..props.attributes,
 
-            {props.children}
+            div {
+                class: "progress-bar",
+                style: format!("width: {}%;", percentage)
+            }
         }
     }
 }

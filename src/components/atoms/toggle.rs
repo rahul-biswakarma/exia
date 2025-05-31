@@ -14,6 +14,10 @@ pub struct ToggleProps {
     #[props(default)]
     on_pressed_change: Callback<bool>,
 
+    /// CSS class names to apply
+    #[props(default)]
+    class: Option<String>,
+
     #[props(extends = GlobalAttributes)]
     attributes: Vec<Attribute>,
 
@@ -36,12 +40,21 @@ pub fn Toggle(props: ToggleProps) -> Element {
         props.on_pressed_change,
     );
 
+    let mut classes = vec!["toggle"];
+
+    if let Some(class) = &props.class {
+        classes.push(class);
+    }
+
+    let final_class = classes.join(" ");
+
     rsx! {
         button {
             onmounted: props.onmounted,
             onfocus: props.onfocus,
             onkeydown: props.onkeydown,
 
+            class: final_class,
             r#type: "button",
             disabled: props.disabled,
             aria_pressed: pressed,

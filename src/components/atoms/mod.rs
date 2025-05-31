@@ -1,6 +1,8 @@
 pub mod accordion;
 pub mod avatar;
+pub mod button;
 pub mod calendar;
+pub mod card;
 pub mod checkbox;
 pub mod collapsible;
 pub mod context_menu;
@@ -18,6 +20,7 @@ pub mod separator;
 pub mod slider;
 pub mod switch;
 pub mod tabs;
+pub mod terminal;
 pub mod toggle;
 pub mod toggle_group;
 pub mod tooltip;

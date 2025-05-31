@@ -1,0 +1,114 @@
+/* Eva/Gundam Theme */
+
+/* Theme-specific buttons */
+.btn.primary {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  border: none;
+  position: relative;
+  overflow: hidden;
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: white;
+}
+
+.btn.primary:hover {
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);
+  box-shadow: 0 0 15px rgba(255, 107, 53, 0.4), inset 0 0 15px rgba(255, 210, 63, 0.2);
+}
+
+.btn.secondary {
+  background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
+  border: 2px solid var(--color-accent);
+  color: white;
+}
+
+.btn.outline {
+  background: transparent;
+  border: 2px solid var(--color-primary);
+  color: var(--color-primary);
+  position: relative;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 100%, 10px 100%);
+}
+
+.btn.ghost {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 100%, 5px 100%);
+}
+
+.btn.small {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-xs);
+}
+
+.btn.large {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--font-size-lg);
+}
+
+/* Hexagonal button effect */
+.btn.primary::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  background: linear-gradient(45deg, transparent 30%, var(--color-primary) 30%, var(--color-primary) 70%, transparent 70%),
+              linear-gradient(-45deg, transparent 30%, var(--color-accent) 30%, var(--color-accent) 70%, transparent 70%);
+  clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity var(--duration-medium) var(--easing-default);
+}
+
+.btn.primary:hover::before {
+  opacity: 0.3;
+}
+
+/* Theme-specific cards */
+.card.decorated::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  border-top: 3px solid var(--color-primary);
+  border-left: 3px solid var(--color-primary);
+}
+
+.card.decorated::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  border-bottom: 3px solid var(--color-accent);
+  border-right: 3px solid var(--color-accent);
+}
+
+.card.glow {
+  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(45, 45, 45, 0.8) 50%, var(--color-surface) 100%);
+  border: 2px solid var(--color-border);
+  position: relative;
+}
+
+.card.hoverable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 107, 53, 0.2);
+}
+
+/* Theme-specific toggle */
+.toggle.glow.active {
+  box-shadow: 0 0 15px var(--color-primary);
+}
+
+/* Theme-specific progress */
+.progress.glow .progress-bar {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  box-shadow: 0 0 10px var(--color-primary);
+}
