@@ -23,7 +23,7 @@ pub struct LoaderProps {
     attributes: Vec<Attribute>,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LoaderType {
     Primary, // Uses theme's primary loader style
     Button,  // Uses theme's button loader style
@@ -36,7 +36,7 @@ pub enum LoaderType {
     Minimal, // Minimal loader (Modern UI theme)
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LoaderSize {
     Small,
     Medium,

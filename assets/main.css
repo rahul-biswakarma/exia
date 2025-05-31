@@ -1,0 +1,25 @@
+/* Main CSS - Import all styles */
+
+/* Fonts */
+@import url('./styles/fonts.css');
+
+/* Design System */
+@import url('./styles/design-system.css');
+
+/* Theme Files */
+@import url('./styles/themes/neon-evangelion.css');
+@import url('./styles/themes/gundam.css');
+@import url('./styles/themes/terminal.css');
+@import url('./styles/themes/modern-ui.css');
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  min-height: 100vh;
+}

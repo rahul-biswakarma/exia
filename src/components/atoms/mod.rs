@@ -10,6 +10,7 @@ pub mod dialog;
 pub mod dropdown_menu;
 pub mod hover_card;
 pub mod label;
+pub mod loader;
 pub mod menubar;
 pub mod portal;
 pub mod progress;
@@ -24,3 +25,8 @@ pub mod terminal;
 pub mod toggle;
 pub mod toggle_group;
 pub mod tooltip;
+
+// Re-export components for easier imports
+pub use button::{Button, ButtonSize, ButtonVariant};
+pub use card::{Card, CardContent, CardFooter, CardHeader};
+pub use loader::{InlineLoader, Loader, LoaderSize, LoaderType, PageLoader};
