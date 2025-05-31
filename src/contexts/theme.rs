@@ -577,11 +577,16 @@ pub static CURRENT_THEME: GlobalSignal<Theme> = GlobalSignal::new(|| Theme::mode
 #[component]
 pub fn ThemeProvider(children: Element) -> Element {
     let theme = CURRENT_THEME.read();
-    let theme_clone = theme.clone();
 
-    // Apply theme to document body as well
-    use_effect(move || {
-        let theme_attr = theme_clone.get_theme_data_attribute();
+    // Apply theme to document body as well - this needs to be reactive
+    use_effect(use_reactive((&theme.variant,), move |(variant,)| {
+        let theme_attr = match variant {
+            ThemeVariant::NeonEvangelion => "neonevangelion",
+            ThemeVariant::Gundam => "gundam",
+            ThemeVariant::Terminal => "terminal",
+            ThemeVariant::ModernUI => "modern-ui",
+        };
+
         #[cfg(target_arch = "wasm32")]
         {
             use dioxus::document::eval;
@@ -594,12 +599,9 @@ pub fn ThemeProvider(children: Element) -> Element {
             ));
             let _ = js;
         }
-    });
+    }));
 
     rsx! {
-        style {
-            ":root {{ {theme.to_css_variables()} }}"
-        }
         div {
             class: format!("{}-theme", theme.get_theme_data_attribute()),
             "data-theme": theme.get_theme_data_attribute(),
@@ -617,25 +619,32 @@ pub fn use_theme() -> Theme {
 }
 
 pub fn switch_theme(theme_variant: ThemeVariant) {
+    dioxus::logger::tracing::info!("switch_theme called with variant: {:?}", theme_variant);
+
     let new_theme = match theme_variant {
         ThemeVariant::NeonEvangelion => Theme::neon_evangelion(),
         ThemeVariant::Gundam => Theme::gundam(),
         ThemeVariant::Terminal => Theme::terminal(),
         ThemeVariant::ModernUI => Theme::modern_ui(),
     };
-    *CURRENT_THEME.write() = new_theme;
+
+    dioxus::logger::tracing::info!("Updating CURRENT_THEME to: {}", new_theme.name);
+    *CURRENT_THEME.write() = new_theme.clone();
 
     // Update document body for web platform
     #[cfg(target_arch = "wasm32")]
     {
         use dioxus::document::eval;
         let theme_attr = new_theme.get_theme_data_attribute();
+        dioxus::logger::tracing::info!("Setting data-theme attribute to: {}", theme_attr);
         let js = eval(&format!(
             r#"
+            console.log('Setting theme attributes:', '{}');
             document.body.setAttribute('data-theme', '{}');
             document.body.className = '{}-theme';
+            console.log('Theme attributes set successfully');
             "#,
-            theme_attr, theme_attr
+            theme_attr, theme_attr, theme_attr
         ));
         let _ = js;
     }
@@ -643,7 +652,7 @@ pub fn switch_theme(theme_variant: ThemeVariant) {
 
 #[component]
 pub fn ThemeSwitcher() -> Element {
-    let current_theme = use_theme();
+    let current_theme = CURRENT_THEME.read();
 
     rsx! {
         div { class: "theme-switcher",
@@ -657,13 +666,21 @@ pub fn ThemeSwitcher() -> Element {
                     ThemeVariant::ModernUI => "modern-ui",
                 },
                 onchange: move |event| {
-                    let variant = match event.data.value().as_str() {
+                    let selected_value = event.data.value();
+                    dioxus::logger::tracing::info!("Theme switcher changed to: {}", selected_value);
+
+                    let variant = match selected_value.as_str() {
                         "neonevangelion" => ThemeVariant::NeonEvangelion,
                         "gundam" => ThemeVariant::Gundam,
                         "terminal" => ThemeVariant::Terminal,
                         "modern-ui" => ThemeVariant::ModernUI,
-                        _ => ThemeVariant::NeonEvangelion,
+                        _ => {
+                            dioxus::logger::tracing::warn!("Unknown theme variant: {}", selected_value);
+                            ThemeVariant::NeonEvangelion
+                        }
                     };
+
+                    dioxus::logger::tracing::info!("Switching to theme variant: {:?}", variant);
                     switch_theme(variant);
                 },
 

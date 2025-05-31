@@ -4,6 +4,12 @@ use crate::contexts::theme::ThemeProvider;
 use dioxus::prelude::*;
 
 const MAIN_CSS: Asset = asset!("/assets/main.css");
+const FONTS_CSS: Asset = asset!("/assets/styles/fonts.css");
+const DESIGN_SYSTEM_CSS: Asset = asset!("/assets/styles/design-system.css");
+const NEON_EVANGELION_CSS: Asset = asset!("/assets/styles/themes/neon-evangelion.css");
+const GUNDAM_CSS: Asset = asset!("/assets/styles/themes/gundam.css");
+const TERMINAL_CSS: Asset = asset!("/assets/styles/themes/terminal.css");
+const MODERN_UI_CSS: Asset = asset!("/assets/styles/themes/modern-ui.css");
 
 #[component]
 pub fn App() -> Element {
@@ -12,31 +18,12 @@ pub fn App() -> Element {
 
     rsx! {
         document::Link { rel: "stylesheet", href: MAIN_CSS }
-        style {
-            r#"
-            /* Inline test styles */
-            .login-container {{
-                background-color: green !important;
-                min-height: 100vh;
-            }}
-            .btn {{
-                background-color: purple !important;
-                color: white !important;
-                padding: 16px 32px !important;
-                border: none !important;
-                border-radius: 8px !important;
-                cursor: pointer !important;
-            }}
-            .input {{
-                background-color: yellow !important;
-                color: black !important;
-                border: 3px solid red !important;
-                padding: 16px !important;
-                border-radius: 8px !important;
-                width: 100% !important;
-            }}
-            "#
-        }
+        document::Link { rel: "stylesheet", href: FONTS_CSS }
+        document::Link { rel: "stylesheet", href: DESIGN_SYSTEM_CSS }
+        document::Link { rel: "stylesheet", href: NEON_EVANGELION_CSS }
+        document::Link { rel: "stylesheet", href: GUNDAM_CSS }
+        document::Link { rel: "stylesheet", href: TERMINAL_CSS }
+        document::Link { rel: "stylesheet", href: MODERN_UI_CSS }
         ThemeProvider { AuthGuard {} }
     }
 }
