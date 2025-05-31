@@ -1,0 +1,526 @@
+/* Modern UI Theme - Clean & Professional */
+
+/* ============================================================================
+   THEME FOUNDATION
+   ============================================================================ */
+
+[data-theme="modern-ui"] {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  color: #0f172a;
+  font-family: 'Inter', 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+  position: relative;
+}
+
+/* Subtle Grid Overlay */
+[data-theme="modern-ui"]::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+    radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.03) 1px, transparent 1px);
+  background-size: 2rem 2rem;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ============================================================================
+   BUTTONS
+   ============================================================================ */
+
+[data-theme="modern-ui"] .btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  border: none;
+  color: #ffffff;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="modern-ui"] .btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+[data-theme="modern-ui"] .btn:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+[data-theme="modern-ui"] .btn:hover::before {
+  opacity: 1;
+}
+
+[data-theme="modern-ui"] .btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="modern-ui"] .btn.secondary {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #ffffff;
+}
+
+[data-theme="modern-ui"] .btn.secondary:hover {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+}
+
+[data-theme="modern-ui"] .btn.outline {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  backdrop-filter: blur(10px);
+}
+
+[data-theme="modern-ui"] .btn.outline:hover {
+  background: rgba(248, 250, 252, 0.8);
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+[data-theme="modern-ui"] .btn.ghost {
+  background: transparent;
+  color: #64748b;
+}
+
+[data-theme="modern-ui"] .btn.ghost:hover {
+  background: rgba(248, 250, 252, 0.8);
+  color: #475569;
+}
+
+/* Button Loading States */
+[data-theme="modern-ui"] .btn.loading {
+  pointer-events: none;
+}
+
+[data-theme="modern-ui"] .btn.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: modernSpin 1s linear infinite;
+}
+
+[data-theme="modern-ui"] .btn[data-loader="inline-spinner"]::after {
+  position: static;
+  display: inline-block;
+  margin-left: 0.5rem;
+  transform: none;
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* ============================================================================
+   CARDS
+   ============================================================================ */
+
+[data-theme="modern-ui"] .card {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.5);
+  border-radius: 0.75rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="modern-ui"] .card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+[data-theme="modern-ui"] .card:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(59, 130, 246, 0.2);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+[data-theme="modern-ui"] .card:hover::before {
+  opacity: 1;
+}
+
+/* Card Header */
+[data-theme="modern-ui"] .card-header {
+  border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+  padding: 1.5rem 1.5rem 1rem;
+}
+
+[data-theme="modern-ui"] .card-content {
+  padding: 1rem 1.5rem;
+}
+
+[data-theme="modern-ui"] .card-footer {
+  border-top: 1px solid rgba(226, 232, 240, 0.5);
+  padding: 1rem 1.5rem 1.5rem;
+  background: rgba(248, 250, 252, 0.5);
+}
+
+/* ============================================================================
+   PROGRESS BARS
+   ============================================================================ */
+
+[data-theme="modern-ui"] .progress {
+  background: rgba(226, 232, 240, 0.5);
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+}
+
+[data-theme="modern-ui"] .progress-bar {
+  background: linear-gradient(90deg, #3b82f6, #6366f1);
+  border-radius: 9999px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="modern-ui"] .progress-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: modernProgressShimmer 2s ease-in-out infinite;
+}
+
+/* ============================================================================
+   INPUTS
+   ============================================================================ */
+
+[data-theme="modern-ui"] .input {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  color: #0f172a;
+  border-radius: 0.5rem;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="modern-ui"] .input::placeholder {
+  color: #94a3b8;
+}
+
+[data-theme="modern-ui"] .input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* ============================================================================
+   TOGGLES & SWITCHES
+   ============================================================================ */
+
+[data-theme="modern-ui"] .toggle {
+  background: rgba(226, 232, 240, 0.8);
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  border-radius: 9999px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="modern-ui"] .toggle::before {
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="modern-ui"] .toggle[data-state="on"] {
+  background: linear-gradient(90deg, #3b82f6, #6366f1);
+  border-color: #3b82f6;
+}
+
+[data-theme="modern-ui"] .toggle[data-state="on"]::before {
+  background: #ffffff;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================================
+   LOADERS
+   ============================================================================ */
+
+/* Primary Loader - Spinner */
+[data-theme="modern-ui"] .loader-primary {
+  position: relative;
+  width: 2rem;
+  height: 2rem;
+  margin: 0 auto;
+}
+
+[data-theme="modern-ui"] .loader-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 3px solid rgba(59, 130, 246, 0.2);
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: modernSpin 1s linear infinite;
+}
+
+/* Page Loader - Minimal */
+[data-theme="modern-ui"] .loader-page {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+[data-theme="modern-ui"] .loader-page::before {
+  content: '';
+  width: 3rem;
+  height: 3rem;
+  border: 4px solid rgba(59, 130, 246, 0.1);
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: modernSpin 1s linear infinite;
+}
+
+[data-theme="modern-ui"] .loader-page::after {
+  content: 'Loading...';
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* ============================================================================
+   SPECIAL EFFECTS
+   ============================================================================ */
+
+/* Glass Morphism */
+[data-theme="modern-ui"] .glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+}
+
+/* Floating Action Button */
+[data-theme="modern-ui"] .fab {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  border: none;
+  color: white;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1000;
+}
+
+[data-theme="modern-ui"] .fab:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-2px) scale(1.05);
+}
+
+/* Gradient Text */
+[data-theme="modern-ui"] .gradient-text {
+  background: linear-gradient(135deg, #3b82f6, #6366f1, #8b5cf6);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 600;
+}
+
+/* Badge */
+[data-theme="modern-ui"] .badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* ============================================================================
+   ANIMATIONS
+   ============================================================================ */
+
+@keyframes modernSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes modernProgressShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes modernFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes modernSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(2rem);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes modernPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+}
+
+/* ============================================================================
+   DARK MODE VARIANT
+   ============================================================================ */
+
+@media (prefers-color-scheme: dark) {
+  [data-theme="modern-ui"] {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #f1f5f9;
+  }
+
+  [data-theme="modern-ui"] .card {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: rgba(71, 85, 105, 0.3);
+  }
+
+  [data-theme="modern-ui"] .card:hover {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+
+  [data-theme="modern-ui"] .input {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: rgba(71, 85, 105, 0.5);
+    color: #f1f5f9;
+  }
+
+  [data-theme="modern-ui"] .input::placeholder {
+    color: #64748b;
+  }
+
+  [data-theme="modern-ui"] .toggle {
+    background: rgba(71, 85, 105, 0.8);
+    border-color: rgba(100, 116, 139, 0.5);
+  }
+
+  [data-theme="modern-ui"] .card-footer {
+    background: rgba(15, 23, 42, 0.5);
+  }
+}
+
+/* ============================================================================
+   RESPONSIVE & ACCESSIBILITY
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  [data-theme="modern-ui"] {
+    font-size: 0.875rem;
+  }
+
+  [data-theme="modern-ui"] .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  [data-theme="modern-ui"] .card {
+    border-radius: 0.5rem;
+  }
+
+  [data-theme="modern-ui"] .fab {
+    bottom: 1rem;
+    right: 1rem;
+    width: 3rem;
+    height: 3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="modern-ui"] *,
+  [data-theme="modern-ui"] *::before,
+  [data-theme="modern-ui"] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-contrast: high) {
+  [data-theme="modern-ui"] {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  [data-theme="modern-ui"] .btn {
+    background: #000000;
+    color: #ffffff;
+    border: 2px solid #000000;
+  }
+
+  [data-theme="modern-ui"] .card {
+    background: #ffffff;
+    border: 2px solid #000000;
+  }
+
+  [data-theme="modern-ui"] .input {
+    background: #ffffff;
+    border: 2px solid #000000;
+    color: #000000;
+  }
+}

@@ -5,7 +5,7 @@ use dioxus::prelude::*;
 
 mod components;
 // mod configs; // Commented out - missing module
-// mod contexts; // Commented out - missing module
+mod contexts;
 mod supabase;
 mod utils;
 use components::{

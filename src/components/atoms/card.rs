@@ -1,7 +1,20 @@
+use crate::contexts::theme::{use_theme, ThemeVariant};
 use dioxus::prelude::*;
 
 #[derive(Props, Clone, PartialEq)]
 pub struct CardProps {
+    /// Enable theme-specific decorations
+    #[props(default = false)]
+    with_decorations: bool,
+
+    /// Enable theme-specific glow effects
+    #[props(default = false)]
+    with_glow: bool,
+
+    /// Enable hover animations
+    #[props(default = true)]
+    hoverable: bool,
+
     /// CSS class names to apply
     #[props(default)]
     class: Option<String>,
@@ -14,7 +27,36 @@ pub struct CardProps {
 
 #[component]
 pub fn Card(props: CardProps) -> Element {
+    let theme = use_theme();
     let mut classes = vec!["card"];
+
+    // Add theme-specific decoration classes
+    if props.with_decorations && theme.decorative.corner_decorations {
+        classes.push("decorated");
+
+        match theme.variant {
+            ThemeVariant::NeonEvangelion => classes.push("neon-decorated"),
+            ThemeVariant::Gundam => classes.push("angular"),
+            ThemeVariant::Terminal => classes.push("terminal-panel"),
+            ThemeVariant::ModernUI => classes.push("glass"),
+        }
+    }
+
+    // Add glow effects if enabled in theme
+    if props.with_glow && theme.decorative.glow_effects {
+        classes.push("glow");
+    }
+
+    // Add hover effects
+    if props.hoverable {
+        classes.push("hoverable");
+    }
+
+    // Add theme-specific shape classes
+    match theme.variant {
+        ThemeVariant::Gundam if theme.decorative.hexagonal_elements => classes.push("hexagon"),
+        _ => {}
+    }
 
     if let Some(class) = &props.class {
         classes.push(class);
@@ -25,6 +67,9 @@ pub fn Card(props: CardProps) -> Element {
     rsx! {
         div {
             class: final_class,
+            "data-theme": theme.get_theme_data_attribute(),
+            "data-decorations": if props.with_decorations { "true" } else { "false" },
+            "data-glow": if props.with_glow { "true" } else { "false" },
             ..props.attributes,
             {props.children}
         }

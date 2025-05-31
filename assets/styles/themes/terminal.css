@@ -1,0 +1,408 @@
+/* Terminal Hacker Theme - Matrix Style */
+
+/* ============================================================================
+   THEME FOUNDATION
+   ============================================================================ */
+
+[data-theme="terminal"] {
+  background: #000000;
+  color: #00ff41;
+  font-family: 'Courier New', 'Monaco', 'Inconsolata', monospace;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Matrix Rain Effect */
+[data-theme="terminal"][data-matrix="true"]::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='20' fill='%2300ff41' font-family='monospace' font-size='10' opacity='0.1'%3E01010101%3C/text%3E%3Ctext y='40' x='20' fill='%2300ff41' font-family='monospace' font-size='8' opacity='0.07'%3E11001100%3C/text%3E%3Ctext y='60' x='10' fill='%2300ff41' font-family='monospace' font-size='12' opacity='0.05'%3E10101010%3C/text%3E%3Ctext y='80' x='30' fill='%2300ff41' font-family='monospace' font-size='9' opacity='0.06'%3E01110111%3C/text%3E%3C/svg%3E");
+  animation: matrixRain 20s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Terminal Cursor */
+[data-theme="terminal"] .terminal-cursor::after {
+  content: '_';
+  animation: terminalBlink 1s infinite;
+  color: #00ff41;
+}
+
+/* ============================================================================
+   BUTTONS
+   ============================================================================ */
+
+[data-theme="terminal"] .btn {
+  background: transparent;
+  border: 1px solid #00ff41;
+  color: #00ff41;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="terminal"] .btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+[data-theme="terminal"] .btn:hover {
+  background: rgba(0, 255, 65, 0.1);
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+  text-shadow: 0 0 5px #00ff41;
+}
+
+[data-theme="terminal"] .btn:hover::before {
+  left: 100%;
+}
+
+[data-theme="terminal"] .btn.primary {
+  background: rgba(0, 255, 65, 0.1);
+  border-color: #00ff41;
+}
+
+[data-theme="terminal"] .btn.secondary {
+  border-color: #ffff00;
+  color: #ffff00;
+}
+
+[data-theme="terminal"] .btn.secondary:hover {
+  background: rgba(255, 255, 0, 0.1);
+  box-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
+  text-shadow: 0 0 5px #ffff00;
+}
+
+[data-theme="terminal"] .btn.error {
+  border-color: #ff0000;
+  color: #ff0000;
+}
+
+[data-theme="terminal"] .btn.error:hover {
+  background: rgba(255, 0, 0, 0.1);
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+  text-shadow: 0 0 5px #ff0000;
+}
+
+/* Button Loading States */
+[data-theme="terminal"] .btn.loading::after {
+  content: '';
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-left: 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: terminalSpin 1s linear infinite;
+}
+
+[data-theme="terminal"] .btn[data-loader="dots"]::after {
+  content: '...';
+  animation: terminalDots 1.5s infinite;
+  border: none;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+}
+
+/* ============================================================================
+   CARDS
+   ============================================================================ */
+
+[data-theme="terminal"] .card {
+  background: rgba(0, 255, 65, 0.05);
+  border: 1px solid #00ff41;
+  color: #00ff41;
+  position: relative;
+}
+
+[data-theme="terminal"] .card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #00ff41, transparent);
+  animation: terminalScanLine 3s linear infinite;
+}
+
+[data-theme="terminal"] .card:hover {
+  background: rgba(0, 255, 65, 0.1);
+  box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+}
+
+/* ============================================================================
+   INPUTS
+   ============================================================================ */
+
+[data-theme="terminal"] .input {
+  background: transparent;
+  border: 1px solid #00ff41;
+  color: #00ff41;
+  caret-color: #00ff41;
+}
+
+[data-theme="terminal"] .input::placeholder {
+  color: rgba(0, 255, 65, 0.5);
+}
+
+[data-theme="terminal"] .input:focus {
+  outline: none;
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+  background: rgba(0, 255, 65, 0.05);
+}
+
+/* ============================================================================
+   PROGRESS BARS
+   ============================================================================ */
+
+[data-theme="terminal"] .progress {
+  background: rgba(0, 255, 65, 0.1);
+  border: 1px solid #00ff41;
+}
+
+[data-theme="terminal"] .progress-bar {
+  background: linear-gradient(90deg, #008f11, #00ff41);
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="terminal"] .progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.1) 2px,
+    rgba(255, 255, 255, 0.1) 4px
+  );
+  animation: terminalProgress 1s linear infinite;
+}
+
+/* ============================================================================
+   TOGGLES & SWITCHES
+   ============================================================================ */
+
+[data-theme="terminal"] .toggle {
+  background: transparent;
+  border: 1px solid #00ff41;
+}
+
+[data-theme="terminal"] .toggle::before {
+  background: #00ff41;
+}
+
+[data-theme="terminal"] .toggle[data-state="on"] {
+  background: rgba(0, 255, 65, 0.2);
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+}
+
+/* ============================================================================
+   LOADERS
+   ============================================================================ */
+
+/* Primary Loader - Dots */
+[data-theme="terminal"] .loader-primary {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: center;
+  align-items: center;
+}
+
+[data-theme="terminal"] .loader-primary::before,
+[data-theme="terminal"] .loader-primary::after {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  background: #00ff41;
+  border-radius: 50%;
+  animation: terminalDotPulse 1.5s infinite;
+}
+
+[data-theme="terminal"] .loader-primary::after {
+  animation-delay: 0.5s;
+}
+
+/* Page Loader - Minimal */
+[data-theme="terminal"] .loader-page {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #00ff41;
+  font-size: 1.5rem;
+  z-index: 9999;
+}
+
+[data-theme="terminal"] .loader-page::before {
+  content: '> LOADING';
+  animation: terminalTyping 2s infinite;
+}
+
+/* ============================================================================
+   SPECIAL EFFECTS
+   ============================================================================ */
+
+/* Glitch Effect */
+[data-theme="terminal"] .glitch {
+  position: relative;
+}
+
+[data-theme="terminal"] .glitch::before,
+[data-theme="terminal"] .glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+[data-theme="terminal"] .glitch::before {
+  animation: terminalGlitch1 0.5s infinite;
+  color: #ff0000;
+  z-index: -1;
+}
+
+[data-theme="terminal"] .glitch::after {
+  animation: terminalGlitch2 0.5s infinite;
+  color: #00ffff;
+  z-index: -2;
+}
+
+/* Terminal Text Effects */
+[data-theme="terminal"] .terminal-text {
+  font-family: inherit;
+  text-shadow: 0 0 5px currentColor;
+}
+
+[data-theme="terminal"] .terminal-prompt::before {
+  content: '$ ';
+  color: #00ff41;
+}
+
+/* ============================================================================
+   ANIMATIONS
+   ============================================================================ */
+
+@keyframes matrixRain {
+  0% { transform: translateY(-100vh); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes terminalBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes terminalSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes terminalDots {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+  100% { content: ''; }
+}
+
+@keyframes terminalScanLine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes terminalProgress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes terminalDotPulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes terminalTyping {
+  0% { content: '> LOADING'; }
+  25% { content: '> LOADING.'; }
+  50% { content: '> LOADING..'; }
+  75% { content: '> LOADING...'; }
+  100% { content: '> LOADING'; }
+}
+
+@keyframes terminalGlitch1 {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+@keyframes terminalGlitch2 {
+  0% { transform: translate(0); }
+  20% { transform: translate(2px, -2px); }
+  40% { transform: translate(2px, 2px); }
+  60% { transform: translate(-2px, -2px); }
+  80% { transform: translate(-2px, 2px); }
+  100% { transform: translate(0); }
+}
+
+/* ============================================================================
+   RESPONSIVE & ACCESSIBILITY
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  [data-theme="terminal"] {
+    font-size: 0.875rem;
+  }
+
+  [data-theme="terminal"] .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="terminal"] *,
+  [data-theme="terminal"] *::before,
+  [data-theme="terminal"] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-contrast: high) {
+  [data-theme="terminal"] {
+    background: #000000;
+    color: #ffffff;
+  }
+
+  [data-theme="terminal"] .btn,
+  [data-theme="terminal"] .card,
+  [data-theme="terminal"] .input {
+    border-color: #ffffff;
+    color: #ffffff;
+  }
+}
