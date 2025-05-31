@@ -1,92 +1,141 @@
-# Exia - AI-Powered Personal Assistant & Learning System
+# Exia – AI-Powered Personal Operating System
 
-Exia is an advanced AI-powered personal assistant and learning system designed to enhance productivity, learning, and personal development through intelligent automation and contextual awareness.
+**Exia** is a modular, AI-first personal OS designed to enhance every aspect of human potential through intelligent systems and context-aware capabilities. It blends memory, emotion, productivity, and communication into a cohesive assistant that evolves with the user.
 
-## Features Roadmap
+---
 
-### 🧠 Learning & Knowledge Management
-- [ ] **Generative Learning System** - Adaptive learning algorithms that generate personalized content
-- [ ] **Live Animation Explanation** - Visual explanations with real-time animations
-- [ ] **Personal Knowledge Base** - Centralized repository for all your information
-- [ ] **Contextual Memory System** - Context-aware information retrieval
-- [ ] **AI Study Buddy** - Intelligent study companion and tutor
-- [ ] **Code Editor + LLM Tutor** - Integrated coding environment with AI guidance
-- [ ] **Learning Milestone Badges** - Gamified learning achievements
-- [ ] **Social Learning Leaderboard** - Competitive learning environment
+## Systems
 
-### 🎭 Emotional & Personal Intelligence
-- [ ] **Emotional Graph** - Track and visualize emotional patterns
-- [ ] **Mood-aware Assistant** - AI that adapts to your emotional state
-- [ ] **Dream Analysis** - Analyze and interpret dream patterns
-- [ ] **Sentiment Dashboard** - Real-time sentiment tracking and analysis
-- [ ] **Energy Graph** - Monitor and optimize energy levels
-- [ ] **Daily Reflection Assistant** - Guided daily reflection sessions
+Each system is a domain of life enhanced by intelligent automation and context.
 
-### 🎪 Life Management & Tracking
-- [ ] **Life Theater Mode** - Immersive life experience visualization
-- [ ] **Life Pattern Tracker** - Identify and analyze life patterns
-- [ ] **Location & Activity Tracker** - Comprehensive activity monitoring
-- [ ] **Real-time Life Log Visualizer** - Visual representation of daily activities
-- [ ] **Memory Lane (Past Data Replay)** - Revisit and analyze past experiences
-- [ ] **Time Capsule** - Store and retrieve memories from specific time periods
-- [ ] **Auto-Journal Generator** - Automated journaling based on daily activities
+---
 
-### 🎯 Productivity & Goal Management
-- [ ] **System Control (Apps + Browser)** - Unified system control interface
-- [ ] **Command Remix** - Customizable command combinations
-- [ ] **Proactive Agent** - Anticipatory assistance and suggestions
-- [ ] **Smart Reminder & Notification System** - Intelligent scheduling and alerts
-- [ ] **Goal Visualizer** - Visual goal tracking and progress monitoring
-- [ ] **Achievement Timeline** - Chronological achievement tracking
-- [ ] **Focus Mode AI** - AI-powered focus and concentration enhancement
-- [ ] **Personal Project Tracker** - Comprehensive project management
-- [ ] **Routine Optimizer** - AI-driven routine optimization
-- [ ] **AI Standup Assistant** - Automated daily standup meetings
+### Synapse – Learning & Knowledge Intelligence
+> A generative learning engine designed to personalize education, knowledge capture, and reflection.
 
-### 🤝 Social & Communication
-- [ ] **AI-powered Chat Enhancer** - Enhanced messaging with AI assistance
-- [ ] **Bill Splitter** - Smart expense sharing and management
-- [ ] **Event Auto-Scheduler** - Intelligent event planning and scheduling
-- [ ] **Friend/Contact Profile Memory** - Detailed contact relationship tracking
-- [ ] **Conversational Code Review** - AI-assisted code review discussions
+**Capabilities**: `Pulse`, `Morph`, `Neuro`, `Drift`, `Sigil`
 
-### 🏆 Gamification & Rewards
-- [ ] **NFT Reward System** - Blockchain-based achievement rewards
-- [ ] **Habit NFT Generator** - Tokenized habit formation rewards
-- [ ] **Reputation NFT Generator** - Social reputation tracking via NFTs
+#### Subsystem Goals
+- [ ] Adaptive Learning Tracks
+- [ ] Visual Concept Explainers with Live Animation
+- [ ] Integrated Code Editor with AI Tutor
+- [ ] Personal Knowledge Base with Tag & Relation Graph
+- [ ] Gamified Milestones and Learning Rewards
+- [ ] Study Session Planner and Contextual Revision
 
-### 🔧 System & Customization
-- [ ] **Plug-in System** - Extensible plugin architecture
-- [ ] **Voice-first OS Interaction** - Voice-controlled operating system interface
-- [ ] **Customizable AI Persona** - Personalized AI assistant personality
-- [ ] **Contextual Workspace Launcher** - Smart workspace management
-- [ ] **Thought Catcher** - Capture and organize spontaneous thoughts
+---
 
-### 🎯 Habit & Behavior
-- [ ] **Auto Habit-forming Suggestions** - AI-driven habit recommendations
-- [ ] **Habit NFT Generator** - Gamified habit tracking with rewards
+### Echo – Communication & Relationship Layer
+> A social cognition system that enhances conversations, relationships, and communication patterns.
 
-## Development
+**Capabilities**: `Pulse`, `Vox`, `Drift`, `Mask`, `Neuro`
 
-Your new bare-bones project includes minimal organization with a single `main.rs` file and a few assets.
+#### Subsystem Goals
+- [ ] Enhanced AI Chat with Smart Replies and Suggestions
+- [ ] Friend Memory & Social Context Layer
+- [ ] Conversational Code Review Support
+- [ ] Relationship Timeline and Memory
+- [ ] Auto-Scheduler for Events & Group Coordination
+- [ ] Voice Chat Support and History Navigation
 
-```
-project/
-├─ assets/ # Any assets that are used by the app should be placed here
-├─ src/
-│  ├─ main.rs # main.rs is the entry point to your application and currently contains all components for the app
-├─ Cargo.toml # The Cargo.toml file defines the dependencies and feature flags for your project
-```
+---
 
-### Serving Your App
+### Vault – Wealth & Financial Intelligence
+> A proactive financial strategist that tracks income, goals, expenses, and long-term financial health.
 
-Run the following command in the root of your project to start developing with the default platform:
+**Capabilities**: `Pulse`, `Neuro`, `Morph`
 
-```bash
-dx serve --platform desktop
-```
+#### Subsystem Goals
+- [ ] Expense Logging with Intent Recognition
+- [ ] Budget Planning and Smart Alerts
+- [ ] Bill Splitting with Smart Context Awareness
+- [ ] Financial Goal Tracker
+- [ ] Transaction Sentiment Tagging
+- [ ] NFT-based Savings Milestones
 
-To run for a different platform, use the `--platform platform` flag. E.g.
-```bash
-dx serve --platform desktop
-```
+---
+
+### Aura – Emotional and Energetic Intelligence
+> Tracks and enhances emotional health, daily patterns, and reflections through ambient sensing.
+
+**Capabilities**: `Pulse`, `Neuro`, `Drift`, `Sigil`, `Mask`
+
+#### Subsystem Goals
+- [ ] Mood & Sentiment Tracker
+- [ ] Daily Reflections with AI Prompts
+- [ ] Dream Journal and Pattern Mining
+- [ ] Energy & Emotion Heatmaps
+- [ ] Emotional Pattern Recognition
+- [ ] Mood-Aware Assistant Reactions
+
+---
+
+### Chronicle – Life Logging & Memory Stream
+> A passive lifelog engine that captures context-rich personal data and generates actionable memories.
+
+**Capabilities**: `Pulse`, `Neuro`, `Drift`, `Morph`
+
+#### Subsystem Goals
+- [ ] Automatic Activity Timeline
+- [ ] Time Capsule with Replay Function
+- [ ] Visual Life Graph of Events & Experiences
+- [ ] Location and Routine Pattern Learning
+- [ ] Daily Auto-Journal Summary
+- [ ] Memory Search with Natural Language
+
+---
+
+### Momentum – Productivity & Execution Engine
+> A smart execution system that adapts your schedule, tasks, and focus patterns using context awareness.
+
+**Capabilities**: `Pulse`, `Morph`, `Neuro`, `Sigil`
+
+#### Subsystem Goals
+- [ ] Proactive Task & Reminder Suggestions
+- [ ] Routine Generator and Optimizer
+- [ ] Focus Mode with Distraction Guard
+- [ ] Project Tracker with Goal Visualizer
+- [ ] Daily Standup Summaries
+- [ ] Achievement Timeline
+
+---
+
+### Sigil – Gamified Identity & Progress
+> A symbolic system that transforms actions, habits, and milestones into unique digital achievements.
+
+**Capabilities**: `Sigil`, `Pulse`, `Drift`
+
+#### Subsystem Goals
+- [ ] Tokenized Habit Formation Tracker
+- [ ] Achievement NFTs for Milestones
+- [ ] Social Reputation Graph
+- [ ] Progress Visualization Engine
+- [ ] Dynamic Reward Triggers from Other Systems
+
+---
+
+## Capabilities
+
+These are atomic modules that power and connect systems via LLMs, data, and UI logic.
+
+| Capability | Alias | Description |
+|------------|--------|-------------|
+| **Pulse** | `pulse` | Context-aware nudge engine for proactive suggestions |
+| **Morph** | `morph` | Generative UI renderer based on real-time intent |
+| **Neuro** | `neuro` | Dynamic context graph of thoughts, tasks, and relationships |
+| **Drift** | `drift` | Passive capture of thoughts, insights, and ambient signals |
+| **Vox** | `vox` | Multimodal voice interface with speech input and AI feedback |
+| **Node** | `node` | Modular plugin system for injecting or extending any system |
+| **Mask** | `mask` | Dynamic assistant persona customization engine |
+| **Sigil** | `sigil` | Progress tracker that mints achievements and reputation as digital artifacts |
+
+---
+
+## Development Guidelines
+
+Each system is a self-contained domain that pulls capabilities as composable utilities. Systems and capabilities are versioned and independently deployable.
+
+- Systems live in `/systems/[system-name]`
+- Capabilities live in `/capabilities/[capability-name]`
+- System config maps define which capabilities are activated
+- Use TypeScript + modular exports with context and state hooks
