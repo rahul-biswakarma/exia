@@ -1,4 +1,5 @@
 use crate::auth::{use_auth, use_auth_actions};
+use crate::components::atoms::Button;
 use dioxus::prelude::*;
 
 #[component]
@@ -19,8 +20,8 @@ pub fn UserInfo() -> Element {
                 style: "color: var(--color-text-secondary);",
                 "Welcome, {auth.read().get_user_email().unwrap_or(\"User\")}"
             }
-            button {
-                class: "btn btn-secondary px-4 py-2 text-sm rounded-lg",
+            Button {
+                variant: crate::components::atoms::ButtonVariant::Secondary,
                 onclick: handle_sign_out,
                 "Sign Out"
             }

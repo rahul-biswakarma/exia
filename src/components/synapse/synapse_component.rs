@@ -3,6 +3,7 @@ use super::{
     ui::{PromptInput, SamplePrompts, SavedSchemas, SynapseHeader, UIPreview},
 };
 use crate::action_executor::*;
+use crate::components::atoms::Button;
 use crate::contexts::theme::ThemeSwitcher;
 use dioxus::prelude::*;
 use std::collections::HashMap;
@@ -41,9 +42,9 @@ pub fn Synapse() -> Element {
                             style: "color: var(--color-text);",
                             "{message}"
                         }
-                        button {
-                            class: "mt-2 text-sm",
-                            style: "color: var(--color-text-secondary);",
+                        Button {
+                            variant: crate::components::atoms::ButtonVariant::Ghost,
+                            size: crate::components::atoms::ButtonSize::Small,
                             onclick: move |_| success_message.set(None),
                             "Dismiss"
                         }

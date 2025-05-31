@@ -20,14 +20,19 @@ pub fn SamplePrompts(props: SamplePromptsProps) -> Element {
     ];
 
     rsx! {
-        div { class: "bg-white rounded-xl shadow-lg p-6",
-            h3 { class: "text-lg font-semibold text-gray-800 mb-4",
+        div {
+            class: "rounded-xl shadow-lg p-6",
+            style: "background: var(--color-surface); border: 1px solid var(--color-border);",
+            h3 {
+                class: "text-lg font-semibold mb-4",
+                style: "color: var(--color-text);",
                 "💡 Sample Prompts"
             }
             div { class: "space-y-2",
                 for sample_prompt in sample_prompts {
                     button {
-                        class: "w-full text-left p-3 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors border border-transparent hover:border-purple-200",
+                        class: "w-full text-left p-3 text-sm rounded-lg transition-colors",
+                        style: "color: var(--color-text-secondary); background: var(--color-background); border: 1px solid var(--color-border);",
                         onclick: {
                             let prompt_text = sample_prompt.to_string();
                             let mut prompt = props.prompt;
