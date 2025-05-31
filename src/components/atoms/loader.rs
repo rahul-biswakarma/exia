@@ -96,9 +96,6 @@ pub fn Loader(props: LoaderProps) -> Element {
     // Add theme-specific class
     match theme.variant {
         ThemeVariant::NeonEvangelion => classes.push("neon-loader"),
-        ThemeVariant::Gundam => classes.push("gundam-loader"),
-        ThemeVariant::Terminal => classes.push("terminal-loader"),
-        ThemeVariant::ModernUI => classes.push("modern-loader"),
     }
 
     if let Some(class) = &props.class {
@@ -110,9 +107,6 @@ pub fn Loader(props: LoaderProps) -> Element {
     // Generate loading text based on theme if not provided
     let loading_text = props.text.clone().unwrap_or_else(|| match theme.variant {
         ThemeVariant::NeonEvangelion => "SYNCING...".to_string(),
-        ThemeVariant::Gundam => "INITIALIZING SYSTEM...".to_string(),
-        ThemeVariant::Terminal => "> LOADING...".to_string(),
-        ThemeVariant::ModernUI => "Loading...".to_string(),
     });
 
     rsx! {
@@ -207,10 +201,7 @@ pub fn PageLoader(props: PageLoaderProps) -> Element {
     }
 
     let overlay_class = match theme.variant {
-        ThemeVariant::Terminal => "page-loader-overlay terminal-overlay",
-        ThemeVariant::Gundam => "page-loader-overlay gundam-overlay",
         ThemeVariant::NeonEvangelion => "page-loader-overlay neon-overlay",
-        ThemeVariant::ModernUI => "page-loader-overlay modern-overlay",
     };
 
     rsx! {

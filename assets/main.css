@@ -8,9 +8,6 @@
 
 /* Theme Files */
 @import url('./styles/themes/neon-evangelion.css');
-@import url('./styles/themes/gundam.css');
-@import url('./styles/themes/terminal.css');
-@import url('./styles/themes/modern-ui.css');
 
 /* Base styles */
 * {

@@ -86,10 +86,7 @@ pub fn Button(props: ButtonProps) -> Element {
 
     if props.with_decorations {
         match theme.variant {
-            ThemeVariant::NeonEvangelion => classes.push("neon-effects"),
-            ThemeVariant::Gundam => classes.push("hexagon"),
-            ThemeVariant::Terminal => classes.push("terminal-style"),
-            ThemeVariant::ModernUI => classes.push("glass"),
+            ThemeVariant::NeonEvangelion => classes.push("neon-glow"),
         }
     }
 
@@ -129,17 +126,8 @@ pub fn Button(props: ButtonProps) -> Element {
             } else {
                 // Show loading content based on theme
                 match theme.variant {
-                    ThemeVariant::Terminal => rsx! {
-                        span { class: "terminal-cursor", "LOADING" }
-                    },
-                    ThemeVariant::Gundam => rsx! {
-                        span { "INITIALIZING..." }
-                    },
                     ThemeVariant::NeonEvangelion => rsx! {
                         span { class: "neon-text", "PROCESSING..." }
-                    },
-                    ThemeVariant::ModernUI => rsx! {
-                        span { "Loading..." }
                     },
                 }
             }

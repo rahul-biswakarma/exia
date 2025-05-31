@@ -36,9 +36,6 @@ pub fn Card(props: CardProps) -> Element {
 
         match theme.variant {
             ThemeVariant::NeonEvangelion => classes.push("neon-decorated"),
-            ThemeVariant::Gundam => classes.push("angular"),
-            ThemeVariant::Terminal => classes.push("terminal-panel"),
-            ThemeVariant::ModernUI => classes.push("glass"),
         }
     }
 
@@ -52,11 +49,7 @@ pub fn Card(props: CardProps) -> Element {
         classes.push("hoverable");
     }
 
-    // Add theme-specific shape classes
-    match theme.variant {
-        ThemeVariant::Gundam if theme.decorative.hexagonal_elements => classes.push("hexagon"),
-        _ => {}
-    }
+    // Add theme-specific shape classes - removed since only NeonEvangelion doesn't use hexagonal elements
 
     if let Some(class) = &props.class {
         classes.push(class);

@@ -4,9 +4,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ThemeVariant {
     NeonEvangelion,
-    Gundam,
-    Terminal,
-    ModernUI,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -182,234 +179,6 @@ impl Theme {
         }
     }
 
-    pub fn gundam() -> Self {
-        Self {
-            name: "Gundam Mecha".to_string(),
-            variant: ThemeVariant::Gundam,
-            colors: ThemeColors {
-                primary: "#ff6b35".to_string(),        // Mecha orange
-                secondary: "#004e89".to_string(),      // Deep blue
-                accent: "#ffd23f".to_string(),         // Bright yellow
-                background: "#0d1117".to_string(),     // Dark steel
-                surface: "#21262d".to_string(),        // Steel gray
-                text: "#f0f6fc".to_string(),           // Light steel
-                text_secondary: "#8b949e".to_string(), // Medium gray
-                border: "#ff6b35".to_string(),         // Mecha orange
-                success: "#26d0ce".to_string(),        // Cyan success
-                warning: "#ffd23f".to_string(),        // Bright yellow
-                error: "#ff4757".to_string(),          // Red alert
-                info: "#5352ed".to_string(),           // Blue info
-            },
-            spacing: Self::default_spacing(),
-            typography: ThemeTypography {
-                font_family: "'Orbitron', 'Exo 2', 'Roboto', sans-serif".to_string(),
-                font_family_mono: "'JetBrains Mono', 'Fira Code', monospace".to_string(),
-                font_size_xs: "0.75rem".to_string(),
-                font_size_sm: "0.875rem".to_string(),
-                font_size_md: "1rem".to_string(),
-                font_size_lg: "1.125rem".to_string(),
-                font_size_xl: "1.25rem".to_string(),
-                font_weight_normal: "400".to_string(),
-                font_weight_medium: "600".to_string(),
-                font_weight_bold: "700".to_string(),
-            },
-            borders: ThemeBorders {
-                radius_none: "0".to_string(),
-                radius_sm: "0".to_string(), // Angular design
-                radius_md: "0".to_string(),
-                radius_lg: "0".to_string(),
-                radius_full: "0".to_string(),
-                width_thin: "1px".to_string(),
-                width_medium: "2px".to_string(),
-                width_thick: "4px".to_string(), // Thick mecha borders
-            },
-            effects: ThemeEffects {
-                shadow_sm: "0 2px 4px rgba(255, 107, 53, 0.2)".to_string(),
-                shadow_md: "0 4px 8px rgba(255, 107, 53, 0.3)".to_string(),
-                shadow_lg: "0 8px 16px rgba(255, 107, 53, 0.4)".to_string(),
-                glow_primary: "0 0 15px rgba(255, 107, 53, 0.6), 0 0 30px rgba(255, 107, 53, 0.3)"
-                    .to_string(),
-                glow_accent: "0 0 15px rgba(255, 210, 63, 0.6), 0 0 30px rgba(255, 210, 63, 0.3)"
-                    .to_string(),
-                blur_sm: "blur(2px)".to_string(),
-                blur_md: "blur(4px)".to_string(),
-            },
-            animations: Self::default_animations(),
-            decorative: ThemeDecorative {
-                corner_decorations: true,
-                glow_effects: true,
-                scan_lines: false,
-                noise_overlay: false,
-                hexagonal_elements: true,
-                terminal_cursor: false,
-                floating_particles: false,
-                angular_borders: true,
-                matrix_rain: false,
-                holographic_effects: false,
-            },
-            loaders: LoaderStyles {
-                primary_type: "hexagon".to_string(),
-                button_loader: "slide".to_string(),
-                page_loader: "overlay".to_string(),
-            },
-        }
-    }
-
-    pub fn terminal() -> Self {
-        Self {
-            name: "Terminal Hacker".to_string(),
-            variant: ThemeVariant::Terminal,
-            colors: ThemeColors {
-                primary: "#00ff41".to_string(),        // Matrix green
-                secondary: "#008f11".to_string(),      // Dark green
-                accent: "#ffffff".to_string(),         // Pure white
-                background: "#000000".to_string(),     // Pure black
-                surface: "#0d1117".to_string(),        // Dark terminal
-                text: "#00ff41".to_string(),           // Matrix green text
-                text_secondary: "#00cc33".to_string(), // Dimmer green
-                border: "#00ff41".to_string(),         // Matrix green
-                success: "#00ff41".to_string(),        // Matrix green
-                warning: "#ffff00".to_string(),        // Terminal yellow
-                error: "#ff0000".to_string(),          // Terminal red
-                info: "#00ffff".to_string(),           // Terminal cyan
-            },
-            spacing: Self::default_spacing(),
-            typography: ThemeTypography {
-                font_family: "'Courier New', 'Monaco', 'Inconsolata', monospace".to_string(),
-                font_family_mono: "'Courier New', 'Monaco', monospace".to_string(),
-                font_size_xs: "0.75rem".to_string(),
-                font_size_sm: "0.875rem".to_string(),
-                font_size_md: "1rem".to_string(),
-                font_size_lg: "1.125rem".to_string(),
-                font_size_xl: "1.25rem".to_string(),
-                font_weight_normal: "400".to_string(),
-                font_weight_medium: "400".to_string(), // Monospace consistency
-                font_weight_bold: "700".to_string(),
-            },
-            borders: ThemeBorders {
-                radius_none: "0".to_string(),
-                radius_sm: "0".to_string(), // Terminal sharp edges
-                radius_md: "0".to_string(),
-                radius_lg: "0".to_string(),
-                radius_full: "0".to_string(),
-                width_thin: "1px".to_string(),
-                width_medium: "1px".to_string(), // Consistent terminal borders
-                width_thick: "2px".to_string(),
-            },
-            effects: ThemeEffects {
-                shadow_sm: "0 1px 2px rgba(0, 255, 65, 0.3)".to_string(),
-                shadow_md: "0 2px 4px rgba(0, 255, 65, 0.4)".to_string(),
-                shadow_lg: "0 4px 8px rgba(0, 255, 65, 0.5)".to_string(),
-                glow_primary: "0 0 10px rgba(0, 255, 65, 0.8), 0 0 20px rgba(0, 255, 65, 0.4)"
-                    .to_string(),
-                glow_accent: "0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.4)"
-                    .to_string(),
-                blur_sm: "blur(1px)".to_string(),
-                blur_md: "blur(2px)".to_string(),
-            },
-            animations: Self::default_animations(),
-            decorative: ThemeDecorative {
-                corner_decorations: false,
-                glow_effects: true,
-                scan_lines: false,
-                noise_overlay: false,
-                hexagonal_elements: false,
-                terminal_cursor: true,
-                floating_particles: false,
-                angular_borders: false,
-                matrix_rain: true,
-                holographic_effects: false,
-            },
-            loaders: LoaderStyles {
-                primary_type: "dots".to_string(),
-                button_loader: "dots".to_string(),
-                page_loader: "minimal".to_string(),
-            },
-        }
-    }
-
-    pub fn modern_ui() -> Self {
-        Self {
-            name: "Modern UI".to_string(),
-            variant: ThemeVariant::ModernUI,
-            colors: ThemeColors {
-                primary: "#3b82f6".to_string(),        // Blue 500
-                secondary: "#6366f1".to_string(),      // Indigo 500
-                accent: "#8b5cf6".to_string(),         // Violet 500
-                background: "#ffffff".to_string(),     // Pure white
-                surface: "#f8fafc".to_string(),        // Slate 50
-                text: "#0f172a".to_string(),           // Slate 900
-                text_secondary: "#64748b".to_string(), // Slate 500
-                border: "#e2e8f0".to_string(),         // Slate 200
-                success: "#10b981".to_string(),        // Emerald 500
-                warning: "#f59e0b".to_string(),        // Amber 500
-                error: "#ef4444".to_string(),          // Red 500
-                info: "#06b6d4".to_string(),           // Cyan 500
-            },
-            spacing: Self::default_spacing(),
-            typography: ThemeTypography {
-                font_family: "'Inter', 'SF Pro Display', 'Segoe UI', system-ui, sans-serif"
-                    .to_string(),
-                font_family_mono: "'JetBrains Mono', 'SF Mono', 'Consolas', monospace".to_string(),
-                font_size_xs: "0.75rem".to_string(),
-                font_size_sm: "0.875rem".to_string(),
-                font_size_md: "1rem".to_string(),
-                font_size_lg: "1.125rem".to_string(),
-                font_size_xl: "1.25rem".to_string(),
-                font_weight_normal: "400".to_string(),
-                font_weight_medium: "500".to_string(),
-                font_weight_bold: "600".to_string(),
-            },
-            borders: ThemeBorders {
-                radius_none: "0".to_string(),
-                radius_sm: "0.25rem".to_string(),
-                radius_md: "0.5rem".to_string(),
-                radius_lg: "0.75rem".to_string(),
-                radius_full: "9999px".to_string(),
-                width_thin: "1px".to_string(),
-                width_medium: "1px".to_string(),
-                width_thick: "2px".to_string(),
-            },
-            effects: ThemeEffects {
-                shadow_sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)".to_string(),
-                shadow_md: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
-                    .to_string(),
-                shadow_lg:
-                    "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)"
-                        .to_string(),
-                glow_primary: "0 0 0 3px rgba(59, 130, 246, 0.1)".to_string(),
-                glow_accent: "0 0 0 3px rgba(139, 92, 246, 0.1)".to_string(),
-                blur_sm: "blur(4px)".to_string(),
-                blur_md: "blur(8px)".to_string(),
-            },
-            animations: ThemeAnimations {
-                duration_fast: "150ms".to_string(),
-                duration_medium: "200ms".to_string(),
-                duration_slow: "300ms".to_string(),
-                easing_default: "cubic-bezier(0.4, 0, 0.2, 1)".to_string(),
-                easing_bounce: "cubic-bezier(0.34, 1.56, 0.64, 1)".to_string(),
-                easing_smooth: "cubic-bezier(0.25, 0.46, 0.45, 0.94)".to_string(),
-            },
-            decorative: ThemeDecorative {
-                corner_decorations: false,
-                glow_effects: false,
-                scan_lines: false,
-                noise_overlay: false,
-                hexagonal_elements: false,
-                terminal_cursor: false,
-                floating_particles: false,
-                angular_borders: false,
-                matrix_rain: false,
-                holographic_effects: false,
-            },
-            loaders: LoaderStyles {
-                primary_type: "spinner".to_string(),
-                button_loader: "inline-spinner".to_string(),
-                page_loader: "minimal".to_string(),
-            },
-        }
-    }
-
     fn default_spacing() -> ThemeSpacing {
         ThemeSpacing {
             xs: "0.25rem".to_string(),
@@ -565,14 +334,11 @@ impl Theme {
     pub fn get_theme_data_attribute(&self) -> String {
         match self.variant {
             ThemeVariant::NeonEvangelion => "neonevangelion".to_string(),
-            ThemeVariant::Gundam => "gundam".to_string(),
-            ThemeVariant::Terminal => "terminal".to_string(),
-            ThemeVariant::ModernUI => "modern-ui".to_string(),
         }
     }
 }
 
-pub static CURRENT_THEME: GlobalSignal<Theme> = GlobalSignal::new(|| Theme::modern_ui());
+pub static CURRENT_THEME: GlobalSignal<Theme> = GlobalSignal::new(|| Theme::neon_evangelion());
 
 #[component]
 pub fn ThemeProvider(children: Element) -> Element {
@@ -582,9 +348,6 @@ pub fn ThemeProvider(children: Element) -> Element {
     use_effect(use_reactive((&theme.variant,), move |(variant,)| {
         let theme_attr = match variant {
             ThemeVariant::NeonEvangelion => "neonevangelion",
-            ThemeVariant::Gundam => "gundam",
-            ThemeVariant::Terminal => "terminal",
-            ThemeVariant::ModernUI => "modern-ui",
         };
 
         #[cfg(target_arch = "wasm32")]
@@ -623,9 +386,6 @@ pub fn switch_theme(theme_variant: ThemeVariant) {
 
     let new_theme = match theme_variant {
         ThemeVariant::NeonEvangelion => Theme::neon_evangelion(),
-        ThemeVariant::Gundam => Theme::gundam(),
-        ThemeVariant::Terminal => Theme::terminal(),
-        ThemeVariant::ModernUI => Theme::modern_ui(),
     };
 
     dioxus::logger::tracing::info!("Updating CURRENT_THEME to: {}", new_theme.name);
@@ -661,9 +421,6 @@ pub fn ThemeSwitcher() -> Element {
                 class: "select",
                 value: match current_theme.variant {
                     ThemeVariant::NeonEvangelion => "neonevangelion",
-                    ThemeVariant::Gundam => "gundam",
-                    ThemeVariant::Terminal => "terminal",
-                    ThemeVariant::ModernUI => "modern-ui",
                 },
                 onchange: move |event| {
                     let selected_value = event.data.value();
@@ -671,9 +428,6 @@ pub fn ThemeSwitcher() -> Element {
 
                     let variant = match selected_value.as_str() {
                         "neonevangelion" => ThemeVariant::NeonEvangelion,
-                        "gundam" => ThemeVariant::Gundam,
-                        "terminal" => ThemeVariant::Terminal,
-                        "modern-ui" => ThemeVariant::ModernUI,
                         _ => {
                             dioxus::logger::tracing::warn!("Unknown theme variant: {}", selected_value);
                             ThemeVariant::NeonEvangelion
@@ -685,9 +439,6 @@ pub fn ThemeSwitcher() -> Element {
                 },
 
                 option { value: "neonevangelion", "Neon Evangelion" }
-                option { value: "gundam", "Gundam Mecha" }
-                option { value: "terminal", "Terminal Hacker" }
-                option { value: "modern-ui", "Modern UI" }
             }
         }
     }
