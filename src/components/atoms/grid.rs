@@ -36,6 +36,10 @@ pub fn Grid(props: GridProps) -> Element {
     let style = style_parts.join("; ") + ";";
 
     rsx! {
-        div { style: "{style}", class: "{props.class}", {props.children} }
+        div {
+            style: "{style}",
+            class: props.class.as_deref().unwrap_or(""),
+            {props.children}
+        }
     }
 }

@@ -346,9 +346,11 @@ pub fn ThemeProvider(children: Element) -> Element {
 
     // Apply theme to document body as well - this needs to be reactive
     use_effect(use_reactive((&theme.variant,), move |(variant,)| {
+        let current_theme = CURRENT_THEME.read();
         let theme_attr = match variant {
             ThemeVariant::NeonEvangelion => "neonevangelion",
         };
+        let css_variables = current_theme.to_css_variables();
 
         #[cfg(target_arch = "wasm32")]
         {
@@ -357,8 +359,26 @@ pub fn ThemeProvider(children: Element) -> Element {
                 r#"
                 document.body.setAttribute('data-theme', '{}');
                 document.body.className = '{}-theme';
+
+                // Apply CSS variables to root
+                const root = document.documentElement;
+                const variables = `{}`;
+                const tempStyle = document.createElement('style');
+                tempStyle.textContent = `:root {{ ${{variables}} }}`;
+
+                // Remove previous theme styles
+                const existingThemeStyle = document.getElementById('theme-variables');
+                if (existingThemeStyle) {{
+                    existingThemeStyle.remove();
+                }}
+
+                // Add new theme styles
+                tempStyle.id = 'theme-variables';
+                document.head.appendChild(tempStyle);
                 "#,
-                theme_attr, theme_attr
+                theme_attr,
+                theme_attr,
+                css_variables.replace('\n', "\\n").replace('"', "\\\"")
             ));
             let _ = js;
         }
@@ -372,6 +392,12 @@ pub fn ThemeProvider(children: Element) -> Element {
             "data-glow": if theme.decorative.glow_effects { "true" } else { "false" },
             "data-scan-lines": if theme.decorative.scan_lines { "true" } else { "false" },
             "data-matrix": if theme.decorative.matrix_rain { "true" } else { "false" },
+            "data-hexagonal": if theme.decorative.hexagonal_elements { "true" } else { "false" },
+            "data-terminal-cursor": if theme.decorative.terminal_cursor { "true" } else { "false" },
+            "data-floating-particles": if theme.decorative.floating_particles { "true" } else { "false" },
+            "data-angular-borders": if theme.decorative.angular_borders { "true" } else { "false" },
+            "data-holographic": if theme.decorative.holographic_effects { "true" } else { "false" },
+            "data-noise-overlay": if theme.decorative.noise_overlay { "true" } else { "false" },
             {children}
         }
     }

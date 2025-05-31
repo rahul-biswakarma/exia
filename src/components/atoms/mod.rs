@@ -8,6 +8,8 @@ pub mod collapsible;
 pub mod context_menu;
 pub mod dialog;
 pub mod dropdown_menu;
+pub mod flex;
+pub mod grid;
 pub mod hover_card;
 pub mod label;
 pub mod loader;
@@ -26,7 +28,15 @@ pub mod toggle;
 pub mod toggle_group;
 pub mod tooltip;
 
+// Theme wrapper utilities
+pub mod theme_wrappers;
+
 // Re-export components for easier imports
 pub use button::{Button, ButtonSize, ButtonVariant};
 pub use card::{Card, CardContent, CardFooter, CardHeader};
 pub use loader::{InlineLoader, Loader, LoaderSize, LoaderType, PageLoader};
+
+// Re-export theme-aware wrappers
+pub use theme_wrappers::{
+    ThemedButton, ThemedCard, ThemedInlineLoader, ThemedLoader, ThemedPageLoader,
+};

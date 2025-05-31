@@ -2,7 +2,6 @@ use crate::action_executor::ActionExecutor;
 use crate::components::synapse::ui::handle_element_click;
 use dioxus::prelude::*;
 use serde_json::json;
-use serde_json::Value;
 
 #[component]
 pub fn UIRenderer(

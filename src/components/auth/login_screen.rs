@@ -1,6 +1,6 @@
 use crate::auth::use_auth_actions;
 use crate::components::atoms::{Button, ButtonVariant, Card, CardContent, CardHeader};
-use crate::components::auth::*;
+use crate::components::auth::constants::*;
 use crate::contexts::theme::ThemeSwitcher;
 use dioxus::prelude::*;
 
@@ -32,8 +32,8 @@ pub fn LoginScreen(show_auth_modal: Signal<bool>) -> Element {
         div { class: "login-container",
             Card {
                 class: "login-card",
-                with_decorations: true,
-                with_glow: true,
+                decorated: true,
+                glow: true,
                 CardHeader {
                     div { class: "login-header",
                         h1 { class: "app-title", "🧠 Exia" }
@@ -159,7 +159,7 @@ fn render_auth_button(
             disabled: ReadOnlySignal::new(is_loading),
             loading: ReadOnlySignal::new(is_loading),
             onclick: move |_| handle_auth(()),
-            with_glow: true,
+            glow: true,
 
             if is_login_mode() {
                 "{SIGN_IN_TEXT}"

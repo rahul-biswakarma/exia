@@ -116,7 +116,7 @@ impl VectorSearchClient {
             };
 
             // Retry search up to 3 times to handle HTTP/2 connection issues
-            let mut last_error = None;
+            let mut _last_error = None;
             for attempt in 1..=3 {
                 match qdrant_client.search_points(search_points.clone()).await {
                     Ok(search_result) => {
@@ -171,7 +171,7 @@ impl VectorSearchClient {
                             "Vector search failed in {} (attempt {}): {}",
                             collection, attempt, e
                         );
-                        last_error = Some(error_msg.clone());
+                        _last_error = Some(error_msg.clone());
 
                         // Check for specific error types and provide better messaging
                         let error_str = e.to_string();

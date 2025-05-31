@@ -1,4 +1,3 @@
-use crate::contexts::theme::{use_theme, ThemeVariant};
 use dioxus::prelude::*;
 
 #[derive(Props, Clone, PartialEq)]
@@ -11,13 +10,17 @@ pub struct ButtonProps {
     #[props(default = ButtonSize::Medium)]
     size: ButtonSize,
 
-    /// Enable theme-specific glow effects
+    /// Enable glow effects (controlled by theme/CSS)
     #[props(default = false)]
-    with_glow: bool,
+    glow: bool,
 
-    /// Enable theme-specific decorations
+    /// Enable decorations (controlled by theme/CSS)
     #[props(default = false)]
-    with_decorations: bool,
+    decorated: bool,
+
+    /// Loading state text override
+    #[props(default)]
+    loading_text: Option<String>,
 
     /// CSS class names to apply
     #[props(default)]
@@ -58,7 +61,6 @@ pub enum ButtonSize {
 
 #[component]
 pub fn Button(props: ButtonProps) -> Element {
-    let theme = use_theme();
     let mut classes = vec!["btn"];
 
     // Add variant classes
@@ -79,15 +81,13 @@ pub fn Button(props: ButtonProps) -> Element {
         ButtonSize::Large => classes.push("btn-lg"),
     }
 
-    // Add theme-specific classes
-    if props.with_glow && theme.decorative.glow_effects {
+    // Add feature classes (theme-controlled via CSS)
+    if props.glow {
         classes.push("btn-glow");
     }
 
-    if props.with_decorations {
-        match theme.variant {
-            ThemeVariant::NeonEvangelion => classes.push("neon-glow"),
-        }
+    if props.decorated {
+        classes.push("btn-decorated");
     }
 
     // Add state classes
@@ -96,7 +96,7 @@ pub fn Button(props: ButtonProps) -> Element {
     }
 
     if *props.disabled.read() {
-        classes.push("disabled");
+        classes.push("btn-disabled");
     }
 
     if *props.loading.read() {
@@ -105,30 +105,24 @@ pub fn Button(props: ButtonProps) -> Element {
 
     let final_class = classes.join(" ");
 
-    // Get theme-specific loader type
-    let loader_type = if *props.loading.read() {
-        Some(theme.loaders.button_loader.clone())
-    } else {
-        None
-    };
-
     rsx! {
         button {
             class: final_class,
             disabled: *props.disabled.read() || *props.loading.read(),
             onclick: props.onclick,
-            "data-loader": loader_type.as_deref().unwrap_or(""),
-            "data-theme": theme.get_theme_data_attribute(),
             ..props.attributes,
 
             if !*props.loading.read() {
                 {props.children}
             } else {
-                // Show loading content based on theme
-                match theme.variant {
-                    ThemeVariant::NeonEvangelion => rsx! {
-                        span { class: "neon-text", "PROCESSING..." }
-                    },
+                // Show loading content - theme controls appearance via CSS
+                span {
+                    class: "btn-loading-content",
+                    if let Some(text) = &props.loading_text {
+                        "{text}"
+                    } else {
+                        span { class: "btn-loading-default", "Loading..." }
+                    }
                 }
             }
         }

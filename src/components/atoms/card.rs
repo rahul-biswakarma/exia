@@ -1,15 +1,14 @@
-use crate::contexts::theme::{use_theme, ThemeVariant};
 use dioxus::prelude::*;
 
 #[derive(Props, Clone, PartialEq)]
 pub struct CardProps {
-    /// Enable theme-specific decorations
+    /// Enable decorations (controlled by theme/CSS)
     #[props(default = false)]
-    with_decorations: bool,
+    decorated: bool,
 
-    /// Enable theme-specific glow effects
+    /// Enable glow effects (controlled by theme/CSS)
     #[props(default = false)]
-    with_glow: bool,
+    glow: bool,
 
     /// Enable hover animations
     #[props(default = true)]
@@ -27,29 +26,21 @@ pub struct CardProps {
 
 #[component]
 pub fn Card(props: CardProps) -> Element {
-    let theme = use_theme();
     let mut classes = vec!["card"];
 
-    // Add theme-specific decoration classes
-    if props.with_decorations && theme.decorative.corner_decorations {
-        classes.push("decorated");
-
-        match theme.variant {
-            ThemeVariant::NeonEvangelion => classes.push("neon-decorated"),
-        }
+    // Add feature classes (theme-controlled via CSS)
+    if props.decorated {
+        classes.push("card-decorated");
     }
 
-    // Add glow effects if enabled in theme
-    if props.with_glow && theme.decorative.glow_effects {
-        classes.push("glow");
+    if props.glow {
+        classes.push("card-glow");
     }
 
     // Add hover effects
     if props.hoverable {
-        classes.push("hoverable");
+        classes.push("card-hoverable");
     }
-
-    // Add theme-specific shape classes - removed since only NeonEvangelion doesn't use hexagonal elements
 
     if let Some(class) = &props.class {
         classes.push(class);
@@ -60,9 +51,6 @@ pub fn Card(props: CardProps) -> Element {
     rsx! {
         div {
             class: final_class,
-            "data-theme": theme.get_theme_data_attribute(),
-            "data-decorations": if props.with_decorations { "true" } else { "false" },
-            "data-glow": if props.with_glow { "true" } else { "false" },
             ..props.attributes,
             {props.children}
         }

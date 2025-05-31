@@ -41,7 +41,7 @@ pub fn PromptInput(mut props: PromptInputProps) -> Element {
                 // Generate Button
                 Button {
                     variant: crate::components::atoms::ButtonVariant::Primary,
-                    with_glow: true,
+                    glow: true,
                     disabled: use_signal(move || props.is_generating.read().clone() || props.prompt.read().trim().is_empty()),
                     loading: props.is_generating,
                     onclick: {

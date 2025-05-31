@@ -91,6 +91,10 @@ pub fn Flex(props: FlexProps) -> Element {
     let style = style_parts.join("; ") + ";";
 
     rsx!(
-        div { style: "{style}", class: "{props.class}", {props.children} }
+        div {
+            style: "{style}",
+            class: props.class.as_deref().unwrap_or(""),
+            {props.children}
+        }
     )
 }
