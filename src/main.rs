@@ -21,6 +21,16 @@ use supabase::{
     SupabaseClient, SupabaseConfig,
 };
 
+// Constants for better maintainability
+const LOADING_TEXT: &str = "Loading...";
+const SIGN_IN_TEXT: &str = "Sign In";
+const SIGN_UP_TEXT: &str = "Sign Up";
+const EMPTY_FIELDS_ERROR: &str = "Please fill in all fields";
+const SIGN_IN_SUBTITLE: &str = "Sign in to continue";
+const SIGN_UP_SUBTITLE: &str = "Create your account";
+const NO_ACCOUNT_TEXT: &str = "Don't have an account? Sign up";
+const HAVE_ACCOUNT_TEXT: &str = "Already have an account? Sign in";
+
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
 enum Route {
@@ -87,7 +97,7 @@ fn AuthGuard() -> Element {
             div { class: "min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50",
                 div { class: "text-center",
                     div { class: "animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4" }
-                    p { class: "text-gray-600", "Loading..." }
+                    p { class: "text-gray-600", "{LOADING_TEXT}" }
                 }
             }
         };
@@ -110,16 +120,16 @@ fn AuthGuard() -> Element {
 #[component]
 fn LoginScreen(show_auth_modal: Signal<bool>) -> Element {
     let auth_actions = use_auth_actions();
-    let auth_actions_for_button = auth_actions.clone();
     let mut email = use_signal(String::new);
     let mut password = use_signal(String::new);
     let mut is_login_mode = use_signal(|| true);
     let mut error_message = use_signal(|| None::<String>);
-    let mut is_loading = use_signal(|| false);
+    let is_loading = use_signal(|| false);
 
-    let handle_submit = move |_: Event<FormData>| {
+    // Extract the authentication logic into a reusable function
+    let handle_auth = use_callback(move |_| {
         if email().trim().is_empty() || password().trim().is_empty() {
-            error_message.set(Some("Please fill in all fields".to_string()));
+            error_message.set(Some(EMPTY_FIELDS_ERROR.to_string()));
             return;
         }
 
@@ -148,6 +158,11 @@ fn LoginScreen(show_auth_modal: Signal<bool>) -> Element {
             }
             is_loading.set(false);
         });
+    });
+
+    let handle_submit = move |evt: Event<FormData>| {
+        evt.prevent_default();
+        handle_auth(());
     };
 
     rsx! {
@@ -161,19 +176,16 @@ fn LoginScreen(show_auth_modal: Signal<bool>) -> Element {
                         h1 { class: "app-title", "🧠 Exia" }
                         p { class: "login-subtitle",
                             if is_login_mode() {
-                                "Sign in to continue"
+                                "{SIGN_IN_SUBTITLE}"
                             } else {
-                                "Create your account"
+                                "{SIGN_UP_SUBTITLE}"
                             }
                         }
                     }
                 }
 
                 CardContent {
-                    form {
-                        onsubmit: handle_submit,
-                        prevent_default: "onsubmit",
-                        class: "login-form",
+                    form { onsubmit: handle_submit, class: "login-form",
 
                         div { class: "form-group",
                             label { class: "form-label", "Email" }
@@ -210,43 +222,13 @@ fn LoginScreen(show_auth_modal: Signal<bool>) -> Element {
                             class: "login-button",
                             disabled: ReadOnlySignal::new(is_loading),
                             loading: ReadOnlySignal::new(is_loading),
-                            onclick: {
-                                let auth_actions = auth_actions_for_button.clone();
-                                move |_| {
-                                    if email().trim().is_empty() || password().trim().is_empty() {
-                                        error_message.set(Some("Please fill in all fields".to_string()));
-                                        return;
-                                    }
-                                    let email_val = email().clone();
-                                    let password_val = password().clone();
-                                    let auth_actions = auth_actions.clone();
-                                    let mut error_message = error_message.clone();
-                                    let mut is_loading = is_loading.clone();
-                                    let is_login = is_login_mode();
-                                    spawn(async move {
-                                        is_loading.set(true);
-                                        error_message.set(None);
-                                        let result = if is_login {
-                                            auth_actions.sign_in(&email_val, &password_val).await
-                                        } else {
-                                            auth_actions.sign_up(&email_val, &password_val).await
-                                        };
-                                        match result {
-                                            Ok(_) => {}
-                                            Err(e) => {
-                                                error_message.set(Some(e));
-                                            }
-                                        }
-                                        is_loading.set(false);
-                                    });
-                                }
-                            },
+                            onclick: move |_| handle_auth(()),
                             with_glow: true,
 
                             if is_login_mode() {
-                                "Sign In"
+                                "{SIGN_IN_TEXT}"
                             } else {
-                                "Sign Up"
+                                "{SIGN_UP_TEXT}"
                             }
                         }
                     }
@@ -257,9 +239,9 @@ fn LoginScreen(show_auth_modal: Signal<bool>) -> Element {
                             onclick: move |_| is_login_mode.set(!is_login_mode()),
 
                             if is_login_mode() {
-                                "Don't have an account? Sign up"
+                                "{NO_ACCOUNT_TEXT}"
                             } else {
-                                "Already have an account? Sign in"
+                                "{HAVE_ACCOUNT_TEXT}"
                             }
                         }
                     }
