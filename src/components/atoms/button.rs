@@ -63,25 +63,25 @@ pub fn Button(props: ButtonProps) -> Element {
 
     // Add variant classes
     match props.variant {
-        ButtonVariant::Primary => classes.push("primary"),
-        ButtonVariant::Secondary => classes.push("secondary"),
-        ButtonVariant::Outline => classes.push("outline"),
-        ButtonVariant::Ghost => classes.push("ghost"),
-        ButtonVariant::Success => classes.push("success"),
-        ButtonVariant::Warning => classes.push("warning"),
-        ButtonVariant::Error => classes.push("error"),
+        ButtonVariant::Primary => classes.push("btn-primary"),
+        ButtonVariant::Secondary => classes.push("btn-secondary"),
+        ButtonVariant::Outline => classes.push("btn-outline"),
+        ButtonVariant::Ghost => classes.push("btn-ghost"),
+        ButtonVariant::Success => classes.push("btn-success"),
+        ButtonVariant::Warning => classes.push("btn-warning"),
+        ButtonVariant::Error => classes.push("btn-error"),
     }
 
     // Add size classes
     match props.size {
-        ButtonSize::Small => classes.push("small"),
+        ButtonSize::Small => classes.push("btn-sm"),
         ButtonSize::Medium => {} // Default size
-        ButtonSize::Large => classes.push("large"),
+        ButtonSize::Large => classes.push("btn-lg"),
     }
 
     // Add theme-specific classes
     if props.with_glow && theme.decorative.glow_effects {
-        classes.push("glow");
+        classes.push("btn-glow");
     }
 
     if props.with_decorations {
@@ -103,7 +103,7 @@ pub fn Button(props: ButtonProps) -> Element {
     }
 
     if *props.loading.read() {
-        classes.push("loading");
+        classes.push("btn-loading");
     }
 
     let final_class = classes.join(" ");

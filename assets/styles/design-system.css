@@ -1,3 +1,24 @@
+/* TEST STYLES - Remove these once themes work */
+.login-container {
+  background-color: red !important;
+  color: white !important;
+}
+
+.btn {
+  background-color: blue !important;
+  color: white !important;
+  padding: 12px 24px !important;
+  border: none !important;
+  border-radius: 8px !important;
+}
+
+.input {
+  background-color: #f0f0f0 !important;
+  border: 2px solid #333 !important;
+  padding: 12px !important;
+  border-radius: 6px !important;
+}
+
 /* =========================
    EXIA DESIGN SYSTEM
    Advanced Theming System with Decorative Elements

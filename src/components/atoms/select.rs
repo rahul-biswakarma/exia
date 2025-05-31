@@ -86,6 +86,7 @@ pub fn Select(props: SelectProps) -> Element {
         select {
             // Standard HTML attributes
             id: id_value,
+            class: "select",
             name: props.name,
             disabled: (props.disabled)(),
             required: (props.required)(),

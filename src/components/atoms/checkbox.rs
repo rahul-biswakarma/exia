@@ -94,6 +94,7 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
     rsx! {
         button {
             r#type: "button",
+            class: "checkbox",
             value: props.value,
             role: "checkbox",
             aria_checked: checked().to_aria_checked(),

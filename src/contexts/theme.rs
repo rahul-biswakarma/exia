@@ -564,7 +564,7 @@ impl Theme {
 
     pub fn get_theme_data_attribute(&self) -> String {
         match self.variant {
-            ThemeVariant::NeonEvangelion => "neon-evangelion".to_string(),
+            ThemeVariant::NeonEvangelion => "neonevangelion".to_string(),
             ThemeVariant::Gundam => "gundam".to_string(),
             ThemeVariant::Terminal => "terminal".to_string(),
             ThemeVariant::ModernUI => "modern-ui".to_string(),
@@ -577,6 +577,24 @@ pub static CURRENT_THEME: GlobalSignal<Theme> = GlobalSignal::new(|| Theme::mode
 #[component]
 pub fn ThemeProvider(children: Element) -> Element {
     let theme = CURRENT_THEME.read();
+    let theme_clone = theme.clone();
+
+    // Apply theme to document body as well
+    use_effect(move || {
+        let theme_attr = theme_clone.get_theme_data_attribute();
+        #[cfg(target_arch = "wasm32")]
+        {
+            use dioxus::document::eval;
+            let js = eval(&format!(
+                r#"
+                document.body.setAttribute('data-theme', '{}');
+                document.body.className = '{}-theme';
+                "#,
+                theme_attr, theme_attr
+            ));
+            let _ = js;
+        }
+    });
 
     rsx! {
         style {
@@ -606,6 +624,21 @@ pub fn switch_theme(theme_variant: ThemeVariant) {
         ThemeVariant::ModernUI => Theme::modern_ui(),
     };
     *CURRENT_THEME.write() = new_theme;
+
+    // Update document body for web platform
+    #[cfg(target_arch = "wasm32")]
+    {
+        use dioxus::document::eval;
+        let theme_attr = new_theme.get_theme_data_attribute();
+        let js = eval(&format!(
+            r#"
+            document.body.setAttribute('data-theme', '{}');
+            document.body.className = '{}-theme';
+            "#,
+            theme_attr, theme_attr
+        ));
+        let _ = js;
+    }
 }
 
 #[component]
@@ -616,14 +649,16 @@ pub fn ThemeSwitcher() -> Element {
         div { class: "theme-switcher",
             label { "Theme: " }
             select {
+                class: "select",
                 value: match current_theme.variant {
-                    ThemeVariant::NeonEvangelion => "neon-evangelion",
+                    ThemeVariant::NeonEvangelion => "neonevangelion",
                     ThemeVariant::Gundam => "gundam",
                     ThemeVariant::Terminal => "terminal",
                     ThemeVariant::ModernUI => "modern-ui",
                 },
                 onchange: move |event| {
                     let variant = match event.data.value().as_str() {
+                        "neonevangelion" => ThemeVariant::NeonEvangelion,
                         "gundam" => ThemeVariant::Gundam,
                         "terminal" => ThemeVariant::Terminal,
                         "modern-ui" => ThemeVariant::ModernUI,
@@ -632,7 +667,7 @@ pub fn ThemeSwitcher() -> Element {
                     switch_theme(variant);
                 },
 
-                option { value: "neon-evangelion", "Neon Evangelion" }
+                option { value: "neonevangelion", "Neon Evangelion" }
                 option { value: "gundam", "Gundam Mecha" }
                 option { value: "terminal", "Terminal Hacker" }
                 option { value: "modern-ui", "Modern UI" }
