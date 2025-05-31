@@ -1,9 +1,9 @@
 #![recursion_limit = "256"]
 
 pub mod action_executor;
+pub mod auth;
 pub mod components;
 pub mod contexts;
-pub mod supabase;
 pub mod utils;
 
 #[cfg(test)]

@@ -6,11 +6,7 @@
     "dioxus",
     "onclick",
     "oninput",
-    "onsubmit",
-    "Supabase"
-  ],
-  "deno.enablePaths": [
-    "supabase/functions"
+    "onsubmit"
   ],
   "deno.lint": true,
   "deno.unstable": [

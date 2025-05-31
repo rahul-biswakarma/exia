@@ -1,9 +1,9 @@
 use crate::components::app::App;
 
 mod action_executor;
+mod auth;
 mod components;
 mod contexts;
-mod supabase;
 mod utils;
 
 fn main() {

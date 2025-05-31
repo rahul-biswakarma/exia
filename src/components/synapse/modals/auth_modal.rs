@@ -1,4 +1,4 @@
-use crate::supabase::auth::AuthActions;
+use crate::auth::AuthActions;
 use dioxus::prelude::*;
 
 #[derive(Props, Clone, PartialEq)]

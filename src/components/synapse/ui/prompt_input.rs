@@ -1,6 +1,6 @@
 use crate::action_executor::ActionExecutor;
+use crate::auth::use_auth;
 use crate::components::synapse::core::{apply_ui_schema_to_executor, generate_ui_with_llm};
-use crate::supabase::auth::use_auth;
 use dioxus::prelude::*;
 
 #[derive(Props, Clone, PartialEq)]

@@ -1,7 +1,7 @@
+use crate::auth::use_auth_actions;
 use crate::components::atoms::{Button, ButtonVariant, Card, CardContent, CardHeader};
 use crate::components::auth::*;
 use crate::contexts::theme::ThemeSwitcher;
-use crate::supabase::auth::use_auth_actions;
 use dioxus::prelude::*;
 
 #[component]
@@ -69,7 +69,7 @@ fn create_auth_handler(
     is_login_mode: Signal<bool>,
     mut error_message: Signal<Option<String>>,
     mut is_loading: Signal<bool>,
-    auth_actions: crate::supabase::auth::AuthActions,
+    auth_actions: crate::auth::AuthActions,
 ) -> Callback<()> {
     use_callback(move |_| {
         if email().trim().is_empty() || password().trim().is_empty() {
