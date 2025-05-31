@@ -572,7 +572,7 @@ impl Theme {
     }
 }
 
-pub static CURRENT_THEME: GlobalSignal<Theme> = GlobalSignal::new(|| Theme::neon_evangelion());
+pub static CURRENT_THEME: GlobalSignal<Theme> = GlobalSignal::new(|| Theme::modern_ui());
 
 #[component]
 pub fn ThemeProvider(children: Element) -> Element {

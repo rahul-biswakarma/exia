@@ -1,13 +1,13 @@
 use crate::action_executor::ActionExecutor;
 use crate::components::synapse::core::{apply_ui_schema_to_executor, generate_ui_with_llm};
-use crate::supabase::{auth::use_auth, database::AnalyticsService};
+use crate::supabase::auth::use_auth;
 use dioxus::prelude::*;
 
 #[derive(Props, Clone, PartialEq)]
 pub struct PromptInputProps {
     pub prompt: Signal<String>,
     pub generated_ui: Signal<Option<serde_json::Value>>,
-    pub save_modal_open: Signal<bool>,
+    pub show_save_modal: Signal<bool>,
     pub is_generating: Signal<bool>,
     pub error_message: Signal<Option<String>>,
     pub action_executor: Signal<ActionExecutor>,
@@ -65,24 +65,7 @@ pub fn PromptInput(mut props: PromptInputProps) -> Element {
                                     Ok(ui_schema) => {
                                         generated_ui.set(Some(ui_schema.clone()));
                                         match apply_ui_schema_to_executor(&mut action_executor.write(), &ui_schema) {
-                                            Ok(_) => {
-                                                let auth_read = auth.read();
-                                                if let Some(user_id) = auth_read.get_user_id() {
-                                                    let client = auth_read.client.clone();
-                                                    let user_id = user_id.to_string();
-                                                    drop(auth_read);
-                                                    spawn(async move {
-                                                        if let Err(e) = AnalyticsService::track_schema_generation(
-                                                            &client,
-                                                            Some(&user_id),
-                                                            &prompt_text,
-                                                            None,
-                                                        ).await {
-                                                            tracing::error!("Failed to log analytics: {}", e);
-                                                        }
-                                                    });
-                                                }
-                                            }
+                                            Ok(_) => {}
                                             Err(e) => {
                                                 error_message.set(Some(format!("Error applying UI: {}", e)))
                                             }
@@ -109,7 +92,7 @@ pub fn PromptInput(mut props: PromptInputProps) -> Element {
                 if (props.generated_ui)().is_some() {
                     button {
                         class: "px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors",
-                        onclick: move |_| props.save_modal_open.set(true),
+                        onclick: move |_| props.show_save_modal.set(true),
                         "💾 Save"
                     }
                 }

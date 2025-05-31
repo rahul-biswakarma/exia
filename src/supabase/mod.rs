@@ -2,8 +2,6 @@ use serde::{Deserialize, Serialize};
 
 pub mod auth;
 pub mod client;
-pub mod database;
-pub mod storage;
 
 pub use client::SupabaseClient;
 
@@ -28,20 +26,6 @@ impl SupabaseConfig {
 
         Ok(Self::new(url, anon_key))
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UISchema {
-    pub id: Option<String>,
-    pub user_id: Option<String>,
-    pub title: String,
-    pub description: Option<String>,
-    pub prompt: String,
-    pub schema_data: serde_json::Value,
-    pub is_public: bool,
-    pub tags: Vec<String>,
-    pub created_at: Option<String>,
-    pub updated_at: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

@@ -1,6 +1,6 @@
 use crate::action_executor::ActionExecutor;
 use crate::components::synapse::core::{apply_ui_schema_to_executor, generate_ui_with_llm};
-use crate::supabase::{auth::use_auth, database::AnalyticsService};
+use crate::supabase::auth::use_auth;
 use dioxus::prelude::*;
 
 #[derive(Props, Clone, PartialEq)]
@@ -68,32 +68,15 @@ pub fn GenerateUISection(mut props: GenerateUISectionProps) -> Element {
                             match generate_ui_with_llm(&prompt_text).await {
                                 Ok(ui_schema) => {
                                     generated_ui.set(Some(ui_schema.clone()));
-                                    match apply_ui_schema_to_executor(
-                                        &mut action_executor.write(),
-                                        &ui_schema,
-                                    ) {
-                                        Ok(_) => {
-                                            let auth_read = auth.read();
-                                            let client = auth_read.client.clone();
-                                            let user_id = auth_read
-                                                .get_user_id()
-                                                .map(|id| id.to_string());
-                                            drop(auth_read);
-                                            if let Err(e) = AnalyticsService::track_schema_generation(
-                                                    &client,
-                                                    user_id.as_deref(),
-                                                    &prompt_text,
-                                                    None,
-                                                )
-                                                .await
-                                            {
-                                                tracing::warn!("Failed to track analytics: {}", e);
+                                                                            match apply_ui_schema_to_executor(
+                                            &mut action_executor.write(),
+                                            &ui_schema,
+                                        ) {
+                                            Ok(_) => {}
+                                            Err(e) => {
+                                                error_message.set(Some(format!("Error applying UI: {}", e)))
                                             }
                                         }
-                                        Err(e) => {
-                                            error_message.set(Some(format!("Error applying UI: {}", e)))
-                                        }
-                                    }
                                 }
                                 Err(e) => {
                                     error_message.set(Some(e));
