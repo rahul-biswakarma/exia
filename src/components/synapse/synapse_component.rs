@@ -3,6 +3,7 @@ use super::{
     ui::{PromptInput, SamplePrompts, SavedSchemas, SynapseHeader, UIPreview},
 };
 use crate::action_executor::*;
+use crate::contexts::theme::ThemeSwitcher;
 use dioxus::prelude::*;
 use std::collections::HashMap;
 
@@ -26,15 +27,23 @@ pub fn Synapse() -> Element {
     });
 
     rsx! {
-        div { class: "min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-6",
+        div {
+            class: "min-h-screen p-6",
+            style: "background: var(--color-background);",
             div { class: "max-w-7xl mx-auto",
                 SynapseHeader {}
 
                 if let Some(message) = success_message() {
-                    div { class: "mb-6 p-4 bg-green-50 border border-green-200 rounded-lg",
-                        p { class: "text-green-700", "{message}" }
+                    div {
+                        class: "mb-6 p-4 rounded-lg",
+                        style: "background: var(--color-success); color: var(--color-text); border: 1px solid var(--color-border);",
+                        p {
+                            style: "color: var(--color-text);",
+                            "{message}"
+                        }
                         button {
-                            class: "mt-2 text-sm text-green-600 hover:text-green-800",
+                            class: "mt-2 text-sm",
+                            style: "color: var(--color-text-secondary);",
                             onclick: move |_| success_message.set(None),
                             "Dismiss"
                         }
@@ -57,11 +66,17 @@ pub fn Synapse() -> Element {
                         SavedSchemas {}
 
                         if let Some(ui_schema) = generated_ui() {
-                            div { class: "bg-white rounded-xl shadow-lg p-6",
-                                h3 { class: "text-lg font-semibold text-gray-800 mb-4",
+                            div {
+                                class: "rounded-xl shadow-lg p-6",
+                                style: "background: var(--color-surface); border: 1px solid var(--color-border);",
+                                h3 {
+                                    class: "text-lg font-semibold mb-4",
+                                    style: "color: var(--color-text);",
                                     "🔍 Generated Schema"
                                 }
-                                pre { class: "bg-gray-50 p-4 rounded-lg text-xs overflow-auto max-h-64",
+                                pre {
+                                    class: "p-4 rounded-lg text-xs overflow-auto max-h-64",
+                                    style: "background: var(--color-background); color: var(--color-text);",
                                     code {
                                         "{serde_json::to_string_pretty(&ui_schema).unwrap_or_default()}"
                                     }
@@ -80,6 +95,8 @@ pub fn Synapse() -> Element {
                     generated_ui,
                     prompt,
                 }
+
+                div { class: "theme-switcher-container", ThemeSwitcher {} }
             }
         }
     }

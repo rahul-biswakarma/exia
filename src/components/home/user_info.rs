@@ -15,11 +15,12 @@ pub fn UserInfo() -> Element {
 
     rsx! {
         div { class: "flex items-center gap-4",
-            span { class: "text-sm text-gray-600",
+            span { class: "text-sm",
+                style: "color: var(--color-text-secondary);",
                 "Welcome, {auth.read().get_user_email().unwrap_or(\"User\")}"
             }
             button {
-                class: "px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors",
+                class: "btn btn-secondary px-4 py-2 text-sm rounded-lg",
                 onclick: handle_sign_out,
                 "Sign Out"
             }

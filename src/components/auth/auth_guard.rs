@@ -1,6 +1,7 @@
 use crate::auth::{use_auth, use_auth_actions};
 use crate::components::app::Route;
 use crate::components::auth::{LoginScreen, LOADING_TEXT};
+use crate::contexts::theme::use_theme;
 use dioxus::prelude::*;
 
 #[component]
@@ -8,6 +9,7 @@ pub fn AuthGuard() -> Element {
     let auth = use_auth();
     let auth_actions = use_auth_actions();
     let mut show_auth_modal = use_signal(|| false);
+    let theme = use_theme();
 
     use_effect({
         let auth_actions = auth_actions.clone();
@@ -42,6 +44,14 @@ pub fn AuthGuard() -> Element {
     drop(auth_read);
 
     rsx! {
-        Router::<Route> {}
+        div {
+            class: format!("{}-theme", theme.get_theme_data_attribute()),
+            "data-theme": theme.get_theme_data_attribute(),
+            "data-decorations": if theme.decorative.corner_decorations { "true" } else { "false" },
+            "data-glow": if theme.decorative.glow_effects { "true" } else { "false" },
+            "data-scan-lines": if theme.decorative.scan_lines { "true" } else { "false" },
+            "data-matrix": if theme.decorative.matrix_rain { "true" } else { "false" },
+            Router::<Route> {}
+        }
     }
 }
