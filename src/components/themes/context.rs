@@ -112,6 +112,14 @@ pub struct Theme {
     pub animations: ThemeAnimations,
     pub decorative: ThemeDecorative,
     pub loaders: LoaderStyles,
+    pub component_texts: ComponentTexts,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ComponentTexts {
+    pub button_loading_text: String,
+    pub loader_syncing_text: String,
+    pub loader_initializing_text: String,
 }
 
 impl Theme {
@@ -175,6 +183,11 @@ impl Theme {
                 primary_type: "hexagon".to_string(),
                 button_loader: "pulse".to_string(),
                 page_loader: "full-screen".to_string(),
+            },
+            component_texts: ComponentTexts {
+                button_loading_text: "PROCESSING...".to_string(),
+                loader_syncing_text: "SYNCING...".to_string(),
+                loader_initializing_text: "INITIALIZING...".to_string(),
             },
         }
     }

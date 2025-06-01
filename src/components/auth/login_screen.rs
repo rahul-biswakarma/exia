@@ -1,7 +1,7 @@
 use crate::auth::use_auth_actions;
 use crate::components::atoms::{Button, ButtonVariant, Card, CardContent, CardHeader};
 use crate::components::auth::constants::*;
-use crate::contexts::theme::ThemeSwitcher;
+use crate::components::themes::context::ThemeSwitcher;
 use dioxus::prelude::*;
 
 #[component]

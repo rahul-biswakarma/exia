@@ -4,7 +4,7 @@ use super::{
 };
 use crate::action_executor::*;
 use crate::components::atoms::Button;
-use crate::contexts::theme::ThemeSwitcher;
+use crate::components::themes::context::ThemeSwitcher;
 use dioxus::prelude::*;
 use std::collections::HashMap;
 

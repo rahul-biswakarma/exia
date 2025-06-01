@@ -1,6 +1,6 @@
 use crate::auth::AuthContext;
 use crate::components::auth::AuthGuard;
-use crate::contexts::theme::ThemeProvider;
+use crate::components::themes::context::ThemeProvider;
 use dioxus::prelude::*;
 
 const MAIN_CSS: Asset = asset!("/assets/main.css");
