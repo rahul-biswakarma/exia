@@ -1,5 +1,5 @@
 use crate::components::home::{Navigation, UserInfo};
-use crate::contexts::theme::ThemeSwitcher;
+use crate::components::themes::context::ThemeSwitcher;
 use dioxus::prelude::*;
 
 #[component]

@@ -1,7 +1,7 @@
 use crate::auth::{use_auth, use_auth_actions};
 use crate::components::app::Route;
 use crate::components::auth::{LoginScreen, LOADING_TEXT};
-use crate::contexts::theme::use_theme;
+use crate::components::themes::context::use_theme;
 use dioxus::prelude::*;
 
 #[component]

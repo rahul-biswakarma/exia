@@ -1,9 +1,9 @@
-use crate::contexts::theme::{use_theme, ThemeVariant};
+use crate::components::themes::context::{use_theme, ThemeVariant};
 use dioxus::prelude::*;
 
-use super::button::{Button, ButtonSize, ButtonVariant};
-use super::card::Card;
-use super::loader::{InlineLoader, Loader, LoaderType, PageLoader};
+use crate::components::atoms::button::{Button, ButtonSize, ButtonVariant};
+use crate::components::atoms::card::Card;
+use crate::components::atoms::loader::{InlineLoader, Loader, LoaderType, PageLoader};
 
 /// Theme-aware Button wrapper that automatically applies theme settings
 #[derive(Props, Clone, PartialEq)]
@@ -55,15 +55,17 @@ pub fn ThemedButton(props: ThemedButtonProps) -> Element {
         .unwrap_or(theme.decorative.corner_decorations);
 
     // Get theme-specific loading text if not provided
-    let loading_text = props.loading_text.clone().or_else(|| {
-        if *props.loading.read() {
-            Some(match theme.variant {
-                ThemeVariant::NeonEvangelion => "PROCESSING...".to_string(),
-            })
-        } else {
-            None
+    let loading_text = if props.loading_text.is_some() {
+        props.loading_text.clone()
+    } else if *props.loading.read() {
+        match theme.variant {
+            ThemeVariant::NeonEvangelion => Some(theme.component_texts.button_loading_text.clone()),
+            #[allow(unreachable_patterns)] // Allows for future themes not using this
+            _ => None,
         }
-    });
+    } else {
+        None
+    };
 
     rsx! {
         Button {
@@ -136,8 +138,8 @@ pub struct ThemedLoaderProps {
     loader_type_override: Option<LoaderType>,
 
     /// Size of the loader
-    #[props(default = super::loader::LoaderSize::Medium)]
-    size: super::loader::LoaderSize,
+    #[props(default = crate::components::atoms::loader::LoaderSize::Medium)]
+    size: crate::components::atoms::loader::LoaderSize,
 
     /// Optional loading text override
     #[props(default)]
@@ -156,7 +158,7 @@ pub enum LoaderContext {
 }
 
 impl LoaderContext {
-    fn get_theme_loader_type(self, theme: &crate::contexts::theme::Theme) -> LoaderType {
+    fn get_theme_loader_type(self, theme: &crate::components::themes::context::Theme) -> LoaderType {
         match self {
             LoaderContext::Primary => match theme.loaders.primary_type.as_str() {
                 "spinner" => LoaderType::Spinner,
@@ -196,11 +198,15 @@ pub fn ThemedLoader(props: ThemedLoaderProps) -> Element {
         .unwrap_or_else(|| props.context.get_theme_loader_type(&theme));
 
     // Get theme-specific loading text if not provided
-    let loading_text = props.text.clone().or_else(|| {
-        Some(match theme.variant {
-            ThemeVariant::NeonEvangelion => "SYNCING...".to_string(),
-        })
-    });
+    let loading_text = if props.text.is_some() {
+        props.text.clone()
+    } else {
+        match theme.variant {
+            ThemeVariant::NeonEvangelion => Some(theme.component_texts.loader_syncing_text.clone()),
+            #[allow(unreachable_patterns)] // Allows for future themes not using this
+            _ => None,
+        }
+    };
 
     rsx! {
         Loader {
@@ -242,11 +248,15 @@ pub fn ThemedPageLoader(props: ThemedPageLoaderProps) -> Element {
         .unwrap_or_else(|| LoaderContext::Page.get_theme_loader_type(&theme));
 
     // Get theme-specific loading text if not provided
-    let loading_text = props.text.clone().or_else(|| {
-        Some(match theme.variant {
-            ThemeVariant::NeonEvangelion => "INITIALIZING...".to_string(),
-        })
-    });
+    let loading_text = if props.text.is_some() {
+        props.text.clone()
+    } else {
+        match theme.variant {
+            ThemeVariant::NeonEvangelion => Some(theme.component_texts.loader_initializing_text.clone()),
+            #[allow(unreachable_patterns)] // Allows for future themes not using this
+            _ => None,
+        }
+    };
 
     rsx! {
         PageLoader {
@@ -266,8 +276,8 @@ pub struct ThemedInlineLoaderProps {
     loader_type_override: Option<LoaderType>,
 
     /// Size of the inline loader
-    #[props(default = super::loader::LoaderSize::Small)]
-    size: super::loader::LoaderSize,
+    #[props(default = crate::components::atoms::loader::LoaderSize::Small)]
+    size: crate::components::atoms::loader::LoaderSize,
 
     /// CSS class names to apply
     #[props(default)]
