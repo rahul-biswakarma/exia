@@ -219,7 +219,7 @@ impl ValidationHandler for ActionExecutor {
                         return Ok(false);
                     }
                 }
-                _ => {} // custom patterns can be added here
+                _ => {}
             }
         }
         Ok(true)

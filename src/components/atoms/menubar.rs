@@ -2,12 +2,12 @@ use dioxus::prelude::*;
 
 #[derive(Clone, Copy)]
 struct MenubarContext {
-    // Currently open menu index
+
     open_menu: Signal<Option<usize>>,
     set_open_menu: Callback<Option<usize>>,
     disabled: ReadOnlySignal<bool>,
 
-    // Keyboard nav data
+
     menu_count: Signal<usize>,
     recent_focus: Signal<usize>,
     current_focus: Signal<Option<usize>>,

@@ -3,13 +3,13 @@ use std::rc::Rc;
 
 #[derive(Clone, Copy)]
 struct ToolbarCtx {
-    // State
+
     disabled: ReadOnlySignal<bool>,
 
-    // Focus management
+
     focused_index: Signal<Option<usize>>,
 
-    // Orientation
+
     horizontal: ReadOnlySignal<bool>,
 }
 
@@ -33,15 +33,15 @@ impl ToolbarCtx {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct ToolbarProps {
-    /// Whether the toolbar is disabled
+
     #[props(default)]
     disabled: ReadOnlySignal<bool>,
 
-    /// Whether the toolbar is horizontal (true) or vertical (false)
+
     #[props(default = ReadOnlySignal::new(Signal::new(true)))]
     horizontal: ReadOnlySignal<bool>,
 
-    /// ARIA label for the toolbar
+
     #[props(default)]
     aria_label: Option<String>,
 
@@ -76,14 +76,14 @@ pub fn Toolbar(props: ToolbarProps) -> Element {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct ToolbarButtonProps {
-    /// Index of the button in the toolbar
+
     index: ReadOnlySignal<usize>,
 
-    /// Whether the button is disabled
+
     #[props(default)]
     disabled: ReadOnlySignal<bool>,
 
-    /// Callback when the button is clicked
+
     #[props(default)]
     on_click: Callback<()>,
 
@@ -97,13 +97,13 @@ pub struct ToolbarButtonProps {
 pub fn ToolbarButton(props: ToolbarButtonProps) -> Element {
     let mut ctx: ToolbarCtx = use_context();
 
-    // Handle button ref for focus management
+
     let mut button_ref: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
 
-    // Check if this button is focused
+
     let is_focused = use_memo(move || ctx.is_focused((props.index)()));
 
-    // Set focus when needed
+
     use_effect(move || {
         if is_focused() {
             if let Some(md) = button_ref() {
@@ -176,12 +176,12 @@ pub fn ToolbarButton(props: ToolbarButtonProps) -> Element {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct ToolbarSeparatorProps {
-    /// Whether the separator is horizontal (true) or vertical (false)
+
     #[props(default)]
     horizontal: Option<bool>,
 
-    /// If the separator is decorative and should not be classified
-    /// as a separator to the ARIA standard.
+
+
     #[props(default = false)]
     decorative: bool,
 
@@ -193,7 +193,7 @@ pub struct ToolbarSeparatorProps {
 pub fn ToolbarSeparator(props: ToolbarSeparatorProps) -> Element {
     let ctx: ToolbarCtx = use_context();
 
-    // If horizontal is explicitly set, use that, otherwise invert the toolbar orientation
+
     let horizontal = props.horizontal.unwrap_or(!(ctx.horizontal)());
 
     let orientation = match horizontal {

@@ -22,7 +22,7 @@ pub fn SynapseHeader() -> Element {
                 }
             }
 
-            // User info section
+
             div { class: "flex items-center gap-4",
                 span {
                     class: "text-sm",

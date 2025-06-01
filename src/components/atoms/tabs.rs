@@ -3,17 +3,17 @@ use dioxus::prelude::*;
 
 #[derive(Clone, Copy)]
 struct TabsContext {
-    // State
+
     value: ReadOnlySignal<String>,
     set_value: Callback<String>,
     disabled: ReadOnlySignal<bool>,
 
-    // Keyboard nav data
+
     item_count: Signal<usize>,
     recent_focus: Signal<usize>,
     current_focus: Signal<Option<usize>>,
 
-    // Orientation
+
     horizontal: ReadOnlySignal<bool>,
     roving_focus: ReadOnlySignal<bool>,
     roving_loop: ReadOnlySignal<bool>,

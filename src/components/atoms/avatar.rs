@@ -1,26 +1,26 @@
 use dioxus::prelude::*;
 
-/// Represents the different states an Avatar can be in
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AvatarState {
-    /// Initial loading state
+
     Loading,
-    /// Image loaded successfully
+
     Loaded,
-    /// Error loading the image
+
     Error,
-    /// No image source provided
+
     Empty,
 }
 
 #[derive(Clone)]
 struct AvatarCtx {
-    // State
+
     state: Signal<AvatarState>,
     has_fallback_child: Signal<bool>,
     has_image_child: Signal<bool>,
 
-    // Callbacks
+
     on_load: Option<EventHandler<()>>,
     on_error: Option<EventHandler<()>>,
     on_state_change: Option<EventHandler<AvatarState>>,
@@ -28,15 +28,15 @@ struct AvatarCtx {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct AvatarProps {
-    /// Callback when image loads successfully
+
     #[props(default)]
     pub on_load: Option<EventHandler<()>>,
 
-    /// Callback when image fails to load
+
     #[props(default)]
     pub on_error: Option<EventHandler<()>>,
 
-    /// Callback when the avatar state changes
+
     #[props(default)]
     pub on_state_change: Option<EventHandler<AvatarState>>,
 
@@ -48,19 +48,19 @@ pub struct AvatarProps {
 
 #[component]
 pub fn Avatar(props: AvatarProps) -> Element {
-    // Internal state tracking
+
     let state = use_signal(|| AvatarState::Empty);
     let has_fallback_child = use_signal(|| false);
     let has_image_child = use_signal(|| false);
 
-    // Notify about initial state
+
     use_effect(move || {
         if let Some(handler) = &props.on_state_change {
             handler.call(state());
         }
     });
 
-    // Create context for child components
+
     let _ctx = use_context_provider(|| AvatarCtx {
         state,
         has_fallback_child,
@@ -70,7 +70,7 @@ pub fn Avatar(props: AvatarProps) -> Element {
         on_state_change: props.on_state_change,
     });
 
-    // Determine if fallback should be shown
+
     let show_fallback =
         use_memo(move || matches!(state(), AvatarState::Error | AvatarState::Empty));
 
@@ -85,10 +85,10 @@ pub fn Avatar(props: AvatarProps) -> Element {
             },
             ..props.attributes,
 
-            // Children (which may include AvatarImage and AvatarFallback)
+
             {props.children}
 
-            // Default fallback if no AvatarFallback is provided and fallback should be shown
+
             if show_fallback() && !has_fallback_child() && has_image_child() {
                 span { style: "display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;",
                     "??"
@@ -109,7 +109,7 @@ pub struct AvatarFallbackProps {
 pub fn AvatarFallback(props: AvatarFallbackProps) -> Element {
     let mut ctx: AvatarCtx = use_context();
 
-    // Mark that a fallback child is provided
+
     use_effect(move || {
         ctx.has_fallback_child.set(true);
     });
@@ -128,10 +128,10 @@ pub fn AvatarFallback(props: AvatarFallbackProps) -> Element {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct AvatarImageProps {
-    /// The image source URL
+
     pub src: String,
 
-    /// Alt text for the image
+
     #[props(default)]
     pub alt: Option<String>,
 
@@ -143,7 +143,7 @@ pub struct AvatarImageProps {
 pub fn AvatarImage(props: AvatarImageProps) -> Element {
     let mut ctx: AvatarCtx = use_context();
 
-    // Mark that an image child is provided and set initial loading state
+
     use_effect(move || {
         ctx.has_image_child.set(true);
         ctx.state.set(AvatarState::Loading);

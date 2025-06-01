@@ -1,16 +1,16 @@
-// Declare modules
+
 pub mod context;
 pub mod wrappers;
 
-// Re-export from context
+
 pub use context::{
-    switch_theme,   // This is a function
-    use_neon_theme, // This is a function alias for use_theme
+    switch_theme,
+    use_neon_theme,
     use_theme,
     ComponentTexts,
     LoaderStyles,
-    NeonEvangelionTheme, // This is a type alias for Theme
-    NeonThemeProvider,   // This is a component alias for ThemeProvider
+    NeonEvangelionTheme,
+    NeonThemeProvider,
     Theme,
     ThemeColors,
     ThemeDecorative,
@@ -20,10 +20,10 @@ pub use context::{
     ThemeSwitcher,
     ThemeTypography,
     ThemeVariant,
-    CURRENT_THEME, // This is a GlobalSignal<Theme>
+    CURRENT_THEME,
 };
 
-// Re-export from wrappers
+
 pub use wrappers::{
     LoaderContext, ThemedButton, ThemedButtonProps, ThemedCard, ThemedCardProps,
     ThemedInlineLoader, ThemedInlineLoaderProps, ThemedLoader, ThemedLoaderProps, ThemedPageLoader,

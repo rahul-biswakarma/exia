@@ -7,7 +7,7 @@ mod tests {
     fn test_visibility_actions() {
         let mut executor = ActionExecutor::new();
 
-        // add a test component
+
         executor.get_ui_state().components.write().insert(
             "test_component".to_string(),
             ComponentState {
@@ -25,7 +25,7 @@ mod tests {
             user_data: None,
         };
 
-        // test hide action
+
         let hide_handler = EventHandler {
             action: "hide".to_string(),
             target: Some("test_component".to_string()),
@@ -45,7 +45,7 @@ mod tests {
                 .visible
         );
 
-        // test show action
+
         let show_handler = EventHandler {
             action: "show".to_string(),
             target: Some("test_component".to_string()),
@@ -65,7 +65,7 @@ mod tests {
                 .visible
         );
 
-        // test toggle action
+
         let toggle_handler = EventHandler {
             action: "toggle".to_string(),
             target: Some("test_component".to_string()),
@@ -112,7 +112,7 @@ mod tests {
     fn test_update_content_action() {
         let mut executor = ActionExecutor::new();
 
-        // add a test component
+
         executor.get_ui_state().components.write().insert(
             "test_component".to_string(),
             ComponentState {
@@ -164,7 +164,7 @@ mod tests {
             user_data: None,
         };
 
-        // test global state
+
         let handler = EventHandler {
             action: "setState".to_string(),
             target: None,

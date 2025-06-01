@@ -27,7 +27,7 @@ pub fn PromptInput(mut props: PromptInputProps) -> Element {
                 "💬 Describe Your UI"
             }
 
-            // Textarea for prompt
+
             textarea {
                 class: "w-full h-32 p-4 rounded-lg resize-none transition-all",
                 style: "background: var(--color-background); color: var(--color-text); border: 2px solid var(--color-border);",
@@ -36,9 +36,9 @@ pub fn PromptInput(mut props: PromptInputProps) -> Element {
                 oninput: move |e| props.prompt.set(e.value()),
             }
 
-            // Action buttons
+
             div { class: "flex gap-2 mt-4",
-                // Generate Button
+
                 Button {
                     variant: crate::components::atoms::ButtonVariant::Primary,
                     glow: true,
@@ -63,12 +63,12 @@ pub fn PromptInput(mut props: PromptInputProps) -> Element {
                                 is_generating.set(true);
                                 error_message.set(None);
 
-                                // Simulate UI generation for now
+
                                 match serde_json::from_str::<serde_json::Value>(r#"{"type": "card", "content": "Sample generated UI"}"#) {
                                     Ok(ui_json) => {
                                         generated_ui.set(Some(ui_json.clone()));
 
-                                        // Apply to action executor
+
                                         if let Err(e) = action_executor.write()
                                             .execute_action("loadSchema", None, Some(&ui_json)) {
                                             error_message.set(Some(format!("Failed to load UI: {}", e)));
@@ -85,7 +85,7 @@ pub fn PromptInput(mut props: PromptInputProps) -> Element {
                     "🚀 Generate UI"
                 }
 
-                // Save Button (only show if UI is generated)
+
                 if props.generated_ui.read().is_some() {
                     Button {
                         variant: crate::components::atoms::ButtonVariant::Success,
@@ -95,7 +95,7 @@ pub fn PromptInput(mut props: PromptInputProps) -> Element {
                 }
             }
 
-            // Error Message
+
             if let Some(error) = props.error_message.read().clone() {
                 div {
                     class: "mt-4 p-3 rounded-lg",

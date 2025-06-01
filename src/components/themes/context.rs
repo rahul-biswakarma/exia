@@ -95,9 +95,9 @@ pub struct ThemeDecorative {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct LoaderStyles {
-    pub primary_type: String, // "spinner", "dots", "bars", "hexagon", "matrix", "minimal"
-    pub button_loader: String, // "inline-spinner", "dots", "pulse", "slide"
-    pub page_loader: String,  // "full-screen", "overlay", "minimal"
+    pub primary_type: String,
+    pub button_loader: String,
+    pub page_loader: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -128,18 +128,18 @@ impl Theme {
             name: "Neon Evangelion".to_string(),
             variant: ThemeVariant::NeonEvangelion,
             colors: ThemeColors {
-                primary: "#ff3366".to_string(),        // Electric red
-                secondary: "#00ffcc".to_string(),      // Neon cyan
-                accent: "#ffcc00".to_string(),         // Electric yellow
-                background: "#0a0a0f".to_string(),     // Deep void
-                surface: "#1a1a2e".to_string(),        // Dark purple
-                text: "#ffffff".to_string(),           // Pure white
-                text_secondary: "#cccccc".to_string(), // Light gray
-                border: "#ff3366".to_string(),         // Electric red border
-                success: "#00ff66".to_string(),        // Neon green
-                warning: "#ffcc00".to_string(),        // Electric yellow
-                error: "#ff3366".to_string(),          // Electric red
-                info: "#00ffcc".to_string(),           // Neon cyan
+                primary: "#ff3366".to_string(),
+                secondary: "#00ffcc".to_string(),
+                accent: "#ffcc00".to_string(),
+                background: "#0a0a0f".to_string(),
+                surface: "#1a1a2e".to_string(),
+                text: "#ffffff".to_string(),
+                text_secondary: "#cccccc".to_string(),
+                border: "#ff3366".to_string(),
+                success: "#00ff66".to_string(),
+                warning: "#ffcc00".to_string(),
+                error: "#ff3366".to_string(),
+                info: "#00ffcc".to_string(),
             },
             spacing: Self::default_spacing(),
             typography: ThemeTypography {
@@ -357,7 +357,7 @@ pub static CURRENT_THEME: GlobalSignal<Theme> = GlobalSignal::new(|| Theme::neon
 pub fn ThemeProvider(children: Element) -> Element {
     let theme = CURRENT_THEME.read();
 
-    // Apply theme to document body as well - this needs to be reactive
+
     use_effect(use_reactive((&theme.variant,), move |(variant,)| {
         let current_theme = CURRENT_THEME.read();
         let theme_attr = match variant {
@@ -373,19 +373,19 @@ pub fn ThemeProvider(children: Element) -> Element {
                 document.body.setAttribute('data-theme', '{}');
                 document.body.className = '{}-theme';
 
-                // Apply CSS variables to root
+
                 const root = document.documentElement;
                 const variables = `{}`;
                 const tempStyle = document.createElement('style');
                 tempStyle.textContent = `:root {{ ${{variables}} }}`;
 
-                // Remove previous theme styles
+
                 const existingThemeStyle = document.getElementById('theme-variables');
                 if (existingThemeStyle) {{
                     existingThemeStyle.remove();
                 }}
 
-                // Add new theme styles
+
                 tempStyle.id = 'theme-variables';
                 document.head.appendChild(tempStyle);
                 "#,
@@ -430,7 +430,7 @@ pub fn switch_theme(theme_variant: ThemeVariant) {
     dioxus::logger::tracing::info!("Updating CURRENT_THEME to: {}", new_theme.name);
     *CURRENT_THEME.write() = new_theme.clone();
 
-    // Update document body for web platform
+
     #[cfg(target_arch = "wasm32")]
     {
         use dioxus::document::eval;
@@ -483,7 +483,7 @@ pub fn ThemeSwitcher() -> Element {
     }
 }
 
-// Backwards compatibility
+
 pub type NeonEvangelionTheme = Theme;
 
 #[component]

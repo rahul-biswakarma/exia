@@ -3,12 +3,12 @@ use dioxus::prelude::*;
 
 #[derive(Clone, Copy)]
 struct RadioGroupCtx {
-    // State
+
     disabled: ReadOnlySignal<bool>,
     value: ReadOnlySignal<String>,
     set_value: Callback<String>,
 
-    // Keyboard nav data
+
     item_count: Signal<usize>,
     recent_focus: Signal<usize>,
     current_focus: Signal<Option<usize>>,
@@ -19,9 +19,9 @@ struct RadioGroupCtx {
 }
 
 impl RadioGroupCtx {
-    /// Set the currently focused radio item.
-    ///
-    /// This should be used by `focus`/`focusout` event only to start tracking focus.
+
+
+
     fn set_focus(&mut self, id: Option<usize>) {
         self.current_focus.set(id);
         if let Some(id) = id {
@@ -151,16 +151,16 @@ pub struct RadioItemProps {
 pub fn RadioItem(props: RadioItemProps) -> Element {
     let mut ctx: RadioGroupCtx = use_context();
 
-    // Move registration logic into an effect
+
     use_effect(move || {
-        // Register on mount
+
         ctx.item_count += 1;
     });
 
     let value = (props.value)().clone();
     let checked = use_memo(move || (ctx.value)() == value);
 
-    // Tab index for roving index
+
     let tab_index = use_memo(move || {
         if !(ctx.roving_focus)() {
             return "0";

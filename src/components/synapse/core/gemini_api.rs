@@ -51,13 +51,13 @@ struct ResponsePart {
 }
 
 pub async fn generate_ui_schema(prompt: &str) -> Result<Value, String> {
-    // Get API key from environment
+
     let api_key = env::var("GEMINI_API_KEY")
         .map_err(|_| "GEMINI_API_KEY environment variable not set".to_string())?;
 
     let client = reqwest::Client::new();
 
-    // Create a detailed prompt for UI generation
+
     let system_prompt = format!(
         r#"You are a UI generator that creates JSON schemas for web interfaces.
 Based on the user's description, generate a detailed UI schema that follows this exact format:
@@ -75,13 +75,13 @@ Based on the user's description, generate a detailed UI schema that follows this
         "placeholder": "placeholder text (for inputs)"
       }},
       "children": [
-        // nested elements following same structure
+
       ],
       "events": {{
         "onClick": {{
           "action": "action_name",
           "target": "component_id (required for some actions)",
-          "payload": {{ /* action-specific data (required for some actions) */ }}
+          "payload": {{  }}
         }}
       }}
     }}
@@ -167,7 +167,7 @@ User request: {}"#,
     };
 
     let url = format!(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={}",
+        "https:
         api_key
     );
 
@@ -198,7 +198,7 @@ User request: {}"#,
         .map(|p| &p.text)
         .ok_or("No response content found")?;
 
-    // Extract JSON from the response (it might be wrapped in markdown code blocks)
+
     let json_str = if generated_text.contains("```json") {
         let start = generated_text.find("```json").unwrap() + 7;
         let end = generated_text[start..]
@@ -215,15 +215,15 @@ User request: {}"#,
         generated_text
     };
 
-    // Parse the JSON with better error handling
+
     let json_str = json_str.trim();
 
-    // Try to find valid JSON if the response is truncated or malformed
+
     let cleaned_json = if let Some(start) = json_str.find('{') {
         if let Some(end) = json_str.rfind('}') {
             &json_str[start..=end]
         } else {
-            // If no closing brace, try to find the last complete object
+
             let mut brace_count = 0;
             let mut last_valid_end = start;
 

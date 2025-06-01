@@ -2,19 +2,19 @@ use dioxus::prelude::*;
 
 #[derive(Props, Clone, PartialEq)]
 pub struct CardProps {
-    /// Enable decorations (controlled by theme/CSS)
+
     #[props(default = false)]
     decorated: bool,
 
-    /// Enable glow effects (controlled by theme/CSS)
+
     #[props(default = false)]
     glow: bool,
 
-    /// Enable hover animations
+
     #[props(default = true)]
     hoverable: bool,
 
-    /// CSS class names to apply
+
     #[props(default)]
     class: Option<String>,
 
@@ -28,7 +28,7 @@ pub struct CardProps {
 pub fn Card(props: CardProps) -> Element {
     let mut classes = vec!["card"];
 
-    // Add feature classes (theme-controlled via CSS)
+
     if props.decorated {
         classes.push("card-decorated");
     }
@@ -37,7 +37,7 @@ pub fn Card(props: CardProps) -> Element {
         classes.push("card-glow");
     }
 
-    // Add hover effects
+
     if props.hoverable {
         classes.push("card-hoverable");
     }

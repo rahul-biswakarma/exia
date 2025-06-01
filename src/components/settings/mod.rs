@@ -9,7 +9,6 @@ pub fn Settings() -> Element {
         div {
             style: "max-width: 1200px; margin: 0 auto; padding: 20px;",
 
-            // Navigation Header
             div {
                 style: "display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb;",
                 h1 {
@@ -27,7 +26,6 @@ pub fn Settings() -> Element {
                 }
             }
 
-            // Settings Content
             div {
                 style: "background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);",
                 LLMSetting {}

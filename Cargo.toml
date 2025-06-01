@@ -12,7 +12,6 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 regex = "1.0"
 
-# Vector DB upload dependencies
 reqwest = { version = "0.11", features = ["json", "multipart"] }
 tokio = { version = "1.0", features = ["rt", "rt-multi-thread", "macros"], default-features = false }
 dotenv = "0.15"
@@ -22,15 +21,10 @@ uuid = { version = "1.0", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 qdrant-client = "1.12"
 
-# For LLM API integration
 serde_derive = "1.0"
 
-
-
-# Non-WASM dependencies (desktop/server)
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 
-# WASM-specific dependencies
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"

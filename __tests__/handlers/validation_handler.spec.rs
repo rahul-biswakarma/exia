@@ -55,7 +55,7 @@ mod tests {
         let result = executor.handle_validate(&handler, &context);
         assert!(result.is_ok());
 
-        // check validation results stored
+
         let validation_data = executor.get_form_data("test_form_validation");
         assert!(validation_data.is_some());
         let data = validation_data.unwrap();
@@ -135,14 +135,14 @@ mod tests {
     fn test_validate_string_length() {
         let executor = ActionExecutor::new();
 
-        // test min length
+
         let min_length_fail = executor.validate_length("ab", &json!({"minLength": 3}));
         assert_eq!(min_length_fail.unwrap(), false);
 
         let min_length_pass = executor.validate_length("abc", &json!({"minLength": 3}));
         assert_eq!(min_length_pass.unwrap(), true);
 
-        // test max length
+
         let max_length_fail = executor.validate_length("abcdef", &json!({"maxLength": 5}));
         assert_eq!(max_length_fail.unwrap(), false);
 
@@ -154,7 +154,7 @@ mod tests {
     fn test_validate_pattern() {
         let executor = ActionExecutor::new();
 
-        // test email pattern
+
         let email_valid =
             executor.validate_pattern("test@example.com", &json!({"pattern": "email"}));
         assert_eq!(email_valid.unwrap(), true);
@@ -163,7 +163,7 @@ mod tests {
             executor.validate_pattern("invalid-email", &json!({"pattern": "email"}));
         assert_eq!(email_invalid.unwrap(), false);
 
-        // test phone pattern
+
         let phone_valid = executor.validate_pattern("123-456-7890", &json!({"pattern": "phone"}));
         assert_eq!(phone_valid.unwrap(), true);
 
@@ -175,14 +175,14 @@ mod tests {
     fn test_validate_number_rules() {
         let executor = ActionExecutor::new();
 
-        // test min value
+
         let min_fail = executor.validate_number_rules(&json!(5), &json!({"min": 10}));
         assert_eq!(min_fail.unwrap(), false);
 
         let min_pass = executor.validate_number_rules(&json!(15), &json!({"min": 10}));
         assert_eq!(min_pass.unwrap(), true);
 
-        // test max value
+
         let max_fail = executor.validate_number_rules(&json!(25), &json!({"max": 20}));
         assert_eq!(max_fail.unwrap(), false);
 

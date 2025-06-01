@@ -7,7 +7,7 @@ struct DialogCtx {
     open: Memo<bool>,
     set_open: Callback<bool>,
 
-    // Whether the dialog is a modal and should capture focus.
+
     is_modal: ReadOnlySignal<bool>,
     dialog_labelledby: Signal<String>,
     dialog_describedby: Signal<String>,

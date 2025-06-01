@@ -46,7 +46,7 @@ pub fn Switch(props: SwitchProps) -> Element {
             aria_required: props.required,
             disabled: props.disabled,
             "data-state": if checked() { "checked" } else { "unchecked" },
-            // Only add data-disabled when actually disabled
+
             "data-disabled": if (props.disabled)() { "true" } else { "false" },
 
             onclick: move |_| {
@@ -54,7 +54,7 @@ pub fn Switch(props: SwitchProps) -> Element {
                 set_checked.call(new_checked);
             },
 
-            // Switches should only toggle on Space, not Enter
+
             onkeydown: move |e| {
                 if e.key() == Key::Enter {
                     e.prevent_default();
@@ -65,7 +65,7 @@ pub fn Switch(props: SwitchProps) -> Element {
             {props.children}
         }
 
-        // Hidden input for form submission
+
         input {
             r#type: "checkbox",
             "aria-hidden": true,

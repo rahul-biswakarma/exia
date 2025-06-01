@@ -13,11 +13,11 @@ mod tests {
             user_data: None,
         };
 
-        // test matching component id
+
         let condition = "componentId == 'login-form'";
         assert!(executor.evaluate_condition(condition, &context));
 
-        // test non-matching component id
+
         let condition = "componentId == 'signup-form'";
         assert!(!executor.evaluate_condition(condition, &context));
     }
@@ -32,11 +32,11 @@ mod tests {
             user_data: None,
         };
 
-        // test with null global state
+
         let condition = "globalState.user != null";
         assert!(!executor.evaluate_condition(condition, &context));
 
-        // test with non-null global state
+
         *executor.get_ui_state().global_state.write() = json!({"user": "john"});
         assert!(executor.evaluate_condition(condition, &context));
     }
@@ -51,7 +51,7 @@ mod tests {
             user_data: None,
         };
 
-        // test unknown condition (should default to true)
+
         let condition = "unknown_condition";
         assert!(executor.evaluate_condition(condition, &context));
     }
@@ -60,7 +60,7 @@ mod tests {
     fn test_get_component_value() {
         let mut executor = ActionExecutor::new();
 
-        // test component with value in local state
+
         executor.get_ui_state().components.write().insert(
             "test_component".to_string(),
             ComponentState {
@@ -76,7 +76,7 @@ mod tests {
         assert!(value.is_some());
         assert_eq!(value.unwrap(), "test_value");
 
-        // test component with content but no value
+
         executor.get_ui_state().components.write().insert(
             "content_component".to_string(),
             ComponentState {
@@ -92,7 +92,7 @@ mod tests {
         assert!(value.is_some());
         assert_eq!(value.unwrap(), "content_text");
 
-        // test nonexistent component
+
         let value = executor.get_component_value("nonexistent");
         assert!(value.is_none());
     }
@@ -101,7 +101,7 @@ mod tests {
     fn test_set_state_component() {
         let mut executor = ActionExecutor::new();
 
-        // create test component
+
         executor.get_ui_state().components.write().insert(
             "test_component".to_string(),
             ComponentState {
@@ -187,7 +187,7 @@ mod tests {
     fn test_update_content() {
         let mut executor = ActionExecutor::new();
 
-        // create test component
+
         executor.get_ui_state().components.write().insert(
             "test_component".to_string(),
             ComponentState {
@@ -274,8 +274,8 @@ mod tests {
         assert!(result.unwrap_err().contains("invalid component data"));
     }
 
-    // note: navigation test would require mocking dioxus navigator
-    // for now we just test that the function exists and handles missing route
+
+
     #[test]
     fn test_navigate_missing_route() {
         let executor = ActionExecutor::new();
