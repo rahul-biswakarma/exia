@@ -6,7 +6,7 @@ use portal::{use_portal, PortalIn, PortalOut};
 use std::collections::VecDeque;
 use std::time::Duration;
 
-// Toast types for different visual styles
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ToastType {
     Success,
@@ -26,7 +26,7 @@ impl ToastType {
     }
 }
 
-// A single toast item
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct ToastItem {
     id: usize,
@@ -37,10 +37,10 @@ pub struct ToastItem {
     permanent: bool,
 }
 
-// Type alias for the complex callback type
+
 type AddToastCallback = Callback<(String, Option<String>, ToastType, Option<Duration>, bool)>;
 
-// Context for managing toasts
+
 #[derive(Clone)]
 struct ToastCtx {
     #[allow(dead_code)]
@@ -49,7 +49,7 @@ struct ToastCtx {
     remove_toast: Callback<usize>,
 }
 
-// Toast provider props
+
 #[derive(Props, Clone, PartialEq)]
 pub struct ToastProviderProps {
     #[props(default = ReadOnlySignal::new(Signal::new(Some(Duration::from_secs(5)))))]
@@ -61,20 +61,20 @@ pub struct ToastProviderProps {
     children: Element,
 }
 
-// Toast provider component
+
 #[component]
 pub fn ToastProvider(props: ToastProviderProps) -> Element {
     let mut toasts = use_signal(VecDeque::new);
     let portal = use_portal();
 
-    // Create context first so we can reference it in the callbacks
+
     let ctx = ToastCtx {
         toasts,
-        add_toast: Callback::new(|_| {}),    // Temporary placeholder
-        remove_toast: Callback::new(|_| {}), // Temporary placeholder
+        add_toast: Callback::new(|_| {}),
+        remove_toast: Callback::new(|_| {}),
     };
 
-    // Remove toast callback
+
     let remove_toast = Callback::new(move |id: usize| {
         let mut toasts_vec = toasts.write();
         if let Some(pos) = toasts_vec.iter().position(|t| t.id == id) {
@@ -82,7 +82,7 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
         }
     });
 
-    // Add toast callback
+
     let add_toast = Callback::new(
         move |(title, description, toast_type, duration, permanent): (
             String,
@@ -91,15 +91,15 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
             Option<Duration>,
             bool,
         )| {
-            // Generate a unique ID for the toast
-            // Use a static atomic counter to ensure unique IDs
+
+
             use std::sync::atomic::{AtomicUsize, Ordering};
             static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
 
-            // Get the current ID and increment it atomically
+
             let id = NEXT_ID.fetch_add(1, Ordering::SeqCst);
 
-            // Only use default duration for non-permanent toasts
+
             let duration = if permanent {
                 None
             } else {
@@ -115,46 +115,46 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
                 permanent,
             };
 
-            // Add the toast directly to the queue
-            // This is safe because we're in an event handler, not during render
+
+
             let mut toasts_vec = toasts.write();
             toasts_vec.push_back(toast.clone());
 
-            // Limit the number of toasts, but prioritize keeping permanent toasts
+
             let max = (props.max_toasts)();
             while toasts_vec.len() > max {
-                // Try to find a non-permanent toast to remove first
+
                 if let Some(pos) = toasts_vec.iter().position(|t| !t.permanent) {
                     toasts_vec.remove(pos);
                 } else {
-                    // If all toasts are permanent, remove the oldest one
+
                     toasts_vec.pop_front();
                 }
             }
 
-            // We'll handle auto-dismissal in the Toast component
+
         },
     );
 
-    // Update the context with the real callbacks
+
     let mut ctx = ctx;
     ctx.add_toast = add_toast;
     ctx.remove_toast = remove_toast;
 
-    // Provide the context
+
     let ctx = use_context_provider(|| ctx);
 
-    // Create a stable list of toasts for rendering outside of RSX
+
     let toast_list = use_memo(move || {
         let toasts_vec = toasts.read();
         toasts_vec.iter().cloned().collect::<Vec<_>>()
     });
 
     rsx! {
-        // Render children
+
         {props.children}
 
-        // Render toast container using portal
+
         PortalIn { portal,
             div {
                 role: "region",
@@ -162,7 +162,7 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
                 aria_label: "Notifications",
                 class: "toast-container",
 
-                // Render all toasts
+
                 for toast in toast_list().iter() {
                     Toast {
                         key: format!("{}", toast.id),
@@ -179,19 +179,19 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
                             }
                         },
 
-                        // Only pass duration to non-permanent toasts
+
                         duration: if toast.permanent { None } else { toast.duration },
                     }
                 }
             }
         }
 
-        // Portal output at the end of the document
+
         PortalOut { portal }
     }
 }
 
-// Toast props
+
 #[derive(Props, Clone, PartialEq)]
 pub struct ToastProps {
     id: usize,
@@ -208,29 +208,29 @@ pub struct ToastProps {
     attributes: Vec<Attribute>,
 }
 
-// Toast component
+
 #[component]
 pub fn Toast(props: ToastProps) -> Element {
     let toast_id = use_unique_id();
     let id = use_memo(move || format!("toast-{}", toast_id()));
 
-    // Get the context at the top level of the component
+
     let ctx = use_context::<ToastCtx>();
 
-    // Handle auto-dismissal for non-permanent toasts with a duration
-    // Double-check that the toast is not permanent and has a duration
+
+
     if !props.permanent && props.duration.is_some() {
         let duration = props.duration.unwrap();
         let toast_id = props.id;
         let remove_toast = ctx.remove_toast;
 
-        // Create a timeout using dioxus-time
+
         let timeout = use_timeout(duration, move |()| {
-            // Call the remove_toast function directly with the toast ID
+
             remove_toast.call(toast_id);
         });
 
-        // Start the timeout when the component mounts
+
         use_effect(move || {
             timeout.action(());
         });
@@ -264,7 +264,7 @@ pub fn Toast(props: ToastProps) -> Element {
     }
 }
 
-// Toast options struct for easier API
+
 #[derive(Clone, Default)]
 pub struct ToastOptions {
     pub description: Option<String>,
@@ -272,26 +272,26 @@ pub struct ToastOptions {
     pub permanent: bool,
 }
 
-// Type alias for the Toasts struct
+
 type AddToastFn = AddToastCallback;
 
-// Simplified toast API
+
 #[derive(Clone, Copy)]
 pub struct Toasts {
     add_toast: AddToastFn,
-    // We keep remove_toast for potential future use
+
     #[allow(dead_code)]
     remove_toast: Callback<usize>,
 }
 
 impl Toasts {
-    // Show a toast with the given type and options
+
     pub fn show(&self, title: String, toast_type: ToastType, options: ToastOptions) {
         self.add_toast.call((
             title,
             options.description,
             toast_type,
-            // If permanent, force duration to None
+
             if options.permanent {
                 None
             } else {
@@ -301,7 +301,7 @@ impl Toasts {
         ));
     }
 
-    // Convenience methods for different toast types
+
     pub fn success(&self, title: String, options: Option<ToastOptions>) {
         self.show(title, ToastType::Success, options.unwrap_or_default());
     }
@@ -319,7 +319,7 @@ impl Toasts {
     }
 }
 
-// Hook to use the toast API
+
 pub fn use_toast() -> Toasts {
     let ctx = use_context::<ToastCtx>();
     let add_toast = ctx.add_toast;

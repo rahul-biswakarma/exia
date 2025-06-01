@@ -2,19 +2,19 @@ use dioxus::prelude::*;
 
 #[derive(Props, Clone, PartialEq)]
 pub struct LoaderProps {
-    /// Type of loader to display
+
     #[props(default = LoaderType::Spinner)]
     loader_type: LoaderType,
 
-    /// Size of the loader
+
     #[props(default = LoaderSize::Medium)]
     size: LoaderSize,
 
-    /// Optional loading text override
+
     #[props(default)]
     text: Option<String>,
 
-    /// CSS class names to apply
+
     #[props(default)]
     class: Option<String>,
 
@@ -24,14 +24,14 @@ pub struct LoaderProps {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LoaderType {
-    Spinner, // Basic spinner loader
-    Dots,    // Dot-based loader
-    Bars,    // Bar-based loader
-    Pulse,   // Pulse loader
-    Slide,   // Slide loader
-    Ring,    // Ring loader
-    Wave,    // Wave loader
-    Custom,  // Custom loader (styled via CSS)
+    Spinner,
+    Dots,
+    Bars,
+    Pulse,
+    Slide,
+    Ring,
+    Wave,
+    Custom,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -45,7 +45,7 @@ pub enum LoaderSize {
 pub fn Loader(props: LoaderProps) -> Element {
     let mut classes = vec!["loader"];
 
-    // Add type-specific class
+
     match props.loader_type {
         LoaderType::Spinner => classes.push("loader-spinner"),
         LoaderType::Dots => classes.push("loader-dots"),
@@ -57,7 +57,7 @@ pub fn Loader(props: LoaderProps) -> Element {
         LoaderType::Custom => classes.push("loader-custom"),
     }
 
-    // Add size class
+
     match props.size {
         LoaderSize::Small => classes.push("loader-small"),
         LoaderSize::Medium => classes.push("loader-medium"),
@@ -70,7 +70,7 @@ pub fn Loader(props: LoaderProps) -> Element {
 
     let final_class = classes.join(" ");
 
-    // Use provided text or fallback to default
+
     let loading_text = props
         .text
         .clone()
@@ -81,7 +81,7 @@ pub fn Loader(props: LoaderProps) -> Element {
             class: final_class,
             ..props.attributes,
 
-            // Render different loader types
+
             match props.loader_type {
                 LoaderType::Spinner => rsx! {
                     div { class: "loader-spinner-inner" }
@@ -157,19 +157,19 @@ pub fn Loader(props: LoaderProps) -> Element {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct PageLoaderProps {
-    /// Whether the page loader is visible
+
     #[props(default = true)]
     visible: bool,
 
-    /// Loader type to use
+
     #[props(default = LoaderType::Spinner)]
     loader_type: LoaderType,
 
-    /// Optional custom loading text
+
     #[props(default)]
     text: Option<String>,
 
-    /// CSS class names to apply
+
     #[props(default)]
     class: Option<String>,
 }
@@ -200,15 +200,15 @@ pub fn PageLoader(props: PageLoaderProps) -> Element {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct InlineLoaderProps {
-    /// Loader type to use
+
     #[props(default = LoaderType::Pulse)]
     loader_type: LoaderType,
 
-    /// Size of the inline loader
+
     #[props(default = LoaderSize::Small)]
     size: LoaderSize,
 
-    /// CSS class names to apply
+
     #[props(default)]
     class: Option<String>,
 }

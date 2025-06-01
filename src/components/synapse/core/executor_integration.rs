@@ -43,7 +43,7 @@ pub fn apply_element_to_executor(
 
         executor.add_component(id_str, component_state);
 
-        // Recursively apply child elements
+
         if let Some(children) = element.get("children").and_then(|c| c.as_array()) {
             for child in children {
                 apply_element_to_executor(executor, child)?;

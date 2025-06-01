@@ -1,7 +1,6 @@
 use crate::action_executor::ActionExecutor;
 
 pub fn handle_element_click(element: &serde_json::Value, executor: &mut ActionExecutor) {
-    // Only log if we expect events (buttons, forms with events defined)
     if element.get("events").is_some() {
         println!("🔥 CLICK EVENT TRIGGERED!");
         println!(

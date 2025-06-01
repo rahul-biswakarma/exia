@@ -1,29 +1,23 @@
 service:
-  # Increase maximum request size to handle large vector operations
+
   max_request_size_mb: 128
 
-  # Enable gRPC port for better protocol support
   grpc_port: 6334
 
-  # HTTP port
   http_port: 6333
 
-  # Enable CORS
   enable_cors: true
 
 storage:
-  # Storage configuration
+
   storage_path: ./qdrant_storage
 
-  # Performance settings to handle HTTP/2 issues
   performance:
-    # Reduce concurrent operations to avoid overwhelming HTTP/2
+
     max_search_threads: 4
 
-  # HNSW configuration for better performance
   hnsw_index:
-    # Reduce concurrent indexing threads to avoid connection issues
+
     max_indexing_threads: 2
 
-# Disable telemetry to reduce network requests
 telemetry_disabled: true

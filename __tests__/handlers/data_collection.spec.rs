@@ -6,7 +6,7 @@ mod tests {
     fn create_test_executor_with_form() -> ActionExecutor {
         let mut executor = ActionExecutor::new();
 
-        // create form component with children
+
         executor.get_ui_state().components.write().insert(
             "user_form".to_string(),
             ComponentState {
@@ -18,7 +18,7 @@ mod tests {
             },
         );
 
-        // create child input components
+
         executor.get_ui_state().components.write().insert(
             "name_field".to_string(),
             ComponentState {
@@ -125,7 +125,7 @@ mod tests {
     fn test_collect_global_state_data() {
         let executor = ActionExecutor::new();
 
-        // set global state
+
         *executor.get_ui_state().global_state.write() = json!({
             "user": "john",
             "theme": "dark"
@@ -153,14 +153,14 @@ mod tests {
             user_data: None,
         };
 
-        // test with custom submission id
+
         let payload_with_id = json!({
             "submissionId": "custom_submission"
         });
         let submission_id = executor.get_submission_id(&payload_with_id, &context);
         assert_eq!(submission_id, "custom_submission");
 
-        // test without submission id (should use component id)
+
         let payload_without_id = json!({});
         let submission_id = executor.get_submission_id(&payload_without_id, &context);
         assert_eq!(submission_id, "test_component");
@@ -209,7 +209,7 @@ mod tests {
     fn test_collect_from_children_nested() {
         let mut executor = ActionExecutor::new();
 
-        // create nested form structure
+
         executor.get_ui_state().components.write().insert(
             "parent_form".to_string(),
             ComponentState {

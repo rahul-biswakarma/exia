@@ -2,15 +2,15 @@ use dioxus::prelude::*;
 
 #[derive(Props, Clone, PartialEq)]
 pub struct ScrollAreaProps {
-    /// The scroll direction.
+
     #[props(default)]
     direction: ReadOnlySignal<ScrollDirection>,
 
-    /// Whether the scrollbars should be always visible.
+
     #[props(default)]
     always_show_scrollbars: ReadOnlySignal<bool>,
 
-    /// The scroll type.
+
     #[props(default)]
     scroll_type: ReadOnlySignal<ScrollType>,
 
@@ -34,11 +34,11 @@ impl Default for ScrollDirection {
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum ScrollType {
-    /// Browser default scrolling
+
     Auto,
-    /// Always show scrollbars
+
     Always,
-    /// Hide scrollbars but enable scrolling
+
     Hidden,
 }
 

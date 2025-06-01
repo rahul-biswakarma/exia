@@ -2,12 +2,12 @@ use dioxus::prelude::*;
 
 #[derive(Props, Clone, PartialEq)]
 pub struct SeparatorProps {
-    /// Horizontal if true, vertical if false.
+
     #[props(default = true)]
     horizontal: bool,
 
-    /// If the separator is decorative and should not be classified
-    /// as a separator to the ARIA standard.
+
+
     #[props(default = false)]
     decorative: bool,
 

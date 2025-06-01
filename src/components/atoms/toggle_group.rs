@@ -6,18 +6,18 @@ use crate::components::atoms::toggle::Toggle;
 
 #[derive(Clone, Copy)]
 struct ToggleGroupCtx {
-    // State
+
     disabled: ReadOnlySignal<bool>,
     pressed: Memo<HashSet<usize>>,
     set_pressed: Callback<HashSet<usize>>,
 
     allow_multiple_pressed: ReadOnlySignal<bool>,
 
-    // Keyboard nav data
+
     item_count: Signal<usize>,
-    // For tracking tabindex
+
     recent_focus: Signal<usize>,
-    // For tracking who should set focus
+
     current_focus: Signal<Option<usize>>,
 
     horizontal: ReadOnlySignal<bool>,
@@ -99,9 +99,9 @@ impl ToggleGroupCtx {
         }
     }
 
-    /// Set the currently focused item.
-    ///
-    /// This should be used by `focus`/`focusout` event only to start tracking focus.
+
+
+
     fn set_focus(&mut self, id: Option<usize>) {
         self.current_focus.set(id);
         if let Some(id) = id {
@@ -204,9 +204,9 @@ pub struct ToggleItemProps {
     #[props(default)]
     disabled: ReadOnlySignal<bool>,
 
-    // Extending props onto another component doesn't work so we need this.
-    //#[props(extends = GlobalAttributes)]
-    //attributes: Vec<Attribute>,
+
+
+
     id: Option<String>,
     class: Option<String>,
 
@@ -217,18 +217,18 @@ pub struct ToggleItemProps {
 pub fn ToggleItem(props: ToggleItemProps) -> Element {
     let mut ctx: ToggleGroupCtx = use_context();
 
-    // un/register item with ctx
+
     use_hook(move || ctx.register_item());
     use_drop(move || ctx.unregister_item());
 
-    // We need a kept-alive signal to control the toggle.
+
     let mut pressed = use_signal(|| ctx.is_pressed(props.index));
     use_effect(move || {
         let is_pressed = ctx.is_pressed(props.index);
         pressed.set(is_pressed);
     });
 
-    // Tab index for roving index
+
     let tab_index = use_memo(move || {
         if !ctx.is_roving_focus() {
             return "0";
@@ -240,7 +240,7 @@ pub fn ToggleItem(props: ToggleItemProps) -> Element {
         }
     });
 
-    // Handle settings focus
+
     let mut toggle_ref: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
     use_effect(move || {
         let is_focused = ctx.is_focused(props.index);
@@ -286,7 +286,7 @@ pub fn ToggleItem(props: ToggleItemProps) -> Element {
 
             id: props.id,
             class: props.class,
-            //..props.attributes,
+
 
             {props.children}
         }

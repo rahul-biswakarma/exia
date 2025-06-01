@@ -2,14 +2,14 @@ use dioxus::prelude::*;
 
 #[derive(Props, Clone, PartialEq)]
 pub struct TerminalPanelProps {
-    /// Panel title displayed in the header
+
     title: String,
 
-    /// Optional color theme for the panel border
-    #[props(default)]
-    color_theme: Option<String>, // "orange", "green", "yellow", "cyan", "red"
 
-    /// CSS class names to apply
+    #[props(default)]
+    color_theme: Option<String>,
+
+
     #[props(default)]
     class: Option<String>,
 
@@ -59,13 +59,13 @@ pub fn TerminalPanel(props: TerminalPanelProps) -> Element {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct StatusIndicatorProps {
-    /// Status text
+
     status: String,
 
-    /// Status type for color coding
-    status_type: String, // "online", "warning", "error", "info", "offline"
 
-    /// Optional label
+    status_type: String,
+
+
     #[props(default)]
     label: Option<String>,
 }
@@ -87,15 +87,15 @@ pub fn StatusIndicator(props: StatusIndicatorProps) -> Element {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct DataRowProps {
-    /// Data label
+
     label: String,
 
-    /// Data value
+
     value: String,
 
-    /// Optional value styling
+
     #[props(default)]
-    value_type: Option<String>, // "highlight", "success", "warning", "error"
+    value_type: Option<String>,
 }
 
 #[component]
@@ -119,10 +119,10 @@ pub fn DataRow(props: DataRowProps) -> Element {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct SystemStatsProps {
-    /// Stats data as a vector of (label, value, type) tuples
+
     stats: Vec<(String, String, Option<String>)>,
 
-    /// CSS class names to apply
+
     #[props(default)]
     class: Option<String>,
 }
@@ -156,15 +156,15 @@ pub fn SystemStats(props: SystemStatsProps) -> Element {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct TerminalGridProps {
-    /// Grid template columns (CSS grid-template-columns value)
+
     #[props(default = "1fr".to_string())]
     columns: String,
 
-    /// Grid gap
+
     #[props(default = "0.75rem".to_string())]
     gap: String,
 
-    /// CSS class names to apply
+
     #[props(default)]
     class: Option<String>,
 

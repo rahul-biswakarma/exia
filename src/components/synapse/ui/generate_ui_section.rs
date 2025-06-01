@@ -17,7 +17,7 @@ pub struct GenerateUISectionProps {
 pub fn GenerateUISection(mut props: GenerateUISectionProps) -> Element {
     let auth = use_auth();
 
-    // Sample prompts for quick testing
+
     let sample_prompts = vec![
         "Create a user profile card with name, email, and avatar",
         "Build a simple login form with username and password fields",
@@ -35,7 +35,7 @@ pub fn GenerateUISection(mut props: GenerateUISectionProps) -> Element {
                 "💬 Describe Your UI"
             }
 
-            // Textarea for prompt
+
             textarea {
                 class: "w-full h-32 p-4 border-2 border-gray-200 rounded-lg resize-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all",
                 placeholder: "Describe the UI you want to create...\n\nExample: \"Create a modern user profile card with an avatar, name, email, bio section, and action buttons for edit and delete. Use a clean, card-based design with subtle shadows.\"",
@@ -43,9 +43,9 @@ pub fn GenerateUISection(mut props: GenerateUISectionProps) -> Element {
                 oninput: move |e| props.prompt.set(e.value()),
             }
 
-            // Action buttons
+
             div { class: "flex gap-2 mt-4",
-                // Generate Button
+
                 button {
                     class: "flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2",
                     disabled: (props.is_generating)() || (props.prompt)().trim().is_empty(),
@@ -94,7 +94,7 @@ pub fn GenerateUISection(mut props: GenerateUISectionProps) -> Element {
                     }
                 }
 
-                // Save Button (only if authenticated and UI generated)
+
                 if (auth.read()).is_authenticated() && (props.generated_ui)().is_some() {
                     button {
                         class: "px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors",
@@ -104,14 +104,14 @@ pub fn GenerateUISection(mut props: GenerateUISectionProps) -> Element {
                 }
             }
 
-            // Error Message
+
             if let Some(error) = (props.error_message)() {
                 div { class: "mt-4 p-3 bg-red-50 border border-red-200 rounded-lg",
                     p { class: "text-red-700 text-sm", "{error}" }
                 }
             }
 
-            // Sample prompts
+
             div { class: "mt-6",
                 h3 { class: "text-sm font-medium text-gray-700 mb-3",
                     "💡 Try these examples:"

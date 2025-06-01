@@ -5,30 +5,30 @@ use crate::components::atoms::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::atoms::card::Card;
 use crate::components::atoms::loader::{InlineLoader, Loader, LoaderType, PageLoader};
 
-/// Theme-aware Button wrapper that automatically applies theme settings
+
 #[derive(Props, Clone, PartialEq)]
 pub struct ThemedButtonProps {
-    /// Button variant style
+
     #[props(default = ButtonVariant::Primary)]
     variant: ButtonVariant,
 
-    /// Button size
+
     #[props(default = ButtonSize::Medium)]
     size: ButtonSize,
 
-    /// Override theme glow setting
+
     #[props(default)]
     glow_override: Option<bool>,
 
-    /// Override theme decorations setting
+
     #[props(default)]
     decorated_override: Option<bool>,
 
-    /// Loading state text override
+
     #[props(default)]
     loading_text: Option<String>,
 
-    /// CSS class names to apply
+
     #[props(default)]
     class: Option<String>,
 
@@ -48,19 +48,19 @@ pub struct ThemedButtonProps {
 pub fn ThemedButton(props: ThemedButtonProps) -> Element {
     let theme = use_theme();
 
-    // Determine glow and decoration settings from theme or override
+
     let glow = props.glow_override.unwrap_or(theme.decorative.glow_effects);
     let decorated = props
         .decorated_override
         .unwrap_or(theme.decorative.corner_decorations);
 
-    // Get theme-specific loading text if not provided
+
     let loading_text = if props.loading_text.is_some() {
         props.loading_text.clone()
     } else if *props.loading.read() {
         match theme.variant {
             ThemeVariant::NeonEvangelion => Some(theme.component_texts.button_loading_text.clone()),
-            #[allow(unreachable_patterns)] // Allows for future themes not using this
+            #[allow(unreachable_patterns)]
             _ => None,
         }
     } else {
@@ -83,22 +83,22 @@ pub fn ThemedButton(props: ThemedButtonProps) -> Element {
     }
 }
 
-/// Theme-aware Card wrapper that automatically applies theme settings
+
 #[derive(Props, Clone, PartialEq)]
 pub struct ThemedCardProps {
-    /// Override theme decorations setting
+
     #[props(default)]
     decorated_override: Option<bool>,
 
-    /// Override theme glow setting
+
     #[props(default)]
     glow_override: Option<bool>,
 
-    /// Enable hover animations
+
     #[props(default = true)]
     hoverable: bool,
 
-    /// CSS class names to apply
+
     #[props(default)]
     class: Option<String>,
 
@@ -109,7 +109,7 @@ pub struct ThemedCardProps {
 pub fn ThemedCard(props: ThemedCardProps) -> Element {
     let theme = use_theme();
 
-    // Determine settings from theme or override
+
     let decorated = props
         .decorated_override
         .unwrap_or(theme.decorative.corner_decorations);
@@ -126,26 +126,26 @@ pub fn ThemedCard(props: ThemedCardProps) -> Element {
     }
 }
 
-/// Theme-aware Loader wrapper that automatically selects loader type from theme
+
 #[derive(Props, Clone, PartialEq)]
 pub struct ThemedLoaderProps {
-    /// Loader usage context
+
     #[props(default = LoaderContext::Primary)]
     context: LoaderContext,
 
-    /// Override theme loader type
+
     #[props(default)]
     loader_type_override: Option<LoaderType>,
 
-    /// Size of the loader
+
     #[props(default = crate::components::atoms::loader::LoaderSize::Medium)]
     size: crate::components::atoms::loader::LoaderSize,
 
-    /// Optional loading text override
+
     #[props(default)]
     text: Option<String>,
 
-    /// CSS class names to apply
+
     #[props(default)]
     class: Option<String>,
 }
@@ -192,18 +192,18 @@ impl LoaderContext {
 pub fn ThemedLoader(props: ThemedLoaderProps) -> Element {
     let theme = use_theme();
 
-    // Determine loader type from theme or override
+
     let loader_type = props
         .loader_type_override
         .unwrap_or_else(|| props.context.get_theme_loader_type(&theme));
 
-    // Get theme-specific loading text if not provided
+
     let loading_text = if props.text.is_some() {
         props.text.clone()
     } else {
         match theme.variant {
             ThemeVariant::NeonEvangelion => Some(theme.component_texts.loader_syncing_text.clone()),
-            #[allow(unreachable_patterns)] // Allows for future themes not using this
+            #[allow(unreachable_patterns)]
             _ => None,
         }
     };
@@ -218,22 +218,22 @@ pub fn ThemedLoader(props: ThemedLoaderProps) -> Element {
     }
 }
 
-/// Theme-aware PageLoader wrapper
+
 #[derive(Props, Clone, PartialEq)]
 pub struct ThemedPageLoaderProps {
-    /// Whether the page loader is visible
+
     #[props(default = true)]
     visible: bool,
 
-    /// Override theme loader type
+
     #[props(default)]
     loader_type_override: Option<LoaderType>,
 
-    /// Optional custom loading text
+
     #[props(default)]
     text: Option<String>,
 
-    /// CSS class names to apply
+
     #[props(default)]
     class: Option<String>,
 }
@@ -242,18 +242,18 @@ pub struct ThemedPageLoaderProps {
 pub fn ThemedPageLoader(props: ThemedPageLoaderProps) -> Element {
     let theme = use_theme();
 
-    // Determine loader type from theme or override
+
     let loader_type = props
         .loader_type_override
         .unwrap_or_else(|| LoaderContext::Page.get_theme_loader_type(&theme));
 
-    // Get theme-specific loading text if not provided
+
     let loading_text = if props.text.is_some() {
         props.text.clone()
     } else {
         match theme.variant {
             ThemeVariant::NeonEvangelion => Some(theme.component_texts.loader_initializing_text.clone()),
-            #[allow(unreachable_patterns)] // Allows for future themes not using this
+            #[allow(unreachable_patterns)]
             _ => None,
         }
     };
@@ -268,18 +268,18 @@ pub fn ThemedPageLoader(props: ThemedPageLoaderProps) -> Element {
     }
 }
 
-/// Theme-aware InlineLoader wrapper
+
 #[derive(Props, Clone, PartialEq)]
 pub struct ThemedInlineLoaderProps {
-    /// Override theme loader type
+
     #[props(default)]
     loader_type_override: Option<LoaderType>,
 
-    /// Size of the inline loader
+
     #[props(default = crate::components::atoms::loader::LoaderSize::Small)]
     size: crate::components::atoms::loader::LoaderSize,
 
-    /// CSS class names to apply
+
     #[props(default)]
     class: Option<String>,
 }
@@ -288,7 +288,7 @@ pub struct ThemedInlineLoaderProps {
 pub fn ThemedInlineLoader(props: ThemedInlineLoaderProps) -> Element {
     let theme = use_theme();
 
-    // Determine loader type from theme or override
+
     let loader_type = props
         .loader_type_override
         .unwrap_or_else(|| LoaderContext::Button.get_theme_loader_type(&theme));

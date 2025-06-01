@@ -45,19 +45,19 @@ pub fn UIElement(element: serde_json::Value, action_executor: Signal<ActionExecu
         .to_string();
     let properties = element.get("properties").cloned().unwrap_or(json!({}));
 
-    // Get CSS classes from properties
+
     let css_class = properties
         .get("className")
         .and_then(|c| c.as_str())
         .unwrap_or("")
         .to_string();
 
-    // Get dynamic children from action executor if they exist
+
     let dynamic_children = {
         let executor = action_executor.read();
         let components = executor.ui_state.components.read();
         if let Some(component) = components.get(&element_id) {
-            // Get the children element data from the component's local_state
+
             component
                 .local_state
                 .get("children")
@@ -68,7 +68,7 @@ pub fn UIElement(element: serde_json::Value, action_executor: Signal<ActionExecu
         }
     };
 
-    // Use dynamic children if available, otherwise use static children from JSON
+
     let children_to_render = dynamic_children
         .or_else(|| element.get("children").and_then(|c| c.as_array()).cloned())
         .unwrap_or_default();
@@ -85,7 +85,7 @@ pub fn UIElement(element: serde_json::Value, action_executor: Signal<ActionExecu
                 if !content.is_empty() {
                     p { class: "text-gray-800", "{content}" }
                 }
-                // Render children (either dynamic from executor or static from JSON)
+
                 for (i , child) in children_to_render.iter().enumerate() {
                     UIElement {
                         key: "{i}",
@@ -129,7 +129,7 @@ pub fn UIElement(element: serde_json::Value, action_executor: Signal<ActionExecu
                 .and_then(|p| p.as_str())
                 .unwrap_or("");
 
-            // Get current value from action executor state instead of static content
+
             let current_value = {
                 let executor = action_executor.read();
                 let components = executor.ui_state.components.read();

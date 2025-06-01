@@ -9,7 +9,7 @@ struct PortalCtx {
     portals: Signal<HashMap<usize, Signal<Element>>>,
 }
 
-/// Create a portal.
+
 pub fn use_portal() -> PortalId {
     static NEXT_ID: GlobalSignal<usize> = Signal::global(|| 0);
 
@@ -33,7 +33,7 @@ pub fn use_portal() -> PortalId {
         (sig, PortalId(id))
     });
 
-    // Cleanup the portal.
+
     use_drop(move || {
         let mut ctx = consume_context::<PortalCtx>();
         ctx.portals.write().remove(&id.0);

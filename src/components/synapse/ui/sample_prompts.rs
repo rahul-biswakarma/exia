@@ -7,7 +7,7 @@ pub struct SamplePromptsProps {
 
 #[component]
 pub fn SamplePrompts(props: SamplePromptsProps) -> Element {
-    // Sample prompts for quick testing
+
     let sample_prompts = vec![
         "Create a user profile card with name, email, and avatar",
         "Build a simple login form with username and password fields",

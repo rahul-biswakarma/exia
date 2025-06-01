@@ -1,10 +1,7 @@
-// TODO: Implement LLM configuration when needed
-// use crate::configs::llm::{clients::LLMClients, invokers::LLMInvokers};
 use dioxus::prelude::*;
 
 #[derive(Clone, Debug, Default)]
 pub struct AppSettings {
-    // Placeholder for future settings
 }
 
 #[derive(Clone, Copy)]

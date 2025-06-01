@@ -108,7 +108,7 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
                 set_checked.call(new_checked);
             },
 
-            // Aria says only spacebar can change state of checkboxes.
+
             onkeydown: move |e| {
                 if e.key() == Key::Enter {
                     e.prevent_default();
@@ -159,7 +159,7 @@ fn BubbleInput(
 ) -> Element {
     let id = use_unique_id();
 
-    // Update the actual input state to match our virtual state.
+
     use_effect(move || {
         let checked = checked();
         let js = eval(
@@ -201,7 +201,7 @@ fn BubbleInput(
             margin: 0,
             style: "transform: 'translateX(-100%)';",
 
-            // Default checked
+
             checked: default_checked != CheckboxState::Unchecked,
 
             ..attributes,

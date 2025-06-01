@@ -22,38 +22,38 @@ impl std::fmt::Display for SliderValue {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct SliderProps {
-    /// The controlled value of the slider
+
     value: Option<Signal<SliderValue>>,
 
-    /// The default value when uncontrolled
+
     #[props(default = SliderValue::Single(0.0))]
     default_value: SliderValue,
 
-    /// The minimum value
+
     #[props(default = 0.0)]
     min: f64,
 
-    /// The maximum value
+
     #[props(default = 100.0)]
     max: f64,
 
-    /// The step value
+
     #[props(default = 1.0)]
     step: f64,
 
-    /// Whether the slider is disabled
+
     #[props(default)]
     disabled: ReadOnlySignal<bool>,
 
-    /// Orientation of the slider
+
     #[props(default = true)]
     horizontal: bool,
 
-    /// Inverts the order of the values
+
     #[props(default)]
     inverted: bool,
 
-    /// Callback when value changes
+
     #[props(default)]
     on_value_change: Callback<SliderValue>,
 
@@ -235,7 +235,7 @@ pub fn SliderRange(props: SliderRangeProps) -> Element {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct SliderThumbProps {
-    /// Which thumb this is in a range slider
+
     #[props(default)]
     index: Option<usize>,
 
@@ -284,42 +284,42 @@ pub fn SliderThumb(props: SliderThumbProps) -> Element {
     }
 }
 
-/// Performs a linear scale transformation between two ranges.
-///
-/// # Arguments
-///
-/// * `input` - Input range [min, max]
-/// * `output` - Output range [min, max]
-///
-/// # Returns
-///
-/// A function that maps values from the input range to the output range
+
+
+
+
+
+
+
+
+
+
 fn linear_scale(input: [f64; 2], output: [f64; 2]) -> impl Fn(f64) -> f64 {
     let [in_min, in_max] = input;
     let [out_min, out_max] = output;
 
     move |x: f64| {
-        // Calculate position in input range (0.0 ~ 1.0)
+
         let normalized = (x - in_min) / (in_max - in_min);
 
-        // Convert to output range
+
         out_min + normalized * (out_max - out_min)
     }
 }
 
-/// Calculates a value based on pointer position within a rectangle.
-///
-/// # Arguments
-///
-/// * `pointer_position` - The position of the pointer
-/// * `rect` - The rectangle reference area
-/// * `min` - The minimum value in the output range
-/// * `max` - The maximum value in the output range
-/// * `inverted` - Whether to invert the output range
-///
-/// # Returns
-///
-/// The calculated value within the range
+
+
+
+
+
+
+
+
+
+
+
+
+
 fn get_value_from_pointer(
     pointer_position: f64,
     rect: &Rect<f64, Pixels>,

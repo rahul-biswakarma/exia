@@ -2,15 +2,15 @@ use dioxus::prelude::*;
 
 #[derive(Props, Clone, PartialEq)]
 pub struct ProgressProps {
-    /// The current progress value, between 0 and max
+
     #[props(default = 0.0)]
     value: f64,
 
-    /// The maximum value. Defaults to 100
+
     #[props(default = 100.0)]
     max: f64,
 
-    /// CSS class names to apply
+
     #[props(default)]
     class: Option<String>,
 
@@ -50,7 +50,7 @@ pub fn Progress(props: ProgressProps) -> Element {
     }
 }
 
-/// The indicator that represents the progress visually
+
 #[derive(Props, Clone, PartialEq)]
 pub struct ProgressIndicatorProps {
     #[props(extends = GlobalAttributes)]

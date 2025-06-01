@@ -49,7 +49,7 @@ mod tests {
             user_data: None,
         };
 
-        // should return ok but not execute due to condition
+
         let result = executor.execute_action(&handler, context);
         assert!(result.is_ok());
     }
@@ -58,10 +58,10 @@ mod tests {
     fn test_get_form_data() {
         let executor = ActionExecutor::new();
 
-        // initially empty
+
         assert!(executor.get_form_data("test_key").is_none());
 
-        // add some data
+
         executor
             .get_ui_state()
             .form_data
@@ -77,10 +77,10 @@ mod tests {
     fn test_get_errors() {
         let executor = ActionExecutor::new();
 
-        // initially empty
+
         assert!(executor.get_errors().is_empty());
 
-        // add an error
+
         executor
             .get_ui_state()
             .errors

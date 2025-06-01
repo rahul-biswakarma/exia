@@ -14,14 +14,14 @@ pub struct ToggleProps {
     #[props(default)]
     on_pressed_change: Callback<bool>,
 
-    /// CSS class names to apply
+
     #[props(default)]
     class: Option<String>,
 
     #[props(extends = GlobalAttributes)]
     attributes: Vec<Attribute>,
 
-    // https://github.com/DioxusLabs/dioxus/issues/2467
+
     #[props(default)]
     onmounted: Callback<Event<MountedData>>,
     #[props(default)]

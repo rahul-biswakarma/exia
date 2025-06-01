@@ -3,12 +3,12 @@ use dioxus::prelude::*;
 
 #[derive(Clone, Copy)]
 struct DropdownMenuContext {
-    // State
+
     open: ReadOnlySignal<bool>,
     set_open: Callback<bool>,
     disabled: ReadOnlySignal<bool>,
 
-    // Keyboard nav data
+
     item_count: Signal<usize>,
     recent_focus: Signal<usize>,
     current_focus: Signal<Option<usize>>,
@@ -175,7 +175,7 @@ pub fn DropdownMenuItem(props: DropdownMenuItemProps) -> Element {
         ctx.item_count += 1;
     });
 
-    // Cleanup when the component is unmounted
+
     use_drop(move || {
         ctx.item_count -= 1;
         if (ctx.current_focus)() == Some((props.index)()) {

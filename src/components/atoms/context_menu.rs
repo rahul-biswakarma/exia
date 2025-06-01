@@ -3,15 +3,15 @@ use dioxus::prelude::*;
 
 #[derive(Clone, Copy)]
 struct ContextMenuCtx {
-    // State
+
     open: ReadOnlySignal<bool>,
     set_open: Callback<bool>,
     disabled: ReadOnlySignal<bool>,
 
-    // Position of the context menu
+
     position: Signal<(i32, i32)>,
 
-    // Keyboard nav data
+
     item_count: Signal<usize>,
     recent_focus: Signal<usize>,
     current_focus: Signal<Option<usize>>,
@@ -70,28 +70,28 @@ impl ContextMenuCtx {
         }
     }
 
-    // Focus management helper - no actual focus restoration since we don't have NodeRef
+
     fn restore_trigger_focus(&mut self) {
-        // In a real implementation with DOM access, we would focus the trigger element here
-        // For now, we just reset the focus state
+
+
         self.current_focus.set(None);
     }
 }
 
 #[derive(Props, Clone, PartialEq)]
 pub struct ContextMenuProps {
-    /// Whether the context menu is disabled
+
     #[props(default = ReadOnlySignal::new(Signal::new(false)))]
     disabled: ReadOnlySignal<bool>,
 
-    /// Whether the context menu is open
+
     open: Option<Signal<bool>>,
 
-    /// Default open state
+
     #[props(default)]
     default_open: bool,
 
-    /// Callback when open state changes
+
     #[props(default)]
     on_open_change: Callback<bool>,
 
@@ -122,9 +122,9 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
             let click_y = coords.y as i32;
             let (menu_x, menu_y) = position();
 
-            // Simple boundary check
-            let menu_width = 200; // Approximate menu width
-            let menu_height = 200; // Approximate menu height
+
+            let menu_width = 200;
+            let menu_height = 200;
 
             if click_x < menu_x
                 || click_x > menu_x + menu_width
@@ -137,7 +137,7 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
         }
     };
 
-    // Handle escape key to close the menu
+
     let handle_keydown = move |event: Event<KeyboardData>| {
         if open() && event.key() == Key::Escape {
             event.prevent_default();
@@ -209,7 +209,7 @@ pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
         format!("position: fixed; left: {}px; top: {}px;", x, y)
     });
 
-    // When menu opens, focus the first item
+
     let is_open = (ctx.open)();
     use_effect(move || {
         if is_open {
@@ -251,13 +251,13 @@ pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct ContextMenuItemProps {
-    /// The value of the menu item
+
     value: ReadOnlySignal<String>,
 
-    /// The index of the item in the menu
+
     index: ReadOnlySignal<usize>,
 
-    /// Callback when the item is selected
+
     #[props(default)]
     on_select: Callback<String>,
 
@@ -270,12 +270,12 @@ pub struct ContextMenuItemProps {
 pub fn ContextMenuItem(props: ContextMenuItemProps) -> Element {
     let mut ctx: ContextMenuCtx = use_context();
 
-    // Register this item with the menu
+
     use_effect(move || {
         ctx.item_count += 1;
     });
 
-    // Cleanup when the component is unmounted
+
     use_drop(move || {
         ctx.item_count -= 1;
         if (ctx.current_focus)() == Some((props.index)()) {
@@ -283,7 +283,7 @@ pub fn ContextMenuItem(props: ContextMenuItemProps) -> Element {
         }
     });
 
-    // Determine if this item is currently focused
+
     let tab_index = use_memo(move || {
         if (ctx.current_focus)() == Some((props.index)()) {
             "0"
@@ -306,7 +306,7 @@ pub fn ContextMenuItem(props: ContextMenuItemProps) -> Element {
     let handle_keydown = {
         let value = (props.value)().clone();
         move |event: Event<KeyboardData>| {
-            // Check for Enter or Space key
+
             if event.key() == Key::Enter || event.key().to_string() == " " {
                 event.prevent_default();
                 if !(ctx.disabled)() {

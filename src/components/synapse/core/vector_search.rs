@@ -56,7 +56,7 @@ impl VectorSearchClient {
         let gemini_api_key = env::var("GEMINI_API_KEY")
             .map_err(|_| "GEMINI_API_KEY environment variable not set".to_string())?;
 
-        // Try to connect to Qdrant, but don't fail if it's not available
+
         let qdrant_client = Self::try_connect_qdrant().await.ok();
 
         Ok(Self {
@@ -68,17 +68,17 @@ impl VectorSearchClient {
 
     async fn try_connect_qdrant() -> Result<Qdrant> {
         let qdrant_url =
-            env::var("QDRANT_URL").unwrap_or_else(|_| "http://localhost:6334".to_string());
+            env::var("QDRANT_URL").unwrap_or_else(|_| "http:
         let qdrant_api_key = env::var("QDRANT_API_KEY").ok();
 
-        // Configure with more robust settings for HTTP/2 compatibility
+
         let mut client_builder = Qdrant::from_url(&qdrant_url);
 
         if let Some(key) = qdrant_api_key {
             client_builder = client_builder.api_key(key);
         }
 
-        // Add improved timeout settings and keep-alive to handle HTTP/2 issues
+
         client_builder = client_builder
             .timeout(std::time::Duration::from_secs(60))
             .connect_timeout(std::time::Duration::from_secs(30))
@@ -96,13 +96,13 @@ impl VectorSearchClient {
     ) -> Result<Vec<ComponentMatch>, String> {
         let qdrant_client = match &self.qdrant_client {
             Some(client) => client,
-            None => return Ok(Vec::new()), // No vector DB available, return empty results
+            None => return Ok(Vec::new()),
         };
 
-        // Generate embedding for the query
+
         let query_embedding = self.generate_embedding(query).await?;
 
-        // Search both components and actions collections
+
         let collections = vec!["components", "actions"];
         let mut all_results = Vec::new();
 
@@ -110,17 +110,17 @@ impl VectorSearchClient {
             let search_points = SearchPoints {
                 collection_name: collection.to_string(),
                 vector: query_embedding.clone(),
-                limit: (limit / 2) as u64, // Split the limit between collections
+                limit: (limit / 2) as u64,
                 with_payload: Some(true.into()),
                 ..Default::default()
             };
 
-            // Retry search up to 3 times to handle HTTP/2 connection issues
+
             let mut _last_error = None;
             for attempt in 1..=3 {
                 match qdrant_client.search_points(search_points.clone()).await {
                     Ok(search_result) => {
-                        // Convert results to ComponentMatch
+
                         let results: Vec<ComponentMatch> = search_result
                             .result
                             .into_iter()
@@ -164,7 +164,7 @@ impl VectorSearchClient {
                             .collect();
 
                         all_results.extend(results);
-                        break; // Success, exit retry loop
+                        break;
                     }
                     Err(e) => {
                         let error_msg = format!(
@@ -173,13 +173,13 @@ impl VectorSearchClient {
                         );
                         _last_error = Some(error_msg.clone());
 
-                        // Check for specific error types and provide better messaging
+
                         let error_str = e.to_string();
                         if error_str.contains("not found") || error_str.contains("Not found") {
                             if collection == "components" {
                                 return Err(format!("Collection 'components' not found. Please run the vector database setup first."));
                             } else {
-                                // Actions collection not found, continue with components only
+
                                 break;
                             }
                         }
@@ -187,7 +187,7 @@ impl VectorSearchClient {
                         if error_str.contains("h2 protocol error")
                             || error_str.contains("FRAME_SIZE_ERROR")
                         {
-                            // HTTP/2 error - wait and retry
+
                             if attempt < 3 {
                                 tokio::time::sleep(tokio::time::Duration::from_millis(
                                     1000 * attempt,
@@ -205,7 +205,7 @@ impl VectorSearchClient {
             }
         }
 
-        // Sort all results by score and take the top limit
+
         all_results.sort_by(|a, b| {
             b.score
                 .partial_cmp(&a.score)
@@ -217,7 +217,7 @@ impl VectorSearchClient {
     }
 
     async fn generate_embedding(&self, text: &str) -> Result<Vec<f32>, String> {
-        let url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-exp-03-07:embedContent";
+        let url = "https:
 
         let request = GeminiEmbedRequest {
             model: "models/gemini-embedding-exp-03-07".to_string(),
@@ -251,7 +251,7 @@ impl VectorSearchClient {
             .await
             .map_err(|e| format!("Failed to parse embedding response: {}", e))?;
 
-        // Convert f64 to f32 for Qdrant
+
         let embedding: Vec<f32> = embed_response
             .embedding
             .values
@@ -314,11 +314,11 @@ impl VectorSearchClient {
 pub async fn create_enhanced_ui_with_vector_search(prompt: &str) -> Result<Value, String> {
     let vector_client = VectorSearchClient::new().await?;
 
-    // First, try to find similar components in the vector database
+
     if vector_client.is_vector_db_available() {
         let similar_components = vector_client.search_similar_components(prompt, 3).await?;
 
-        // If we found high-scoring matches (>0.8), use them to inform the LLM
+
         let high_quality_matches: Vec<&ComponentMatch> = similar_components
             .iter()
             .filter(|m| m.score > 0.8)
@@ -339,7 +339,7 @@ pub async fn create_enhanced_ui_with_vector_search(prompt: &str) -> Result<Value
         }
     }
 
-    // Fallback to pure LLM generation
+
     println!("🤖 No vector matches found, using pure LLM generation");
     super::gemini_api::generate_ui_schema(prompt).await
 }
@@ -348,7 +348,7 @@ async fn create_ui_from_vector_matches(
     prompt: &str,
     matches: &[&ComponentMatch],
 ) -> Result<Value, String> {
-    // Create enhanced prompt using the matched components
+
     let context = matches
         .iter()
         .map(|m| format!("- {}: {} ({})", m.name, m.description, m.usage))
@@ -369,7 +369,7 @@ async fn create_enhanced_llm_ui(
 ) -> Result<Value, String> {
     let context = similar_components
         .iter()
-        .take(3) // Limit to top 3 to avoid token limits
+        .take(3)
         .map(|m| format!("- {}: {}", m.name, m.description))
         .collect::<Vec<_>>()
         .join("\n");

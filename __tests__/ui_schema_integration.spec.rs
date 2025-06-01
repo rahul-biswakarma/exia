@@ -3,12 +3,12 @@ mod tests {
     use crate::action_executor::*;
     use serde_json::json;
 
-    /// Test that demonstrates how UI schema integrates with atoms and action registry
+
     #[test]
     fn test_ui_schema_action_integration() {
         let mut executor = ActionExecutor::new();
 
-        // Simulate parsing a UI schema from LLM
+
         let ui_schema = json!({
             "ui_elements": [
                 {
@@ -53,7 +53,7 @@ mod tests {
             }
         });
 
-        // Parse UI elements into components
+
         let ui_elements = ui_schema["ui_elements"].as_array().unwrap();
 
         for element in ui_elements {
@@ -65,7 +65,7 @@ mod tests {
                 .map(|s| s.to_string());
             let properties = element.get("properties").cloned().unwrap_or(json!({}));
 
-            // Create component state
+
             let component = ComponentState {
                 visible: true,
                 content,
@@ -77,18 +77,18 @@ mod tests {
             executor.add_component(component_id, component);
         }
 
-        // Set global state from schema
+
         if let Some(state) = ui_schema.get("state") {
             *executor.ui_state.global_state.write() = state.clone();
         }
 
-        // Verify components were created correctly
+
         let components = executor.ui_state.components.read();
         assert!(components.contains_key("user-card"));
         assert!(components.contains_key("status-label"));
         assert!(components.contains_key("toggle-button"));
 
-        // Verify global state
+
         let global_state = executor.ui_state.global_state.read();
         assert_eq!(global_state["currentUser"], "john_doe");
         assert_eq!(global_state["theme"], "dark");
@@ -96,7 +96,7 @@ mod tests {
         drop(components);
         drop(global_state);
 
-        // Test action execution - setState action
+
         let set_state_result = executor.execute_action(
             "setState",
             Some("user-card"),
@@ -104,7 +104,7 @@ mod tests {
         );
         assert!(set_state_result.is_ok());
 
-        // Verify state was set
+
         let user_card = executor
             .ui_state
             .components
@@ -115,11 +115,11 @@ mod tests {
         assert_eq!(user_card.local_state["selected"], true);
         assert_eq!(user_card.local_state["lastClicked"], "2024-01-01");
 
-        // Test visibility toggle action
+
         let toggle_result = executor.execute_action("toggle", Some("user-card"), None);
         assert!(toggle_result.is_ok());
 
-        // Verify visibility was toggled
+
         let user_card_after_toggle = executor
             .ui_state
             .components
@@ -129,7 +129,7 @@ mod tests {
             .clone();
         assert!(!user_card_after_toggle.visible);
 
-        // Toggle back
+
         executor
             .execute_action("toggle", Some("user-card"), None)
             .unwrap();
@@ -147,7 +147,7 @@ mod tests {
     fn test_complex_action_workflow() {
         let mut executor = ActionExecutor::new();
 
-        // Create a form-like UI structure
+
         let form_components = vec![
             ("username-input", "input", "Username"),
             ("email-input", "input", "Email"),
@@ -166,8 +166,8 @@ mod tests {
             executor.add_component(id, component);
         }
 
-        // Test form validation workflow
-        // 1. Set form field values
+
+
         executor
             .execute_action(
                 "setState",
@@ -184,7 +184,7 @@ mod tests {
             )
             .unwrap();
 
-        // 2. Update status message to show processing
+
         executor
             .execute_action(
                 "update",
@@ -196,7 +196,7 @@ mod tests {
             )
             .unwrap();
 
-        // Verify content update
+
         let status_component = executor
             .ui_state
             .components
@@ -207,7 +207,7 @@ mod tests {
         assert_eq!(status_component.content, Some("Processing...".to_string()));
         assert_eq!(status_component.properties["color"], "blue");
 
-        // 3. Hide submit button during processing
+
         executor
             .execute_action("hide", Some("submit-button"), None)
             .unwrap();
@@ -220,7 +220,7 @@ mod tests {
             .clone();
         assert!(!submit_button.visible);
 
-        // 4. Show success message
+
         executor
             .execute_action(
                 "update",
@@ -232,7 +232,7 @@ mod tests {
             )
             .unwrap();
 
-        // 5. Show submit button again
+
         executor
             .execute_action("show", Some("submit-button"), None)
             .unwrap();
@@ -245,7 +245,7 @@ mod tests {
             .clone();
         assert!(submit_button_final.visible);
 
-        // Verify final state
+
         let final_status = executor
             .ui_state
             .components
@@ -264,10 +264,10 @@ mod tests {
     fn test_dynamic_component_creation_and_destruction() {
         let mut executor = ActionExecutor::new();
 
-        // Start with empty UI
+
         assert!(executor.ui_state.components.read().is_empty());
 
-        // Dynamically create components using action registry
+
         let create_result = executor.execute_action(
             "create",
             None,
@@ -282,7 +282,7 @@ mod tests {
         );
         assert!(create_result.is_ok());
 
-        // Verify component was created
+
         let components = executor.ui_state.components.read();
         assert!(components.contains_key("dynamic-card"));
         let dynamic_card = components.get("dynamic-card").unwrap();
@@ -291,7 +291,7 @@ mod tests {
         assert_eq!(dynamic_card.local_state["created_at"], "2024-01-01");
         drop(components);
 
-        // Update the dynamic component
+
         executor
             .execute_action(
                 "update",
@@ -303,7 +303,7 @@ mod tests {
             )
             .unwrap();
 
-        // Verify update
+
         let updated_card = executor
             .ui_state
             .components
@@ -314,12 +314,12 @@ mod tests {
         assert_eq!(updated_card.content, Some("Updated Content".to_string()));
         assert_eq!(updated_card.properties["highlighted"], true);
 
-        // Test component destruction
+
         executor
             .execute_action("destroy", Some("dynamic-card"), None)
             .unwrap();
 
-        // Verify component was removed
+
         assert!(!executor
             .ui_state
             .components
@@ -331,7 +331,7 @@ mod tests {
     fn test_animation_and_state_integration() {
         let mut executor = ActionExecutor::new();
 
-        // Create a component that supports animations
+
         let component = ComponentState {
             visible: true,
             content: Some("Animated Element".to_string()),
@@ -341,7 +341,7 @@ mod tests {
         };
         executor.add_component("animated-element", component);
 
-        // Trigger animation
+
         let animation_result = executor.execute_action(
             "animate",
             Some("animated-element"),
@@ -352,14 +352,14 @@ mod tests {
         );
         assert!(animation_result.is_ok());
 
-        // Verify animation state
+
         let animations = executor.ui_state.animations.read();
         assert!(animations.contains_key("animated-element"));
         let animation = animations.get("animated-element").unwrap();
         assert!(animation.active);
         drop(animations);
 
-        // Test state updates during animation
+
         executor
             .execute_action(
                 "setState",
@@ -383,29 +383,29 @@ mod tests {
     fn test_error_handling_and_recovery() {
         let mut executor = ActionExecutor::new();
 
-        // Test action on non-existent component
+
         let result = executor.execute_action("show", Some("non-existent"), None);
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
             .contains("component 'non-existent' not found"));
 
-        // Test action without required parameters
+
         let result = executor.execute_action("update", Some("test"), None);
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("no payload provided"));
 
-        // Test unknown action
+
         let result = executor.execute_action("unknown-action", None, None);
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("unknown action"));
 
-        // Test error tracking
+
         executor.set_error("form-field", "This field is required");
         let errors = executor.get_errors();
         assert_eq!(errors.get("form-field").unwrap(), "This field is required");
 
-        // Test error clearing
+
         executor.clear_error("form-field");
         let errors_after_clear = executor.get_errors();
         assert!(!errors_after_clear.contains_key("form-field"));
@@ -415,10 +415,10 @@ mod tests {
     fn test_action_registry_registration() {
         let executor = ActionExecutor::new();
 
-        // The action registry should be automatically initialized
-        // This is tested indirectly by verifying that actions work
 
-        // Create a test component
+
+
+
         let mut test_executor = executor.clone();
         let component = ComponentState {
             visible: true,
@@ -429,7 +429,7 @@ mod tests {
         };
         test_executor.add_component("test-component", component);
 
-        // Test that all registered actions work
+
         let actions_to_test = vec![
             ("show", Some("test-component"), None),
             ("hide", Some("test-component"), None),

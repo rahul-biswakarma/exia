@@ -2,36 +2,31 @@ use crate::utils::lib::{use_id_or, use_unique_id};
 use dioxus::prelude::*;
 use std::rc::Rc;
 
-// TODO: controlled version
-// TODO: docs
-// TODO: rewrite this to use collapsible
-// TODO: keyboard should skip disabled items when focusing.
 
-/// Internal accordion context.
 #[derive(Clone, Copy, Default)]
 struct AccordionContext {
-    /// Used to track the next runtime-generated id.
+
     next_id: Signal<usize>,
 
-    /// The runtime generated ids of the open items.
+
     open_items: Signal<Vec<usize>>,
 
-    /// Whether multiple items can be open at once.
+
     allow_multiple_open: ReadOnlySignal<bool>,
 
-    /// Whether the entire accordion is disabled.
+
     disabled: ReadOnlySignal<bool>,
 
-    /// Whether all accordion items can be collapsed.
+
     collapsible: ReadOnlySignal<bool>,
 
-    /// Whether the accordion is horizontal.
+
     horizontal: ReadOnlySignal<bool>,
 
-    /// Number of current accordion items.
+
     num_items: Signal<usize>,
 
-    /// The focused accordion item by index, if any.
+
     focused_index: Signal<Option<usize>>,
 }
 
@@ -78,7 +73,7 @@ impl AccordionContext {
     pub fn set_closed(&mut self, id: usize) {
         let mut open_items = self.open_items.write();
 
-        // If the accordion is not collapsible, we can't close this one.
+
         if !*self.collapsible.peek() && open_items.len() == 1 {
             return;
         }
@@ -106,14 +101,14 @@ impl AccordionContext {
         false
     }
 
-    /// Set the currently focused accordion item.
-    ///
-    /// This should be used by `focus`/`focusout` event only to start tracking focus.
+
+
+
     pub fn set_focus(&mut self, id: Option<usize>) {
         self.focused_index.set(id);
     }
 
-    /// Focus the next accordion item.
+
     pub fn focus_next(&mut self) {
         let Some(id) = *self.focused_index.read() else {
             return;
@@ -129,7 +124,7 @@ impl AccordionContext {
         self.focused_index.set(Some(next_focused));
     }
 
-    /// Focus the previous accordion item.
+
     pub fn focus_prev(&mut self) {
         let Some(id) = *self.focused_index.read() else {
             return;
@@ -165,25 +160,25 @@ pub struct AccordionProps {
     style: Option<String>,
     children: Element,
 
-    /// Whether multiple accordion items are allowed to be open at once.
-    ///
-    /// Defaults to false.
+
+
+
     #[props(default)]
     allow_multiple_open: ReadOnlySignal<bool>,
 
-    /// Set whether the accordion is disabled.
+
     #[props(default)]
     disabled: ReadOnlySignal<bool>,
 
-    /// Whether the accordion can be fully collapsed.
-    ///
-    /// Setting this to true will allow all accordion items to close. Defaults to true.
+
+
+
     #[props(default = ReadOnlySignal::new(Signal::new(true)))]
     collapsible: ReadOnlySignal<bool>,
 
-    /// Whether the accordion is horizontal.
-    ///
-    /// Settings this to true will use left/right keybinds for navigation instead of up/down. Defaults to false.
+
+
+
     #[props(default)]
     horizontal: ReadOnlySignal<bool>,
 }
@@ -222,25 +217,25 @@ pub struct AccordionItemProps {
     style: Option<String>,
     children: Element,
 
-    /// Whether the accordion item is disabled.
+
     #[props(default)]
     disabled: ReadOnlySignal<bool>,
 
-    /// Whether this accordion item should be opened by default.
+
     #[props(default)]
     default_open: bool,
 
-    /// Callback for when the accordion's open/closed state changes.
-    ///
-    /// The new value is provided.
+
+
+
     #[props(default)]
     on_change: Callback<bool, ()>,
 
-    /// Callback for when the trigger is clicked.
+
     #[props(default)]
     on_trigger_click: Callback,
 
-    /// Required index for tracking component ordering.
+
     index: usize,
 }
 
@@ -259,14 +254,14 @@ pub fn AccordionItem(props: AccordionItemProps) -> Element {
 
     use_drop(move || ctx.unregister_item());
 
-    // Open this item if we're set as default.
+
     use_hook(move || {
         if props.default_open {
             ctx.set_open(item.id);
         }
     });
 
-    // Handle calling `on_change` callback.
+
     use_effect(move || {
         let open = ctx.is_open(item.id);
         props.on_change.call(open)
@@ -378,7 +373,7 @@ pub fn AccordionTrigger(props: AccordionTriggerProps) -> Element {
     }
 }
 
-/// Internal accordion-item context.
+
 #[derive(Clone, Copy, PartialEq)]
 struct Item {
     id: usize,

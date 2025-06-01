@@ -3,29 +3,29 @@ use dioxus::prelude::*;
 
 #[derive(Clone)]
 struct HoverCardCtx {
-    // State
+
     open: Memo<bool>,
     set_open: Callback<bool>,
     disabled: ReadOnlySignal<bool>,
 
-    // ARIA attributes
+
     content_id: Signal<String>,
 }
 
 #[derive(Props, Clone, PartialEq)]
 pub struct HoverCardProps {
-    /// Whether the hover card is open
+
     open: Option<Signal<bool>>,
 
-    /// Default open state
+
     #[props(default)]
     default_open: bool,
 
-    /// Callback when open state changes
+
     #[props(default)]
     on_open_change: Callback<bool>,
 
-    /// Whether the hover card is disabled
+
     #[props(default)]
     disabled: ReadOnlySignal<bool>,
 
@@ -38,7 +38,7 @@ pub struct HoverCardProps {
 #[component]
 pub fn HoverCard(props: HoverCardProps) -> Element {
     let (open, set_open) = use_controlled(props.open, props.default_open, props.on_open_change);
-    // Generate a unique ID for the hover card content
+
     let content_id = use_unique_id();
 
     let _ctx = use_context_provider(|| HoverCardCtx {
@@ -62,7 +62,7 @@ pub fn HoverCard(props: HoverCardProps) -> Element {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct HoverCardTriggerProps {
-    /// Optional ID for the trigger element
+
     #[props(default)]
     id: ReadOnlySignal<Option<String>>,
 
@@ -76,13 +76,13 @@ pub struct HoverCardTriggerProps {
 pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
     let ctx: HoverCardCtx = use_context();
 
-    // Generate a unique ID for the trigger
+
     let trigger_id = use_unique_id();
 
-    // Use use_id_or to handle the ID
+
     let id = use_id_or(trigger_id, props.id);
 
-    // Handle mouse events
+
     let handle_mouse_enter = move |_: Event<MouseData>| {
         if !(ctx.disabled)() {
             ctx.set_open.call(true);
@@ -100,11 +100,11 @@ pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
             id,
             class: "hover-card-trigger",
 
-            // Mouse events
+
             onmouseenter: handle_mouse_enter,
             onmouseleave: handle_mouse_leave,
 
-            // ARIA attributes
+
             aria_haspopup: "dialog",
             aria_expanded: (ctx.open)(),
             aria_controls: ctx.content_id.peek().clone(),
@@ -153,19 +153,19 @@ impl HoverCardAlign {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct HoverCardContentProps {
-    /// Optional ID for the hover card content
+
     #[props(default)]
     id: ReadOnlySignal<Option<String>>,
 
-    /// Side of the trigger to place the hover card
+
     #[props(default = HoverCardSide::Top)]
     side: HoverCardSide,
 
-    /// Alignment of the hover card relative to the trigger
+
     #[props(default = HoverCardAlign::Center)]
     align: HoverCardAlign,
 
-    /// Whether to force the hover card to stay open when hovered
+
     #[props(default = true)]
     force_mount: bool,
 
@@ -179,16 +179,16 @@ pub struct HoverCardContentProps {
 pub fn HoverCardContent(props: HoverCardContentProps) -> Element {
     let ctx: HoverCardCtx = use_context();
 
-    // Only render if the hover card is open or force_mount is true
+
     let is_open = (ctx.open)();
     if !is_open && !props.force_mount {
         return rsx!({});
     }
 
-    // Use use_id_or to handle the ID
+
     let id = use_id_or(ctx.content_id, props.id);
 
-    // Handle mouse events to keep the hover card open when hovered
+
     let handle_mouse_enter = move |_: Event<MouseData>| {
         if !(ctx.disabled)() {
             ctx.set_open.call(true);
@@ -210,7 +210,7 @@ pub fn HoverCardContent(props: HoverCardContentProps) -> Element {
             "data-side": props.side.as_str(),
             "data-align": props.align.as_str(),
 
-            // Mouse events to keep the hover card open when hovered
+
             onmouseenter: handle_mouse_enter,
             onmouseleave: handle_mouse_leave,
 

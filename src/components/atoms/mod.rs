@@ -28,7 +28,7 @@ pub mod toggle;
 pub mod toggle_group;
 pub mod tooltip;
 
-// Re-export components for easier imports
+
 pub use button::{Button, ButtonSize, ButtonVariant};
 pub use card::{Card, CardContent, CardFooter, CardHeader};
 pub use loader::{InlineLoader, Loader, LoaderSize, LoaderType, PageLoader};
