@@ -4,9 +4,11 @@
   },
   "cSpell.words": [
     "dioxus",
+    "ollama",
     "onclick",
     "oninput",
-    "onsubmit"
+    "onsubmit",
+    "qdrant"
   ],
   "deno.lint": true,
   "deno.unstable": [

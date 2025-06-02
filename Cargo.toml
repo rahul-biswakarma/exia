@@ -22,6 +22,7 @@ chrono = { version = "0.4", features = ["serde"] }
 qdrant-client = "1.12"
 
 serde_derive = "1.0"
+ollama = "0.0.1"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 

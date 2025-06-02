@@ -1690,6 +1690,7 @@ dependencies = [
  "getrandom 0.2.16",
  "gloo-timers",
  "js-sys",
+ "ollama",
  "qdrant-client",
  "regex",
  "reqwest 0.11.27",
@@ -3464,6 +3465,12 @@ checksum = "62948e14d923ea95ea2c7c86c71013138b66525b86bdc08d2dcc262bdb497b87"
 dependencies = [
  "memchr",
 ]
+
+[[package]]
+name = "ollama"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8c75c1297e730093910f3b22a291167cdb42b3a790ab2e89568c41efdbf199a3"
 
 [[package]]
 name = "once_cell"
