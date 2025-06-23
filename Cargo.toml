@@ -1,72 +1,15 @@
 [package]
 name = "exia"
 version = "0.1.0"
-authors = ["Rahul Biswakarma <rahul.id39@gmail.com>"]
-edition = "2021"
+edition = "2024"
 
 [dependencies]
-dioxus = { version = "0.6.0", features = ["router", "fullstack"] }
-dioxus-time = "0.0.0"
-tracing = "0.1"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-regex = "1.0"
-
-reqwest = { version = "0.11", features = ["json", "multipart"] }
-tokio = { version = "1.0", features = ["rt", "rt-multi-thread", "macros"], default-features = false }
-dotenv = "0.15"
-anyhow = "1.0"
-clap = { version = "4.0", features = ["derive"] }
-uuid = { version = "1.0", features = ["v4"] }
-chrono = { version = "0.4", features = ["serde"] }
-qdrant-client = "1.12"
-
-serde_derive = "1.0"
-ollama = "0.0.1"
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "0.2"
-wasm-bindgen-futures = "0.4"
-gloo-timers = { version = "0.3", features = ["futures"] }
-getrandom = { version = "0.2", features = ["js"] }
-tokio = { version = "1.0", features = ["macros"], default-features = false }
-web-sys = { version = "0.3", features = [
-  "console",
-  "Request",
-  "RequestInit",
-  "RequestMode",
-  "Response",
-  "Window",
-  "Headers",
-  "Storage",
-  "Location",
-] }
-js-sys = "0.3"
-
-[[bin]]
-name = "upload_to_vector_db"
-path = "vector_db/upload_to_vector_db.rs"
-
-[[bin]]
-name = "query_components"
-path = "vector_db/query_components.rs"
-
-[features]
-default = ["desktop"]
-web = ["dioxus/web"]
-desktop = ["dioxus/desktop"]
-mobile = ["dioxus/mobile"]
-
-[profile]
-
-[profile.wasm-dev]
-inherits = "dev"
-opt-level = 1
-
-[profile.server-dev]
-inherits = "dev"
-
-[profile.android-dev]
-inherits = "dev"
+crossterm = "0.29.0"
+ipnet = "2.11.0"
+network-interface = "2.0.1"
+ratatui = "0.29.0"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread"] }
+tokio-wifiscanner = "0.2.2"
+uuid = { version = "1.17.0", features = ["serde", "v4"] }
