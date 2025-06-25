@@ -46,3 +46,17 @@ pub struct UnifiedNetworkItem {
     #[serde(skip_serializing)] // Don't send this to the LLM
     pub is_primary_connected: bool, // for your internal logic/UI highlighting
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct DiscoveredDevice {
+    pub id: Uuid,
+    pub ip_address: String,
+    pub mac_address: Option<String>,
+    pub hostname: Option<String>,
+    pub device_type_heuristic: String,
+    pub open_ports: Vec<u16>,        // list of actively listening TCP/UDP ports
+    pub advertised_services: Vec<String>, // e.g., "_hue._tcp.local.", "_googlecast._tcp.local."
+    pub last_seen: chrono::DateTime<chrono::Utc>,
+    pub manufacturer: Option<String>,
+    pub is_iot_device: bool,
+}
