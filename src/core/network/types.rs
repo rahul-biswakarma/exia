@@ -33,4 +33,6 @@ pub struct LocalNetworkDevice {
     pub ip_address: String,
     pub hostname: Option<String>,
     pub vendor: Option<String>,
+    pub mdns_names: Option<Vec<String>>,
+    pub mdns_service_types: Option<Vec<String>>,
 }

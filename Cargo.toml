@@ -5,9 +5,17 @@ edition = "2024"
 
 [dependencies]
 default-net = "0.22.0"
+futures = "0.3.31"
+futures-util = "0.3.31"
+hex = "0.4.3"
 ipnet = "2.11.0"
+reqwest = { version = "0.11", default-features = false, features = ["rustls-tls"] }
+mdns = "3.0.0"
 pnet = "0.35.0"
 pnet_datalink = "0.35.0"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
+tokio = { version = "1", features = ["full"] }
+trust-dns-proto = "0.23.2"
+trust-dns-resolver = "0.23.2"
 uuid = { version = "1.17.0", features = ["v4"] }
