@@ -1,4 +1,6 @@
-use crate::core::network::scanner::network_scanner::types::MDNS_SERVICES;
+use crate::core::network::scanner::network_scanner::types::{
+    HueDeviceInfo, HueLightInfo, MDNS_SERVICES,
+};
 use futures_util::{pin_mut, StreamExt};
 use reqwest::Client;
 use std::collections::HashMap;
@@ -229,5 +231,143 @@ fn extract_title_from_html(html: &str) -> Option<String> {
             return Some(title.trim().to_string());
         }
     }
+    None
+}
+
+pub async fn discover_hue_info(ip: IpAddr) -> Option<HueDeviceInfo> {
+    // Try to detect if this is a Hue bridge
+    if !is_hue_bridge(ip).await {
+        return None;
+    }
+
+    // Try to get basic bridge information (no auth required)
+    get_hue_bridge_info(ip).await
+}
+
+async fn is_hue_bridge(ip: IpAddr) -> bool {
+    let client = match Client::builder().timeout(Duration::from_secs(3)).build() {
+        Ok(client) => client,
+        Err(_) => return false,
+    };
+
+    // Check for Hue bridge API endpoint
+    let url = format!("http://{}/api/config", ip);
+    match client.get(&url).send().await {
+        Ok(response) => {
+            if response.status().is_success() {
+                if let Ok(text) = response.text().await {
+                    return text.contains("hue")
+                        || text.contains("philips")
+                        || text.contains("bridge");
+                }
+            }
+        }
+        Err(_) => {}
+    }
+
+    // Fallback: Check description.xml for UPnP
+    let url = format!("http://{}/description.xml", ip);
+    match client.get(&url).send().await {
+        Ok(response) => {
+            if response.status().is_success() {
+                if let Ok(text) = response.text().await {
+                    return text.to_lowercase().contains("philips hue bridge");
+                }
+            }
+        }
+        Err(_) => {}
+    }
+
+    false
+}
+
+async fn get_hue_bridge_info(ip: IpAddr) -> Option<HueDeviceInfo> {
+    let client = Client::builder()
+        .timeout(Duration::from_secs(5))
+        .build()
+        .ok()?;
+
+    // Try to get bridge config (some info is public)
+    let config_url = format!("http://{}/api/config", ip);
+    match client.get(&config_url).send().await {
+        Ok(response) => {
+            if response.status().is_success() {
+                if let Ok(text) = response.text().await {
+                    return parse_hue_config(&text);
+                }
+            }
+        }
+        Err(_) => {}
+    }
+
+    // Try description.xml as fallback
+    let desc_url = format!("http://{}/description.xml", ip);
+    match client.get(&desc_url).send().await {
+        Ok(response) => {
+            if response.status().is_success() {
+                if let Ok(text) = response.text().await {
+                    return parse_hue_description(&text);
+                }
+            }
+        }
+        Err(_) => {}
+    }
+
+    None
+}
+
+fn parse_hue_config(config_text: &str) -> Option<HueDeviceInfo> {
+    // Simple JSON parsing to extract basic bridge info
+    let mut bridge_name = None;
+    let mut bridge_id = None;
+    let mut api_version = None;
+    let mut software_version = None;
+
+    if let Ok(json) = serde_json::from_str::<serde_json::Value>(config_text) {
+        if let Some(name) = json.get("name").and_then(|v| v.as_str()) {
+            bridge_name = Some(name.to_string());
+        }
+        if let Some(id) = json.get("bridgeid").and_then(|v| v.as_str()) {
+            bridge_id = Some(id.to_string());
+        }
+        if let Some(version) = json.get("apiversion").and_then(|v| v.as_str()) {
+            api_version = Some(version.to_string());
+        }
+        if let Some(sw_version) = json.get("swversion").and_then(|v| v.as_str()) {
+            software_version = Some(sw_version.to_string());
+        }
+    }
+
+    Some(HueDeviceInfo {
+        bridge_id,
+        bridge_name,
+        lights: Vec::new(), // Cannot get lights without authentication
+        api_version,
+        software_version,
+    })
+}
+
+fn parse_hue_description(desc_text: &str) -> Option<HueDeviceInfo> {
+    // Parse UPnP description.xml for basic bridge info
+    let mut bridge_name = None;
+
+    if desc_text.to_lowercase().contains("philips hue bridge") {
+        // Extract friendly name from XML
+        if let Some(start) = desc_text.find("<friendlyName>") {
+            let start_pos = start + 14; // length of "<friendlyName>"
+            if let Some(end) = desc_text[start_pos..].find("</friendlyName>") {
+                bridge_name = Some(desc_text[start_pos..start_pos + end].to_string());
+            }
+        }
+
+        return Some(HueDeviceInfo {
+            bridge_id: None,
+            bridge_name,
+            lights: Vec::new(),
+            api_version: None,
+            software_version: None,
+        });
+    }
+
     None
 }

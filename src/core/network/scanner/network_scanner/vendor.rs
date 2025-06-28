@@ -49,8 +49,9 @@ pub fn get_vendor_from_mac(mac: &str) -> Option<String> {
         | "30FD38" | "9C5C8E" | "AA8137" => Some("Google/Nest".to_string()),
 
         // Tuya/Smart Life IoT devices (common in budget smart home)
-        "68C63A" | "843A4B" | "E8DB84" | "508A06" | "E0E2E6" | "6C5AB0" | "70039F" | "5C02A8"
-        | "381F8D" | "600194" => Some("Tuya Smart Device".to_string()),
+        "843A4B" | "508A06" | "E0E2E6" | "6C5AB0" | "70039F" | "5C02A8" | "381F8D" | "600194" => {
+            Some("Tuya Smart Device".to_string())
+        }
 
         // Wemo Smart Plugs/Switches (Belkin)
         "94103E" | "B4750E" | "001E8C" | "0030BD" | "001CDF" => Some("Belkin WeMo".to_string()),
@@ -70,8 +71,15 @@ pub fn get_vendor_from_mac(mac: &str) -> Option<String> {
         "60BD2C" | "2C300E" | "A021B7" | "B03495" | "C03F0E" | "0846B7" | "1F5B2C" | "C40415"
         | "9C3DCF" | "84002D" | "1C7EE5" | "003EE1" => Some("NETGEAR".to_string()),
 
+        // Smart Bulbs & WiFi-enabled lighting (often use chipset manufacturer OUIs)
+        "CC8CBF" => Some("HomeMATE Smart Bulb".to_string()),
+        "18FE34" | "C83AE0" => Some("Sengled Smart Bulb".to_string()),
+        "5CCF7F" | "68C63A" => Some("Kasa Smart Bulb".to_string()),
+        "E8DB84" | "50E549" => Some("Smart Life Bulb".to_string()),
+        "DC4F22" | "3C71BF" => Some("Generic WiFi Smart Bulb".to_string()),
+
         // Motorola/Android phones
-        "CC8CBF" | "08EE8B" | "C4731E" | "A4ED4E" | "1C666D" | "7C6193" | "BC4760" => {
+        "08EE8B" | "C4731E" | "A4ED4E" | "1C666D" | "7C6193" | "BC4760" => {
             Some("Motorola".to_string())
         }
 
@@ -91,8 +99,9 @@ pub fn get_vendor_from_mac(mac: &str) -> Option<String> {
         }
 
         // Espressif (ESP32/ESP8266) - DIY IoT & generic smart devices
-        "240AC4" | "30AEA4" | "807D3A" | "246F28" | "84CCA8" | "8CCAB3" | "7CDFA1" | "3C71BF"
-        | "DC4F22" | "C83AE0" | "50E549" | "18FE34" => Some("ESP32/IoT Device".to_string()),
+        "240AC4" | "30AEA4" | "807D3A" | "246F28" | "84CCA8" | "8CCAB3" | "7CDFA1" => {
+            Some("ESP32/IoT Device".to_string())
+        }
 
         // Local Admin (randomized/virtual MACs)
         "AE0910" | "6A5E93" | "96C6B0" | "820AF0" | "7E0A3D" | "926D56" => {

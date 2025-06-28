@@ -4,7 +4,7 @@ pub mod types;
 pub mod vendor;
 
 use crate::core::network::scanner::network_scanner::discovery::{
-    discover_device_name, discover_mdns_devices, perform_reverse_dns_lookup,
+    discover_device_name, discover_hue_info, discover_mdns_devices, perform_reverse_dns_lookup,
 };
 use crate::core::network::scanner::network_scanner::network::{
     get_default_gateway, scan_local_network_interfaces,
@@ -154,6 +154,7 @@ pub fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
                                                     ),
                                                     mdns_names: None,
                                                     mdns_service_types: None,
+                                                    hue_info: None,
                                                 },
                                             );
                                         }
@@ -204,6 +205,13 @@ pub fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
                         if device.hostname.is_none() {
                             if let Some(device_name) = discover_device_name(ip).await {
                                 device.hostname = Some(device_name);
+                            }
+                        }
+
+                        // Try to discover Hue bridge information
+                        if device.hue_info.is_none() {
+                            if let Some(hue_info) = discover_hue_info(ip).await {
+                                device.hue_info = Some(hue_info);
                             }
                         }
                     }
