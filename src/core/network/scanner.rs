@@ -51,21 +51,20 @@ pub fn scan_local_network_interfaces() -> Vec<LocalNetworkInterface> {
 }
 
 pub fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
-    let mut devices: HashMap<String, LocalNetworkDevice> = HashMap::new(); // Use HashMap for unique devices
+    let mut devices: HashMap<String, LocalNetworkDevice> = HashMap::new();
 
     let gateway_info = match get_default_gateway() {
         Ok(gateway) => gateway,
-        Err(e) => {
-            eprintln!("Error getting default gateway: {}", e);
-            return devices.into_values().collect(); // Return empty vec if no gateway
+        Err(_) => {
+            // TODO: Handle error
+            return devices.into_values().collect();
         }
     };
 
     let interfaces = scan_local_network_interfaces();
-    let mut network_interface_with_gateway_info: Option<LocalNetworkInterface> = None; // Your custom info struct
+    let mut network_interface_with_gateway_info: Option<LocalNetworkInterface> = None;
 
     for iface_info in interfaces {
-        // Iterate over your custom NetworkInterface structs
         let Some(cidr_str) = iface_info.ipv4_cidr.as_ref() else {
             continue;
         };
@@ -79,55 +78,44 @@ pub fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
         }
     }
 
-    let pnet_iface = match network_interface_with_gateway_info {
+    match network_interface_with_gateway_info {
         Some(iface_info) => {
-            // Now safely extract the pnet_interface_ref
             let Some(pnet_iface) = iface_info.pnet_interface_ref else {
-                eprintln!("Pnet interface reference missing for selected network interface.");
+                // TODO: Handle error
                 return devices.into_values().collect();
             };
 
-            // Extract source IP and MAC from the selected PnetNetworkInterface
+            // extract source IP and MAC from the selected PnetNetworkInterface
             let Some(my_ip_info) = pnet_iface.ips.iter().find(|ip_info| ip_info.is_ipv4()) else {
-                eprintln!(
-                    "IPv4 address not found for the selected interface: {}",
-                    pnet_iface.name
-                );
+                // TODO: Handle error
                 return devices.into_values().collect();
             };
             let source_ip = match my_ip_info.ip() {
                 IpAddr::V4(ipv4) => ipv4,
                 _ => {
-                    // Should not happen if filtered by is_ipv4()
-                    eprintln!("Non-IPv4 address found for source IP.");
+                    // TODO: Handle error
                     return devices.into_values().collect();
                 }
             };
 
             let Some(source_mac) = pnet_iface.mac else {
-                eprintln!(
-                    "MAC address not found for the selected interface: {}",
-                    pnet_iface.name
-                );
+                // TODO: Handle error
                 return devices.into_values().collect();
             };
 
-            println!("Scanning on interface: {}", pnet_iface.name);
-            println!("My IP: {}, My MAC: {}", source_ip, source_mac);
+            // determine the IP range from the found interface's IP and mask
+            let Ok(cidr) = format!("{}/{}", source_ip, my_ip_info.prefix()).parse::<IpNet>() else {
+                // TODO: Handle error
+                return devices.into_values().collect();
+            };
 
-            // Determine the IP range from the found interface's IP and mask
-            let cidr: IpNet = format!("{}/{}", source_ip, my_ip_info.prefix())
-                .parse()
-                .expect("Failed to parse CIDR for scanning");
-            println!("Scanning subnet: {}", cidr);
-
-            // Get all possible host IPs in the subnet, excluding self
+            // get all possible host IPs in the subnet, excluding self
             let target_ips: Vec<Ipv4Addr> = cidr
                 .hosts()
                 .filter_map(|ip| {
                     if let IpAddr::V4(ipv4) = ip {
                         if ipv4 != source_ip {
-                            // Exclude self
+                            // exclude self
                             Some(ipv4)
                         } else {
                             None
@@ -142,23 +130,16 @@ pub fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
             let (mut tx, mut rx) = match datalink::channel(&pnet_iface, Default::default()) {
                 Ok(Channel::Ethernet(tx, rx)) => (tx, rx),
                 Ok(_) => {
-                    eprintln!("Unknown channel type, expected Ethernet channel.");
+                    // TODO: Handle error
                     return devices.into_values().collect();
                 }
-                Err(e) => {
-                    eprintln!(
-                        "Error opening datalink channel on interface {}: {}",
-                        pnet_iface.name, e
-                    );
-                    eprintln!(
-                        "This often requires elevated permissions (e.g., sudo/administrator)."
-                    );
+                Err(_) => {
+                    // TODO: Handle error
                     return devices.into_values().collect();
                 }
             };
 
             // --- Send ARP requests ---
-            println!("Sending ARP requests to {} IPs...", target_ips.len());
             for &target_ip_v4 in &target_ips {
                 let mut buffer = [0u8; 42]; // Ethernet (14) + ARP (28)
                 let mut ethernet_packet = MutableEthernetPacket::new(&mut buffer).unwrap();
@@ -174,25 +155,21 @@ pub fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
                 arp_packet.set_operation(ArpOperations::Request);
                 arp_packet.set_sender_hw_addr(source_mac);
                 arp_packet.set_sender_proto_addr(source_ip);
-                arp_packet.set_target_hw_addr(MacAddr::zero()); // Unknown target MAC for request
+                arp_packet.set_target_hw_addr(MacAddr::zero()); // unknown target MAC for request
                 arp_packet.set_target_proto_addr(target_ip_v4);
 
-                if let Some(Err(e)) = tx.send_to(ethernet_packet.packet(), None) {
-                    eprintln!(
-                        "Warning: Failed to send ARP request to {}: {}",
-                        target_ip_v4, e
-                    );
+                if let Some(Err(_)) = tx.send_to(ethernet_packet.packet(), None) {
+                    // TODO: Handle error
                 }
             }
 
             // --- Receive ARP responses ---
-            println!("Listening for ARP responses (timeout in 5 seconds)...");
             let start = Instant::now();
             let timeout = Duration::from_secs(5); // Increased timeout for potentially slower networks
 
             while Instant::now() - start < timeout {
                 match rx.next() {
-                    // This is a blocking call
+                    // this is a blocking call
                     Ok(packet) => {
                         let Some(ethernet) = EthernetPacket::new(packet) else {
                             continue;
@@ -207,7 +184,6 @@ pub fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
                                 let sender_mac = arp.get_sender_hw_addr();
 
                                 let ip_string = sender_ip.to_string();
-                                // Insert into HashMap only if not already present
                                 if devices
                                     .insert(
                                         ip_string.clone(),
@@ -229,22 +205,17 @@ pub fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
                             }
                         }
                     }
-                    Err(e) => {
-                        // Check if the error is a timeout or something else
-                        // pnet's rx.next() doesn't typically return WouldBlock on its own unless configured
-                        eprintln!("Error receiving packet: {}", e);
-                        // Consider breaking if the error is critical or persistent
+                    Err(_) => {
+                        // TODO: Handle error
                     }
                 }
             }
-            pnet_iface // Return the pnet_iface so the match block completes
         }
         None => {
-            eprintln!("No network interface found that contains the gateway IP in its subnet.");
-            return devices.into_values().collect(); // Return empty vec
+            // TODO: Handle error
+            return devices.into_values().collect();
         }
     };
 
-    println!("\n--- Scan Complete ---");
-    devices.into_values().collect() // Convert HashMap values to Vec for return
+    devices.into_values().collect()
 }
