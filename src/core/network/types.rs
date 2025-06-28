@@ -1,7 +1,6 @@
 use pnet::datalink::NetworkInterface;
-use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LocalNetworkInterface {
     pub id: String,
     pub name: Option<String>,
@@ -14,11 +13,10 @@ pub struct LocalNetworkInterface {
     pub is_loopback: bool,
     pub ipv4_cidr: Option<String>,
     pub wifi_metadata: Option<WifiMetadata>,
-    #[serde(skip)]
     pub pnet_interface_ref: Option<NetworkInterface>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WifiMetadata {
     pub ssid: String,
     pub bssid: String,
@@ -26,7 +24,7 @@ pub struct WifiMetadata {
     pub frequency: u32,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LocalNetworkDevice {
     pub id: String,
     pub mac_address: String,

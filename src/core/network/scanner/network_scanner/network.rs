@@ -22,12 +22,9 @@ pub fn scan_local_network_interfaces() -> Vec<LocalNetworkInterface> {
                 .iter()
                 .find(|ip| ip.is_ipv4())
                 .map(|ip| ip.to_string());
-            let mac_address = iface.mac.map(|m| m.to_string());
 
             interfaces.push(LocalNetworkInterface {
-                name: iface.name.clone(),
                 ipv4_cidr,
-                mac_address,
                 pnet_interface_ref: Some(iface),
             });
         }
@@ -58,25 +55,17 @@ fn get_default_gateway_macos() -> Result<DefaultGateway, io::Error> {
 
     let output_str = String::from_utf8_lossy(&output.stdout);
     let mut gateway_ip: Option<Ipv4Addr> = None;
-    let mut interface_name: Option<String> = None;
 
     for line in output_str.lines() {
         if line.trim().starts_with("gateway:") {
             if let Some(ip_str) = line.split_whitespace().nth(1) {
                 gateway_ip = ip_str.parse().ok();
             }
-        } else if line.trim().starts_with("interface:") {
-            if let Some(iface_str) = line.split_whitespace().nth(1) {
-                interface_name = Some(iface_str.to_string());
-            }
         }
     }
 
-    match (gateway_ip, interface_name) {
-        (Some(ip), Some(name)) => Ok(DefaultGateway {
-            ip_addr: ip,
-            interface_name: name,
-        }),
+    match gateway_ip {
+        Some(ip) => Ok(DefaultGateway { ip_addr: ip }),
         _ => Err(io::Error::new(
             io::ErrorKind::NotFound,
             "Could not find default gateway",
@@ -108,7 +97,6 @@ fn get_default_gateway_linux() -> Result<DefaultGateway, io::Error> {
                 );
                 return Ok(DefaultGateway {
                     ip_addr: gateway_ip,
-                    interface_name: fields[0].to_string(),
                 });
             }
         }
@@ -135,7 +123,6 @@ fn get_default_gateway_windows() -> Result<DefaultGateway, io::Error> {
                 if let Ok(gateway_ip) = fields[2].parse::<Ipv4Addr>() {
                     return Ok(DefaultGateway {
                         ip_addr: gateway_ip,
-                        interface_name: "default".to_string(),
                     });
                 }
             }
