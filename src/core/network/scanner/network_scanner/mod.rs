@@ -4,12 +4,12 @@ pub mod types;
 pub mod vendor;
 
 use crate::core::network::scanner::network_scanner::discovery::{
-    discover_mdns_devices, perform_reverse_dns_lookup,
+    discover_mdns_devices, discover_smart_device_name, perform_reverse_dns_lookup,
 };
 use crate::core::network::scanner::network_scanner::network::{
     get_default_gateway, scan_local_network_interfaces,
 };
-use crate::core::network::scanner::network_scanner::types::LocalNetworkDevice;
+use crate::core::network::scanner::network_scanner::types::{DeviceMapping, LocalNetworkDevice};
 use crate::core::network::scanner::network_scanner::vendor::get_vendor_from_mac;
 use futures::future::join_all;
 use ipnet::IpNet;
@@ -31,6 +31,8 @@ pub fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
 
     runtime.block_on(async {
         let mut devices: HashMap<String, LocalNetworkDevice> = HashMap::new();
+
+        let device_mapping = DeviceMapping::load_from_file("device_config.json").ok();
 
         let gateway_info = match get_default_gateway() {
             Ok(gateway) => gateway,
@@ -99,7 +101,6 @@ pub fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
                     Err(_) => return devices.into_values().collect(),
                 };
 
-                // Send ARP requests
                 for &target_ip_v4 in &target_ips {
                     let mut buffer = [0u8; 42];
                     let Some(mut ethernet_packet) = MutableEthernetPacket::new(&mut buffer) else {
@@ -126,7 +127,6 @@ pub fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
                     let _ = tx.send_to(ethernet_packet.packet(), None);
                 }
 
-                // Run ARP discovery and mDNS discovery concurrently
                 let arp_future = tokio::time::timeout(Duration::from_millis(1500), async {
                     let mut temp_devices: HashMap<String, LocalNetworkDevice> = HashMap::new();
                     let start_arp_rx = Instant::now();
@@ -152,6 +152,7 @@ pub fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
                                                     mac_address: sender_mac.to_string(),
                                                     ip_address: ip_string,
                                                     hostname: None,
+                                                    device_name: None,
                                                     vendor: get_vendor_from_mac(
                                                         &sender_mac.to_string(),
                                                     ),
@@ -170,28 +171,26 @@ pub fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
 
                 let mdns_future = discover_mdns_devices(Duration::from_millis(1000));
 
-                // Wait for both ARP and mDNS discovery to complete
                 let (arp_result, mdns_devices) = tokio::join!(arp_future, mdns_future);
 
-                // Merge ARP results
                 if let Ok(temp_devices) = arp_result {
                     devices.extend(temp_devices);
                 }
-
-                // Merge mDNS results
                 for (ip, (mdns_name, service_types)) in mdns_devices {
                     if let IpAddr::V4(ipv4) = ip {
                         let ip_string = ipv4.to_string();
                         if let Some(device) = devices.get_mut(&ip_string) {
                             if device.hostname.is_none() {
-                                device.hostname = Some(mdns_name);
+                                device.hostname = Some(mdns_name.clone());
+                            }
+                            if device.device_name.is_none() && !mdns_name.is_empty() {
+                                device.device_name = Some(mdns_name);
                             }
                             device.mdns_service_types = Some(service_types);
                         }
                     }
                 }
 
-                // Parallel DNS lookups for devices without hostnames
                 let device_ips: Vec<IpAddr> = devices
                     .keys()
                     .filter_map(|ip_str| ip_str.parse::<IpAddr>().ok())
@@ -205,7 +204,6 @@ pub fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
                     .collect();
 
                 if !device_ips.is_empty() {
-                    // Create parallel DNS lookup tasks
                     let dns_tasks: Vec<_> = device_ips
                         .into_iter()
                         .map(|ip| {
@@ -213,10 +211,7 @@ pub fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
                         })
                         .collect();
 
-                    // Wait for all DNS lookups to complete
                     let dns_results = join_all(dns_tasks).await;
-
-                    // Update devices with DNS results
                     for task_result in dns_results {
                         if let Ok((ip, hostname)) = task_result {
                             let ip_string = ip.to_string();
@@ -228,8 +223,52 @@ pub fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
                         }
                     }
                 }
+
+                let smart_device_ips: Vec<(IpAddr, String)> = devices
+                    .iter()
+                    .filter_map(|(ip_str, device)| {
+                        if let (Ok(ip), Some(vendor)) = (ip_str.parse::<IpAddr>(), &device.vendor) {
+                            Some((ip, vendor.clone()))
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+
+                if !smart_device_ips.is_empty() {
+                    let name_tasks: Vec<_> = smart_device_ips
+                        .into_iter()
+                        .map(|(ip, vendor)| {
+                            tokio::spawn(async move {
+                                (ip, discover_smart_device_name(ip, &vendor).await)
+                            })
+                        })
+                        .collect();
+
+                    let name_results = join_all(name_tasks).await;
+                    for task_result in name_results {
+                        if let Ok((ip, device_name)) = task_result {
+                            let ip_string = ip.to_string();
+                            if let Some(device) = devices.get_mut(&ip_string) {
+                                if device.device_name.is_none() {
+                                    device.device_name = device_name;
+                                }
+                            }
+                        }
+                    }
+                }
             }
             None => {}
+        }
+
+        if let Some(ref mapping) = device_mapping {
+            for device in devices.values_mut() {
+                if device.device_name.is_none() {
+                    if let Some(mapped_name) = mapping.get_device_name(&device.mac_address) {
+                        device.device_name = Some(mapped_name);
+                    }
+                }
+            }
         }
 
         devices.into_values().collect()
