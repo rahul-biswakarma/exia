@@ -127,10 +127,10 @@ pub fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
                 }
 
                 // Run ARP discovery and mDNS discovery concurrently
-                let arp_future = tokio::time::timeout(Duration::from_secs(3), async {
+                let arp_future = tokio::time::timeout(Duration::from_millis(1500), async {
                     let mut temp_devices: HashMap<String, LocalNetworkDevice> = HashMap::new();
                     let start_arp_rx = Instant::now();
-                    while Instant::now() - start_arp_rx < Duration::from_secs(3) {
+                    while Instant::now() - start_arp_rx < Duration::from_millis(1500) {
                         match rx.next() {
                             Ok(packet) => {
                                 let Some(ethernet) = EthernetPacket::new(packet) else {
@@ -168,7 +168,7 @@ pub fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
                     temp_devices
                 });
 
-                let mdns_future = discover_mdns_devices(Duration::from_secs(2));
+                let mdns_future = discover_mdns_devices(Duration::from_millis(1000));
 
                 // Wait for both ARP and mDNS discovery to complete
                 let (arp_result, mdns_devices) = tokio::join!(arp_future, mdns_future);

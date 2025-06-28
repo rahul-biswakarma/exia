@@ -23,21 +23,9 @@ pub struct DefaultGateway {
 }
 
 pub const MDNS_SERVICES: &[&str] = &[
-    "_http._tcp.local",
     "_device-info._tcp.local",
-    "_apple-mobdev2._tcp.local",
     "_airplay._tcp.local",
     "_googlecast._tcp.local",
-    "_spotify-connect._tcp.local",
     "_homekit._tcp.local",
-    "_hap._tcp.local",
-    "_printer._tcp.local",
-    "_ipp._tcp.local",
-    "_smb._tcp.local",
-    "_afpovertcp._tcp.local",
-    "_ssh._tcp.local",
     "_workstation._tcp.local",
-    "_companion-link._tcp.local",
-    "_raop._tcp.local",
-    "_sleep-proxy._udp.local",
 ];
