@@ -1,0 +1,16 @@
+{
+  "mappings": {
+    "CC4085": "Philips Hue/Smart Lighting",
+    "CC4CBF": "HomeMATE Smart Bulb",
+    "CC8CBF": "HomeMATE Smart Bulb",
+    "001788": "Philips Hue Bridge",
+    "ECFD9F": "Philips Hue Bridge",
+    "D073D5": "LIFX Smart Bulb",
+    "843A4B": "Tuya Smart Device",
+    "C482E1": "Amazon Echo/Alexa",
+    "B0CFCB": "Google Nest/Chromecast",
+    "3C0B59": "TP-Link Kasa Smart Device",
+    "60BD2C": "NETGEAR Router",
+    "240AC4": "ESP32 IoT Device"
+  }
+} 

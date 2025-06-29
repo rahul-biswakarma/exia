@@ -1,10 +1,56 @@
-pub fn get_vendor_from_mac(mac: &str) -> Option<String> {
-    let oui_prefix = mac.replace(":", "").replace("-", "").to_uppercase();
-    if oui_prefix.len() < 6 {
-        return None;
-    }
-    let oui_prefix = &oui_prefix[0..6];
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VendorMapping {
+    pub mappings: HashMap<String, String>,
+}
+
+impl VendorMapping {
+    pub fn load_from_file(path: &str) -> Result<Self, std::io::Error> {
+        match std::fs::read_to_string(path) {
+            Ok(content) => serde_json::from_str(&content)
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e)),
+            Err(_) => {
+                // Return default mapping if config file doesn't exist
+                Ok(Self::default())
+            }
+        }
+    }
+
+    pub fn get_vendor(&self, mac: &str) -> Option<String> {
+        let oui_prefix = mac.replace(":", "").replace("-", "").to_uppercase();
+        if oui_prefix.len() < 6 {
+            return None;
+        }
+        let oui_prefix = &oui_prefix[0..6];
+
+        // Check custom mappings first
+        if let Some(vendor) = self.mappings.get(oui_prefix) {
+            return Some(vendor.clone());
+        }
+
+        // Fall back to default mappings
+        get_default_vendor_mapping(oui_prefix)
+    }
+}
+
+impl Default for VendorMapping {
+    fn default() -> Self {
+        Self {
+            mappings: HashMap::new(),
+        }
+    }
+}
+
+pub fn get_vendor_from_mac(mac: &str) -> Option<String> {
+    // Try to load custom vendor mapping, fall back to default if not available
+    let vendor_mapping = VendorMapping::load_from_file("vendor_config.json").unwrap_or_default();
+
+    vendor_mapping.get_vendor(mac)
+}
+
+fn get_default_vendor_mapping(oui_prefix: &str) -> Option<String> {
     match oui_prefix {
         // Apple devices (MacBooks, iPhones, iPads, Apple TV, HomePod)
         "D8BE65" | "001D4F" | "001E58" | "001F5B" | "002332" | "002436" | "002500" | "40A36B"
@@ -22,12 +68,11 @@ pub fn get_vendor_from_mac(mac: &str) -> Option<String> {
             Some("HomeKit Hub".to_string())
         }
 
-        // Philips Hue Bridge & Smart Lighting
-        "001788" | "ECFD9F" | "00178D" | "001742" | "7CB94E" | "B4E62D" | "E0E429" | "54AF97"
-        | "5C0E8B" | "001CA8" | "001CDB" | "0017C0" | "001DF6" | "001F12" | "0007B8" | "0008DC"
-        | "0015BC" | "0010DD" | "0004F3" | "F0B429" | "001E06" | "00236C" | "E4E4AB" | "0001DB" => {
-            Some("Philips Hue Bridge".to_string())
-        }
+        // Philips Hue Bridge & Smart Lighting - FIXED: Added CC4085 as Philips
+        "CC4085" | "001788" | "ECFD9F" | "00178D" | "001742" | "7CB94E" | "B4E62D" | "E0E429"
+        | "54AF97" | "5C0E8B" | "001CA8" | "001CDB" | "0017C0" | "001DF6" | "001F12" | "0007B8"
+        | "0008DC" | "0015BC" | "0010DD" | "0004F3" | "F0B429" | "001E06" | "00236C" | "E4E4AB"
+        | "0001DB" => Some("Philips Hue/Smart Lighting".to_string()),
 
         // LIFX Smart Bulbs
         "D073D5" | "EC23F6" | "A4DA22" | "68B686" | "C4935D" | "5C313E" => {
@@ -43,10 +88,10 @@ pub fn get_vendor_from_mac(mac: &str) -> Option<String> {
         | "F0272D" | "34D270" | "74C246" | "A002DC" | "FCF152" | "78E103" | "AC3743" | "B47C9C"
         | "0C8268" => Some("Amazon/Alexa".to_string()),
 
-        // Google/Nest devices & Chromecast
-        "CC4085" | "B0CFCB" | "64168D" | "F8CF7E" | "4C49E3" | "B4F1DA" | "54FA3E" | "F04F7C"
-        | "6476BA" | "6C1FFD" | "98AA3C" | "1C1AC0" | "F4F5D8" | "18B905" | "54EAA8" | "4C5765"
-        | "30FD38" | "9C5C8E" | "AA8137" => Some("Google/Nest".to_string()),
+        // Google/Nest devices & Chromecast - FIXED: Removed CC4085 (moved to Philips)
+        "B0CFCB" | "64168D" | "F8CF7E" | "4C49E3" | "B4F1DA" | "54FA3E" | "F04F7C" | "6476BA"
+        | "6C1FFD" | "98AA3C" | "1C1AC0" | "F4F5D8" | "18B905" | "54EAA8" | "4C5765" | "30FD38"
+        | "9C5C8E" | "AA8137" => Some("Google/Nest".to_string()),
 
         // Tuya/Smart Life IoT devices (common in budget smart home)
         "843A4B" | "508A06" | "E0E2E6" | "6C5AB0" | "70039F" | "5C02A8" | "381F8D" | "600194" => {
@@ -71,8 +116,8 @@ pub fn get_vendor_from_mac(mac: &str) -> Option<String> {
         "60BD2C" | "2C300E" | "A021B7" | "B03495" | "C03F0E" | "0846B7" | "1F5B2C" | "C40415"
         | "9C3DCF" | "84002D" | "1C7EE5" | "003EE1" => Some("NETGEAR".to_string()),
 
-        // Smart Bulbs & WiFi-enabled lighting (often use chipset manufacturer OUIs)
-        "CC8CBF" => Some("HomeMATE Smart Bulb".to_string()),
+        // Smart Bulbs & WiFi-enabled lighting - FIXED: Added CC4CBF for HomeMATE
+        "CC8CBF" | "CC4CBF" => Some("HomeMATE Smart Bulb".to_string()),
         "18FE34" | "C83AE0" => Some("Sengled Smart Bulb".to_string()),
         "5CCF7F" | "68C63A" => Some("Kasa Smart Bulb".to_string()),
         "E8DB84" | "50E549" => Some("Smart Life Bulb".to_string()),
