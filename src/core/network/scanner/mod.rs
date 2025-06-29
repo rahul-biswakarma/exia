@@ -148,22 +148,27 @@ pub async fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
             for (ip, (mdns_name, service_types)) in mdns_devices {
                 if let IpAddr::V4(ipv4) = ip {
                     let ip_string = ipv4.to_string();
-                    if let Some(device) = devices.get_mut(&ip_string) {
-                        if device.hostname.is_none() {
-                            device.hostname = Some(mdns_name.clone());
+
+                    // Find the device with matching IP address
+                    for device in devices.values_mut() {
+                        if device.ip_address == ip_string {
+                            if device.hostname.is_none() {
+                                device.hostname = Some(mdns_name.clone());
+                            }
+                            if device.device_name.is_none() && !mdns_name.is_empty() {
+                                device.device_name = Some(mdns_name.clone());
+                            }
+                            device.mdns_service_types = Some(service_types.clone());
+                            break; // Found the device, no need to continue
                         }
-                        if device.device_name.is_none() && !mdns_name.is_empty() {
-                            device.device_name = Some(mdns_name);
-                        }
-                        device.mdns_service_types = Some(service_types);
                     }
                 }
             }
 
             let all_device_info: Vec<(IpAddr, String, bool)> = devices
                 .iter()
-                .filter_map(|(ip_str, device)| {
-                    if let Ok(ip) = ip_str.parse::<IpAddr>() {
+                .filter_map(|(_device_id, device)| {
+                    if let Ok(ip) = device.ip_address.parse::<IpAddr>() {
                         let vendor = device.vendor.clone().unwrap_or_default();
                         let needs_dns = device.hostname.is_none();
                         Some((ip, vendor, needs_dns))
@@ -195,12 +200,17 @@ pub async fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
                 for task_result in discovery_results {
                     if let Ok((ip, hostname, device_name)) = task_result {
                         let ip_string = ip.to_string();
-                        if let Some(device) = devices.get_mut(&ip_string) {
-                            if device.hostname.is_none() {
-                                device.hostname = hostname;
-                            }
-                            if device.device_name.is_none() {
-                                device.device_name = device_name;
+
+                        // Find the device with matching IP address
+                        for (_device_id, device) in devices.iter_mut() {
+                            if device.ip_address == ip_string {
+                                if device.hostname.is_none() {
+                                    device.hostname = hostname.clone();
+                                }
+                                if device.device_name.is_none() {
+                                    device.device_name = device_name.clone();
+                                }
+                                break; // Found the device, no need to continue
                             }
                         }
                     }
