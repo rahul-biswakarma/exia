@@ -7,7 +7,6 @@ pub struct LocalNetworkInterface {
     pub pnet_interface_ref: Option<PnetNetworkInterface>,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct LocalNetworkDevice {
     pub id: String,
@@ -50,13 +49,10 @@ impl DeviceMapping {
         match std::fs::read_to_string(path) {
             Ok(content) => serde_json::from_str(&content)
                 .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e)),
-            Err(_) => {
-                // If file doesn't exist, return error - no default hardcoding
-                Err(std::io::Error::new(
-                    std::io::ErrorKind::NotFound,
-                    "Config file not found",
-                ))
-            }
+            Err(_) => Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "Config file not found",
+            )),
         }
     }
 
