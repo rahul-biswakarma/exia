@@ -1,3 +1,4 @@
+pub mod bulb_control;
 pub mod dns;
 pub mod mdns;
 pub mod network;
