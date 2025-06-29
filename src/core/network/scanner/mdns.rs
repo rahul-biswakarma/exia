@@ -1,4 +1,3 @@
-use crate::core::logger::{log_progress, LogType};
 use crate::core::network::scanner::{
     dns::extract_ip_from_hostname, types::MDNS_SERVICES, utils::extract_device_name_from_mdns,
 };
@@ -12,15 +11,6 @@ use tokio::time::timeout;
 pub async fn discover_mdns_devices(
     _timeout_duration: Duration,
 ) -> HashMap<IpAddr, (String, Vec<String>)> {
-    log_progress(
-        LogType::MdnsDiscovery,
-        &format!(
-            "Starting mDNS discovery for {} services",
-            MDNS_SERVICES.len()
-        ),
-    )
-    .await;
-
     let mdns_tasks: Vec<_> = MDNS_SERVICES
         .iter()
         .map(|&service_name| {
@@ -97,13 +87,7 @@ pub async fn discover_mdns_devices(
         }
     }
 
-    if !discovered_devices.is_empty() {
-        log_progress(
-            LogType::MdnsDiscovery,
-            &format!("mDNS discovery found {} devices", discovered_devices.len()),
-        )
-        .await;
-    }
+    if !discovered_devices.is_empty() {}
 
     discovered_devices
 }

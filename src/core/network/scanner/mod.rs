@@ -1,14 +1,12 @@
 pub mod dns;
-pub mod http_discovery;
 pub mod mdns;
 pub mod network;
 pub mod smart_devices;
 pub mod types;
 pub mod utils;
 pub mod vendor;
-pub mod vendor_specific;
 
-use crate::core::logger::{log_error, log_progress, LogType};
+use crate::core::logger::{log_error, LogType};
 use dns::perform_reverse_dns_lookup;
 use mdns::discover_mdns_devices;
 use network::{get_default_gateway, scan_local_network_interfaces};
@@ -23,28 +21,22 @@ use pnet::packet::arp::{ArpHardwareTypes, ArpOperations, ArpPacket, MutableArpPa
 use pnet::packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
 use pnet::packet::{MutablePacket, Packet};
 use pnet::util::MacAddr;
+use regex;
 use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr};
+use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 
 pub async fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
-    log_progress(LogType::NetworkScanner, "Starting network scan...").await;
     let start_time = Instant::now();
 
     let mut devices: HashMap<String, LocalNetworkDevice> = HashMap::new();
     let device_mapping = DeviceMapping::load_from_file("device_config.json").ok();
 
     let gateway_info = match get_default_gateway() {
-        Ok(gateway) => {
-            log_progress(
-                LogType::NetworkScanner,
-                &format!("Found default gateway: {}", gateway.ip_addr),
-            )
-            .await;
-            gateway
-        }
+        Ok(gateway) => gateway,
         Err(e) => {
             log_error(
                 LogType::NetworkScanner,
@@ -95,6 +87,11 @@ pub async fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
                 return devices.into_values().collect();
             };
 
+            // Debug: Show what we're scanning
+            // println!("🔍 Debug: Source IP: {}", source_ip);
+            // println!("🔍 Debug: Network CIDR: {}", cidr);
+            // println!("🔍 Debug: Network range: {} to {}", cidr.network(), cidr.broadcast());
+
             let target_ips: Vec<Ipv4Addr> = cidr
                 .hosts()
                 .filter_map(|ip| {
@@ -110,30 +107,43 @@ pub async fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
                 })
                 .collect();
 
-            log_progress(
-                LogType::ArpScan,
-                &format!("Scanning {} IP addresses...", target_ips.len()),
-            )
-            .await;
+            // println!("🔍 Debug: Scanning {} target IPs", target_ips.len());
+
+            // Check if our target IPs include the missing ones
+            // let missing_ips = [
+            //     "192.168.1.31".parse::<std::net::Ipv4Addr>().unwrap(),
+            //     "192.168.1.32".parse::<std::net::Ipv4Addr>().unwrap(),
+            // ];
+            // for missing_ip in missing_ips {
+            //     if target_ips.contains(&missing_ip) {
+            //         println!("🔍 Debug: {} is in scan range ✅", missing_ip);
+            //     } else {
+            //         println!("🔍 Debug: {} is NOT in scan range ❌", missing_ip);
+            //     }
+            // }
 
             let arp_future =
                 perform_optimized_arp_scan(&pnet_iface, source_ip, source_mac, target_ips);
 
             let mdns_future = discover_mdns_devices(Duration::from_millis(400));
 
-            log_progress(
-                LogType::NetworkScanner,
-                "Performing ARP and mDNS discovery...",
-            )
-            .await;
-            let (arp_devices, mdns_devices) = tokio::join!(arp_future, mdns_future);
+            // Also read the existing ARP table for devices that might not respond to active scanning
+            let arp_table_future = read_arp_table();
+
+            let (arp_devices, mdns_devices, arp_table_devices) =
+                tokio::join!(arp_future, mdns_future, arp_table_future);
 
             devices.extend(arp_devices);
-            log_progress(
-                LogType::ArpScan,
-                &format!("ARP scan found {} devices", devices.len()),
-            )
-            .await;
+
+            // Merge ARP table devices (don't overwrite active scan results)
+            for (ip, arp_device) in arp_table_devices {
+                // Check if we already have a device with this IP address
+                let ip_exists = devices.values().any(|device| device.ip_address == ip);
+                if !ip_exists {
+                    // println!("🔍 Debug: Adding device from ARP table: {}", ip);
+                    devices.insert(arp_device.id.clone(), arp_device);
+                }
+            }
 
             for (ip, (mdns_name, service_types)) in mdns_devices {
                 if let IpAddr::V4(ipv4) = ip {
@@ -149,15 +159,6 @@ pub async fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
                     }
                 }
             }
-
-            log_progress(
-                LogType::DeviceDiscovery,
-                &format!(
-                    "Found {} devices, performing enhanced discovery...",
-                    devices.len()
-                ),
-            )
-            .await;
 
             let all_device_info: Vec<(IpAddr, String, bool)> = devices
                 .iter()
@@ -219,16 +220,7 @@ pub async fn scan_local_network_devices() -> Vec<LocalNetworkDevice> {
         }
     }
 
-    let elapsed = start_time.elapsed();
-    log_progress(
-        LogType::NetworkScanner,
-        &format!(
-            "Network scan completed in {:.2}s - Found {} devices",
-            elapsed.as_secs_f64(),
-            devices.len()
-        ),
-    )
-    .await;
+    let _elapsed = start_time.elapsed();
 
     devices.into_values().collect()
 }
@@ -244,13 +236,13 @@ async fn perform_optimized_arp_scan(
     let (mut tx, mut rx) = match datalink::channel(pnet_iface, Default::default()) {
         Ok(Channel::Ethernet(tx, rx)) => (tx, rx),
         Ok(_) => {
-            log_error(LogType::ArpScan, "Unsupported channel type", None).await;
+            log_error(LogType::NetworkScanner, "Unsupported channel type", None).await;
             return HashMap::new();
         }
         Err(e) => {
             log_error(
-                LogType::ArpScan,
-                "Failed to create datalink channel",
+                LogType::NetworkScanner,
+                "Failed to create datalink channel - ARP scanning requires elevated privileges",
                 Some(&e.to_string()),
             )
             .await;
@@ -325,24 +317,31 @@ async fn perform_optimized_arp_scan(
                                 continue;
                             };
                             if arp.get_operation() == ArpOperations::Reply {
-                                let sender_ip = arp.get_sender_proto_addr();
-                                let sender_mac = arp.get_sender_hw_addr();
-                                if sender_ip != source_ip {
-                                    let ip_string = sender_ip.to_string();
-                                    let device = LocalNetworkDevice {
-                                        id: Uuid::new_v4().to_string(),
-                                        mac_address: sender_mac.to_string(),
-                                        ip_address: ip_string.clone(),
-                                        hostname: None,
-                                        device_name: None,
-                                        vendor: get_vendor_from_mac(&sender_mac.to_string()),
-                                        mdns_service_types: None,
-                                    };
+                                let source_ip = arp.get_sender_proto_addr();
+                                let source_mac = arp.get_sender_hw_addr();
 
-                                    if let Ok(mut devices_map) = devices.lock() {
-                                        devices_map.insert(ip_string, device);
-                                    }
+                                // Debug: Check if this is one of the missing devices
+                                if source_ip.to_string() == "192.168.1.31"
+                                    || source_ip.to_string() == "192.168.1.32"
+                                {
+                                    // println!(
+                                    //     "🔍 Debug: Found missing device {} with MAC {}",
+                                    //     source_ip, source_mac
+                                    // );
                                 }
+
+                                let device = LocalNetworkDevice {
+                                    id: Uuid::new_v4().to_string(),
+                                    ip_address: source_ip.to_string(),
+                                    mac_address: source_mac.to_string(),
+                                    hostname: None,
+                                    device_name: None,
+                                    vendor: get_vendor_from_mac(&source_mac.to_string()),
+                                    mdns_service_types: None,
+                                };
+
+                                let mut devices = devices.lock().unwrap();
+                                devices.insert(device.id.clone(), device);
                             }
                         }
                     }
@@ -360,4 +359,46 @@ async fn perform_optimized_arp_scan(
         Ok(devices_map) => devices_map.clone(),
         Err(_) => HashMap::new(),
     }
+}
+
+async fn read_arp_table() -> HashMap<String, LocalNetworkDevice> {
+    let mut devices = HashMap::new();
+
+    // Read the system ARP table
+    if let Ok(output) = Command::new("arp").arg("-a").output() {
+        if let Ok(arp_output) = String::from_utf8(output.stdout) {
+            // println!("🔍 Debug: Reading system ARP table...");
+
+            for line in arp_output.lines() {
+                // Parse lines like: ? (192.168.1.31) at cc:40:85:d1:4e:94 on en0 ifscope [ethernet]
+                if let Some(captures) =
+                    regex::Regex::new(r"\((\d+\.\d+\.\d+\.\d+)\) at ([a-fA-F0-9:]{17})")
+                        .ok()
+                        .and_then(|re| re.captures(line))
+                {
+                    let ip = captures.get(1).unwrap().as_str();
+                    let mac = captures.get(2).unwrap().as_str();
+
+                    // Only include devices from our subnet
+                    if ip.starts_with("192.168.1.") {
+                        // println!("🔍 Debug: Found in ARP table: {} -> {}", ip, mac);
+
+                        let device = LocalNetworkDevice {
+                            id: Uuid::new_v4().to_string(),
+                            ip_address: ip.to_string(),
+                            mac_address: mac.to_string(),
+                            hostname: None,
+                            device_name: None,
+                            vendor: get_vendor_from_mac(mac),
+                            mdns_service_types: None,
+                        };
+
+                        devices.insert(ip.to_string(), device);
+                    }
+                }
+            }
+        }
+    }
+
+    devices
 }
