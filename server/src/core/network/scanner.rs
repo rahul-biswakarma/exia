@@ -1,12 +1,20 @@
-use super::types::LocalDeviceInfo;
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+use pnet::datalink::{self, Channel, Config};
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+use pnet::packet::arp::{ArpOperations, ArpPacket, MutableArpPacket};
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+use pnet::packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+use pnet::packet::{MutablePacket, Packet};
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+use pnet::util::MacAddr;
+
+use crate::core::network::plugin::{adapter::PluginAdapter, wiz::WizPlugin};
 use default_net::get_default_interface;
 use dns_lookup::getnameinfo;
 use ipnet::IpNet;
-use pnet::datalink::{self, Channel, Config};
-use pnet::packet::arp::{ArpHardwareTypes, ArpOperations, ArpPacket, MutableArpPacket};
-use pnet::packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
-use pnet::packet::{MutablePacket, Packet};
-use pnet::util::MacAddr;
+use shared::logger::{log_error, log_task};
+use shared::types::network_types::{DeviceType, LocalDeviceInfo};
 use std::collections::HashSet;
 use std::net::{IpAddr, Ipv4Addr};
 use std::time::{Duration, Instant};
@@ -32,10 +40,15 @@ fn reverse_dns_lookup(ip: IpAddr) -> Option<String> {
         .filter(|hostname| hostname != &ip_string)
 }
 
-fn scan_arp_pnet() -> Vec<LocalDeviceInfo> {
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+async fn scan_arp_pnet() -> Vec<LocalDeviceInfo> {
+    log_task("Starting ARP scan");
     let cidr = match get_default_cidr() {
         Some(c) => c,
-        None => return vec![],
+        None => {
+            log_error("Could not get default CIDR");
+            return vec![];
+        }
     };
 
     let interfaces = datalink::interfaces();
@@ -92,8 +105,7 @@ fn scan_arp_pnet() -> Vec<LocalDeviceInfo> {
             None => continue,
         };
 
-        arp_packet.set_hardware_type(ArpHardwareTypes::Ethernet);
-        arp_packet.set_protocol_type(EtherTypes::Ipv4);
+        arp_packet.set_hardware_type(pnet::packet::arp::ArpHardwareTypes::Ethernet);
         arp_packet.set_hw_addr_len(6);
         arp_packet.set_proto_addr_len(4);
         arp_packet.set_operation(ArpOperations::Request);
@@ -119,24 +131,36 @@ fn scan_arp_pnet() -> Vec<LocalDeviceInfo> {
         }
     }
 
-    results
-        .into_iter()
-        .map(|(ip, mac)| {
-            let ip_addr = IpAddr::V4(ip);
-            let hostname = reverse_dns_lookup(ip_addr);
-            LocalDeviceInfo {
-                interface_name: interface.name.clone(),
-                ip: ip_addr,
-                mac: Some(mac.to_string()),
-                cidr: Some(cidr),
-                hostname,
-            }
-        })
-        .collect()
+    let mut plugin_adapter = PluginAdapter::new();
+    plugin_adapter.add_plugin(Box::new(WizPlugin));
+
+    let mut devices = vec![];
+    for (ip, mac) in results {
+        let ip_addr = IpAddr::V4(ip);
+        let hostname = reverse_dns_lookup(ip_addr);
+        let mut device_info = LocalDeviceInfo {
+            interface_name: interface.name.clone(),
+            ip: ip_addr,
+            mac: Some(mac.to_string()),
+            cidr: Some(cidr),
+            hostname,
+            manufacturer: None,
+            device_type: DeviceType::Unknown,
+            model: None,
+            controls: vec![],
+        };
+        plugin_adapter.identify_and_update(&mut device_info).await;
+        devices.push(device_info);
+    }
+    devices
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+async fn scan_arp_pnet() -> Vec<LocalDeviceInfo> {
+    log_task("ARP scan is not supported on this platform");
+    vec![]
 }
 
 pub async fn scan_arp_async() -> Vec<LocalDeviceInfo> {
-    tokio::task::spawn_blocking(scan_arp_pnet)
-        .await
-        .unwrap_or_else(|_| vec![])
+    scan_arp_pnet().await
 }
