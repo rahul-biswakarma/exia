@@ -155,9 +155,63 @@ async fn scan_arp_pnet() -> Vec<LocalDeviceInfo> {
     devices
 }
 
-#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+#[cfg(target_os = "windows")]
 async fn scan_arp_pnet() -> Vec<LocalDeviceInfo> {
-    log_task("ARP scan is not supported on this platform");
+    log_task("Starting host discovery on Windows (no ARP scan)");
+    let cidr = match get_default_cidr() {
+        Some(c) => c,
+        None => {
+            log_error("Could not get default CIDR");
+            return vec![];
+        }
+    };
+
+    let mut devices = Vec::new();
+    let interface_name = "Unknown".to_string(); // Placeholder for Windows
+
+    for host_ip in cidr.hosts() {
+        let ip_addr = host_ip.to_string();
+        let output = tokio::process::Command::new("ping")
+            .arg("-n")
+            .arg("1")
+            .arg("-w")
+            .arg("100") // 100ms timeout
+            .arg(&ip_addr)
+            .output()
+            .await;
+
+        match output {
+            Ok(output) => {
+                if output.status.success() {
+                    let hostname = reverse_dns_lookup(host_ip);
+                    let mut device_info = LocalDeviceInfo {
+                        interface_name: interface_name.clone(),
+                        ip: host_ip,
+                        mac: None, // MAC address not available via ping
+                        cidr: Some(cidr),
+                        hostname,
+                        manufacturer: None,
+                        device_type: DeviceType::Unknown,
+                        model: None,
+                        controls: vec![],
+                    };
+                    let mut plugin_adapter = PluginAdapter::new();
+                    plugin_adapter.add_plugin(Box::new(WizPlugin));
+                    plugin_adapter.identify_and_update(&mut device_info).await;
+                    devices.push(device_info);
+                }
+            }
+            Err(e) => {
+                log_error(format!("Failed to run ping command: {}", e));
+            }
+        }
+    }
+    devices
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+async fn scan_arp_pnet() -> Vec<LocalDeviceInfo> {
+    log_task("Host discovery is not supported on this platform");
     vec![]
 }
 

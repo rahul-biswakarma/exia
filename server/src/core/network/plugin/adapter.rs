@@ -1,5 +1,7 @@
 use async_trait::async_trait;
-use shared::types::network_types::{DeviceControl, DeviceControlKind, DeviceMetadata, LocalDeviceInfo};
+use shared::types::network_types::{
+    DeviceControl, DeviceControlKind, DeviceMetadata, LocalDeviceInfo,
+};
 
 #[async_trait]
 pub trait DevicePlugin: Send + Sync {
@@ -8,7 +10,11 @@ pub trait DevicePlugin: Send + Sync {
     fn get_name(&self) -> String;
     fn capabilities(&self) -> Vec<DeviceControlKind>;
     async fn probe(&self, device: &LocalDeviceInfo) -> Option<DeviceMetadata>;
-    async fn control(&self, device: &LocalDeviceInfo, control: &DeviceControl) -> Result<(), String>;
+    async fn control(
+        &self,
+        device: &LocalDeviceInfo,
+        control: &DeviceControl,
+    ) -> Result<(), String>;
 }
 
 pub struct PluginAdapter {
@@ -38,7 +44,11 @@ impl PluginAdapter {
         }
     }
 
-    pub async fn control_device(&self, device: &LocalDeviceInfo, control: &DeviceControl) -> Result<(), String> {
+    pub async fn control_device(
+        &self,
+        device: &LocalDeviceInfo,
+        control: &DeviceControl,
+    ) -> Result<(), String> {
         for plugin in &self.plugins {
             if plugin.identify(device) {
                 return plugin.control(device, control).await;
